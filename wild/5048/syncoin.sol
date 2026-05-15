@@ -1,0 +1,451 @@
+/*────────────────────────────┐
+Developed by Coinsult                       
+ _____     _             _ _   
+|     |___|_|___ ___ _ _| | |_ 
+|   --| . | |   |_ -| | | |  _|
+|_____|___|_|_|_|___|___|_|_|  
+                               
+tg: @coinsult_tg
+──────────────────────────────┘
+
+SPDX-License-Identifier: MIT */
+
+pragma solidity 0.8.26;
+
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
+import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Arrays.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
+
+contract SNC is ERC20, Ownable(msg.sender), ReentrancyGuard {
+    using Arrays for uint256[];
+    using Counters for Counters.Counter;
+
+    struct Snapshots {
+        uint256[] ids;
+        uint256[] values;
+    }
+
+    mapping(address => Snapshots) private _accountBalanceSnapshots;
+    Snapshots private _totalSupplySnapshots;
+
+    Counters.Counter private _currentSnapshotId;
+
+    event Snapshot(uint256 id);
+
+    struct Proposal {
+        bytes32 descriptionHash;
+        uint256 voteCountFor;
+        uint256 voteCountAgainst;
+        uint256 deadline;
+        bool executed;
+        uint256 snapshotId;
+    }
+
+    Proposal[] public proposals;
+    mapping(uint256 => mapping(address => bool)) public hasVoted;
+
+    event ProposalCreated(uint256 proposalId, bytes32 descriptionHash, uint256 deadline);
+    event Voted(uint256 proposalId, address voter, bool voteFor, uint256 votePower);
+    event ProposalExecuted(uint256 proposalId, bool success);
+
+    IUniswapV2Router02 public uniswapV2Router;
+    address public uniswapV2Pair;
+
+    mapping (address => bool) private _isExcludedFromFees;
+
+    uint256 public  feeOnBuy;
+    uint256 public  feeOnSell;
+
+    uint256 public  feeOnTransfer;
+
+    address public  feeReceiver;
+
+    uint256 public  swapTokensAtAmount;
+    uint256 public  maxFeeSwap;
+    bool    public  feeSwapEnabled;
+
+    bool    private swapping;
+
+    bool    public  tradingEnabled;
+
+    error TradingNotEnabled();
+    error TradingAlreadyEnabled();
+    error FeeSetupError();
+    error InvalidAddress(address invalidAddress);
+    error NotAllowed(address token, address sender);
+    error FeeTooHigh(uint256 feeOnBuy, uint256 feeOnSell, uint256 feeOnTransfer);
+    error ZeroAddress(address feeReceiver);
+
+    event TradingEnabled();
+    event ExcludedFromFees(address indexed account, bool isExcluded);
+    event FeeReceiverChanged(address feeReceiver);
+
+    constructor () ERC20("Syncoin", "SNC") {
+        address router;
+        address pinkLock;
+        
+        if (block.chainid == 56) {
+            router = 0x10ED43C718714eb63d5aA57B78B54704E256024E;
+            pinkLock = 0x407993575c91ce7643a4d4cCACc9A98c36eE1BBE; 
+        } else if (block.chainid == 97) {
+            router = 0xD99D1c33F9fC3444f8101754aBC46c52416550D1;
+            pinkLock = 0x5E5b9bE5fd939c578ABE5800a90C566eeEbA44a5;
+        } else if (block.chainid == 1 || block.chainid == 5) {
+            router = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
+            pinkLock = 0x71B5759d73262FBb223956913ecF4ecC51057641;
+        } else {
+            revert();
+        }
+
+        transferOwnership(0xeb6527Db45A9407515D2e29899Db771e6d7D2278);
+
+        uniswapV2Router = IUniswapV2Router02(router);
+        uniswapV2Pair = IUniswapV2Factory(uniswapV2Router.factory())
+            .createPair(address(this), uniswapV2Router.WETH());
+
+        _approve(address(this), address(uniswapV2Router), type(uint256).max);
+
+        feeOnBuy  = 1;
+        feeOnSell = 1;
+
+        feeOnTransfer = 0;
+
+        feeReceiver = 0xB685E32702D7c3D5c3C03B81224B8f121E5514db;
+
+        _isExcludedFromFees[owner()] = true;
+        _isExcludedFromFees[address(0xdead)] = true;
+        _isExcludedFromFees[address(this)] = true;
+        _isExcludedFromFees[pinkLock] = true;
+
+        maxWalletLimitEnabled = true;
+
+        _isExcludedFromMaxWalletLimit[owner()] = true;
+        _isExcludedFromMaxWalletLimit[address(this)] = true;
+        _isExcludedFromMaxWalletLimit[address(0xdead)] = true;
+        _isExcludedFromMaxWalletLimit[feeReceiver] = true;
+        _isExcludedFromMaxWalletLimit[pinkLock] = true;
+
+        uint256 totalSupply = 1_618_033 * (10 ** decimals());
+    
+        maxFeeSwap = totalSupply / 1_000; 
+        swapTokensAtAmount = totalSupply / 5_000;
+
+        maxWalletAmount = totalSupply * 10 / 1000;
+
+        feeSwapEnabled = false;
+
+        super._update(address(0), owner(), totalSupply);
+    }
+
+    receive() external payable {}
+
+    function _update(address from, address to, uint256 value) internal override {        
+        bool isExcluded = _isExcludedFromFees[from] || _isExcludedFromFees[to];
+
+        if (!isExcluded && !tradingEnabled) {
+            revert TradingNotEnabled();
+        }
+
+        _beforeTokenTransfer(from, to, value);
+
+        if (!swapping && from != uniswapV2Pair && feeSwapEnabled) {
+            uint256 contractTokenBalance = balanceOf(address(this));
+            bool canSwap = contractTokenBalance >= swapTokensAtAmount;
+
+            if (canSwap) {
+                swapping = true;
+
+                swapAndSendFee(contractTokenBalance);
+
+                swapping = false;
+            }
+        }
+
+        uint256 _totalFees = 0;
+        if (!isExcluded && !swapping) {
+            if (from == uniswapV2Pair) {
+                _totalFees = feeOnBuy;
+            } else if (to == uniswapV2Pair) {
+                _totalFees = feeOnSell;
+            } else {
+                _totalFees = feeOnTransfer;
+            }
+        }
+
+        if (_totalFees > 0) {
+            uint256 fees = (value * _totalFees) / 100;
+            value -= fees;
+            super._update(from, address(this), fees);
+        }
+
+        if (maxWalletLimitEnabled) 
+        {
+            if (!_isExcludedFromMaxWalletLimit[from] && 
+                !_isExcludedFromMaxWalletLimit[to] &&
+                to != uniswapV2Pair
+            ) {
+                uint256 balance  = balanceOf(to);
+                require(
+                    balance + value <= maxWalletAmount, 
+                    "MaxWallet: Recipient exceeds the maxWalletAmount"
+                );
+            }
+        }
+
+        super._update(from, to, value);
+    }
+
+    function swapAndSendFee(uint256 amount) internal returns (bool) {
+        if (amount > maxFeeSwap){
+            amount = maxFeeSwap;
+        }
+
+        uint256 initialBalance = address(this).balance;
+
+        address[] memory path = new address[](2);
+        path[0] = address(this);
+        path[1] = uniswapV2Router.WETH();
+
+        try uniswapV2Router.swapExactTokensForETHSupportingFeeOnTransferTokens(
+            amount,
+            0,
+            path,
+            address(this),
+            block.timestamp
+        ) {
+            uint256 newBalance = address(this).balance - initialBalance;
+            (bool success, ) = payable(feeReceiver).call{value: newBalance}("");
+            return success;    
+        } catch {
+            return false;
+        }
+    }
+
+    function enableTrading() external onlyOwner {
+        if (tradingEnabled) {
+            revert TradingAlreadyEnabled();
+        }
+
+        tradingEnabled = true;
+        feeSwapEnabled = true;
+
+        emit TradingEnabled();
+    }
+
+    function setFeeSwapSettings(
+        uint256 _swapTokensAtAmount, 
+        uint256 _maxFeeSwap, 
+        bool _feeSwapEnabled
+    ) external onlyOwner {
+        uint256 decimalsToAdd = 10 ** decimals();
+
+        maxFeeSwap = _maxFeeSwap * decimalsToAdd;
+        swapTokensAtAmount = _swapTokensAtAmount * decimalsToAdd;
+        feeSwapEnabled = _feeSwapEnabled;
+
+        if (swapTokensAtAmount > totalSupply() || maxFeeSwap < swapTokensAtAmount){
+            revert FeeSetupError();
+        }
+    }
+
+    function excludeFromFees(address account, bool excluded) external onlyOwner{
+        _isExcludedFromFees[account] = excluded;
+
+        emit ExcludedFromFees(account, excluded);
+    }
+
+    function isExcludedFromFees(address account) public view returns(bool) {
+        return _isExcludedFromFees[account];
+    }
+
+    function changeFeeReceiver(address _feeReceiver) external onlyOwner{
+        if (_feeReceiver == address(0)){
+            revert ZeroAddress(_feeReceiver);
+        }
+
+        feeReceiver = _feeReceiver;
+
+        emit FeeReceiverChanged(feeReceiver);
+    }
+
+
+    function recoverStuckTokens(address token) external {
+        if (token == address(this) || (msg.sender != owner() && msg.sender != feeReceiver)){
+            revert NotAllowed(token, msg.sender);
+        }
+
+        if (token == address(0x0)) {
+            payable(msg.sender).transfer(address(this).balance);
+            return;
+        }
+
+        IERC20 ERC20token = IERC20(token);
+        uint256 balance = ERC20token.balanceOf(address(this));
+        ERC20token.transfer(msg.sender, balance);
+    }
+
+
+    mapping(address => bool) private _isExcludedFromMaxWalletLimit;
+    bool    public maxWalletLimitEnabled;
+    uint256 public maxWalletAmount;
+
+    event ExcludedFromMaxWalletLimit(address indexed account, bool isExcluded);
+    event MaxWalletLimitStateChanged(bool maxWalletLimit);
+    event MaxWalletLimitAmountChanged(uint256 maxWalletAmount);
+
+    function setEnableMaxWalletLimit(bool enable) external onlyOwner {
+        require(enable != maxWalletLimitEnabled,"Max wallet limit is already set to that state");
+        maxWalletLimitEnabled = enable;
+
+        emit MaxWalletLimitStateChanged(maxWalletLimitEnabled);
+    }
+
+    function setMaxWalletAmount(uint256 _maxWalletAmount) external onlyOwner {
+        require(_maxWalletAmount >= (totalSupply() / (10 ** decimals())) / 100, "Max wallet percentage cannot be lower than 1%");
+        maxWalletAmount = _maxWalletAmount * (10 ** decimals());
+
+        emit MaxWalletLimitAmountChanged(maxWalletAmount);
+    }
+
+    function excludeFromMaxWallet(address account, bool exclude) external onlyOwner {
+        require( _isExcludedFromMaxWalletLimit[account] != exclude,"Account is already set to that state");
+        require(account != address(this), "Can't set this address.");
+
+        _isExcludedFromMaxWalletLimit[account] = exclude;
+
+        emit ExcludedFromMaxWalletLimit(account, exclude);
+    }
+
+    function isExcludedFromMaxWalletLimit(address account) public view returns(bool) {
+        return _isExcludedFromMaxWalletLimit[account];
+    }
+
+    function _snapshot() internal virtual returns (uint256) {
+        _currentSnapshotId.increment();
+
+        uint256 currentId = _getCurrentSnapshotId();
+        emit Snapshot(currentId);
+        return currentId;
+    }
+
+    function _getCurrentSnapshotId() internal view virtual returns (uint256) {
+        return _currentSnapshotId.current();
+    }
+
+    function balanceOfAt(address account, uint256 snapshotId) public view virtual returns (uint256) {
+        (bool snapshotted, uint256 value) = _valueAt(snapshotId, _accountBalanceSnapshots[account]);
+
+        return snapshotted ? value : balanceOf(account);
+    }
+
+    function totalSupplyAt(uint256 snapshotId) public view virtual returns (uint256) {
+        (bool snapshotted, uint256 value) = _valueAt(snapshotId, _totalSupplySnapshots);
+
+        return snapshotted ? value : totalSupply();
+    }
+
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual {
+        if (from == address(0)) {
+            _updateAccountSnapshot(to);
+            _updateTotalSupplySnapshot();
+        } else if (to == address(0)) {
+            _updateAccountSnapshot(from);
+            _updateTotalSupplySnapshot();
+        } else {
+            _updateAccountSnapshot(from);
+            _updateAccountSnapshot(to);
+        }
+    }
+
+    function _valueAt(uint256 snapshotId, Snapshots storage snapshots) private view returns (bool, uint256) {
+        require(snapshotId > 0, "ERC20Snapshot: id is 0");
+        require(snapshotId <= _getCurrentSnapshotId(), "ERC20Snapshot: nonexistent id");
+
+        uint256 index = snapshots.ids.findUpperBound(snapshotId);
+
+        if (index == snapshots.ids.length) {
+            return (false, 0);
+        } else {
+            return (true, snapshots.values[index]);
+        }
+    }
+
+    function _updateAccountSnapshot(address account) private {
+        _updateSnapshot(_accountBalanceSnapshots[account], balanceOf(account));
+    }
+
+    function _updateTotalSupplySnapshot() private {
+        _updateSnapshot(_totalSupplySnapshots, totalSupply());
+    }
+
+    function _updateSnapshot(Snapshots storage snapshots, uint256 currentValue) private {
+        uint256 currentId = _getCurrentSnapshotId();
+        if (_lastSnapshotId(snapshots.ids) < currentId) {
+            snapshots.ids.push(currentId);
+            snapshots.values.push(currentValue);
+        }
+    }
+
+    function _lastSnapshotId(uint256[] storage ids) private view returns (uint256) {
+        if (ids.length == 0) {
+            return 0;
+        } else {
+            return ids[ids.length - 1];
+        }
+    }
+
+    function createProposal(bytes32 descriptionHash, uint256 duration) public onlyOwner {
+        uint256 deadline = block.timestamp + duration;
+        uint256 snapshotId = _snapshot();
+
+        proposals.push(Proposal({
+            descriptionHash: descriptionHash,
+            voteCountFor: 0,
+            voteCountAgainst: 0,
+            deadline: deadline,
+            executed: false,
+            snapshotId: snapshotId
+        }));
+
+        emit ProposalCreated(proposals.length - 1, descriptionHash, deadline);
+    }
+
+    function vote(uint256 proposalId, bool voteFor) public nonReentrant {
+        require(proposalId < proposals.length, "Proposal does not exist");
+        Proposal storage proposal = proposals[proposalId];
+        require(block.timestamp <= proposal.deadline, "Voting period is over");
+        require(!hasVoted[proposalId][msg.sender], "You have already voted");
+
+        uint256 votePower = balanceOfAt(msg.sender, proposal.snapshotId);
+        require(votePower > 0, "You have no voting power");
+
+        if (voteFor) {
+            proposal.voteCountFor += votePower;
+        } else {
+            proposal.voteCountAgainst += votePower;
+        }
+
+        hasVoted[proposalId][msg.sender] = true;
+        emit Voted(proposalId, msg.sender, voteFor, votePower);
+    }
+
+    function submitSnapshotResults(uint256 proposalId) public onlyOwner {
+        require(proposalId < proposals.length, "Proposal does not exist");
+        Proposal storage proposal = proposals[proposalId];
+        require(block.timestamp > proposal.deadline, "Voting period has not ended");
+        require(!proposal.executed, "Proposal already executed");
+
+        if (proposal.voteCountFor > proposal.voteCountAgainst) {
+            proposal.executed = true;
+            emit ProposalExecuted(proposalId, true);
+        } else {
+            proposal.executed = false;
+            emit ProposalExecuted(proposalId, false);
+        }
+    }
+}

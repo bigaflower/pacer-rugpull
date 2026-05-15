@@ -1,0 +1,584 @@
+// SPDX-License-Identifier: MIT
+pragma solidity =0.8.25;
+
+// lib/tanssi-bridge-relayer/snowbridge/contracts/src/interfaces/IERC20.sol
+
+// SPDX-FileCopyrightText: 2023 Axelar Network
+// SPDX-FileCopyrightText: 2023 Snowfork <hello@snowfork.com>
+
+/**
+ * @dev Interface of the ERC20 standard as defined in the EIP.
+ */
+interface IERC20 {
+    error InvalidAccount();
+    error InsufficientBalance(address sender, uint256 balance, uint256 needed);
+    error InsufficientAllowance(address spender, uint256 allowance, uint256 needed);
+
+    /**
+     * @dev Returns the amount of tokens in existence.
+     */
+    function totalSupply() external view returns (uint256);
+
+    /**
+     * @dev Returns the amount of tokens owned by `account`.
+     */
+    function balanceOf(address account) external view returns (uint256);
+
+    /**
+     * @dev Moves `amount` tokens from the caller's account to `recipient`.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transfer(address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Returns the remaining number of tokens that `spender` will be
+     * allowed to spend on behalf of `owner` through {transferFrom}. This is
+     * zero by default.
+     *
+     * This value changes when {approve} or {transferFrom} are called.
+     */
+    function allowance(address owner, address spender) external view returns (uint256);
+
+    /**
+     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * IMPORTANT: Beware that changing an allowance with this method brings the risk
+     * that someone may use both the old and the new allowance by unfortunate
+     * transaction ordering. One possible solution to mitigate this race
+     * condition is to first reduce the spender's allowance to 0 and set the
+     * desired value afterwards:
+     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+     *
+     * Emits an {Approval} event.
+     */
+    function approve(address spender, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Moves `amount` tokens from `sender` to `recipient` using the
+     * allowance mechanism. `amount` is then deducted from the caller's
+     * allowance.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Emitted when `value` tokens are moved from one account (`from`) to
+     * another (`to`).
+     *
+     * Note that `value` may be zero.
+     */
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    /**
+     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
+     * a call to {approve}. `value` is the new allowance.
+     */
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+}
+
+// lib/tanssi-bridge-relayer/snowbridge/contracts/src/interfaces/IERC20Permit.sol
+
+// SPDX-FileCopyrightText: 2023 Axelar Network
+// SPDX-FileCopyrightText: 2023 Snowfork <hello@snowfork.com>
+
+interface IERC20Permit {
+    error PermitExpired();
+    error InvalidS();
+    error InvalidV();
+    error InvalidSignature();
+
+    function DOMAIN_SEPARATOR() external view returns (bytes32);
+
+    function nonces(address account) external view returns (uint256);
+
+    function permit(address issuer, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s)
+        external;
+}
+
+// lib/tanssi-bridge-relayer/snowbridge/contracts/src/TokenLib.sol
+
+// SPDX-FileCopyrightText: 2023 Axelar Network
+// SPDX-FileCopyrightText: 2023 Snowfork <hello@snowfork.com>
+
+library TokenLib {
+    // keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)')
+    bytes32 internal constant DOMAIN_TYPE_SIGNATURE_HASH =
+        bytes32(0x8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f);
+
+    // keccak256('Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)')
+    bytes32 internal constant PERMIT_SIGNATURE_HASH =
+        bytes32(0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9);
+
+    string internal constant EIP191_PREFIX_FOR_EIP712_STRUCTURED_DATA = "\x19\x01";
+
+    struct Token {
+        mapping(address account => uint256) balance;
+        mapping(address account => mapping(address spender => uint256)) allowance;
+        mapping(address token => uint256) nonces;
+        uint256 totalSupply;
+    }
+
+    /**
+     * @dev See {IERC20-transfer}.
+     *
+     * Requirements:
+     *
+     * - `recipient` cannot be the zero address.
+     * - the caller must have a balance of at least `amount`.
+     */
+    function transfer(Token storage token, address sender, address recipient, uint256 amount) external returns (bool) {
+        _transfer(token, sender, recipient, amount);
+        return true;
+    }
+
+    /**
+     * @dev Creates `amount` tokens and assigns them to `account`, increasing
+     * the total supply.
+     *
+     * Emits a {Transfer} event with `from` set to the zero address.
+     *
+     * Requirements:
+     *
+     * - `to` cannot be the zero address.
+     */
+    function mint(Token storage token, address account, uint256 amount) external {
+        if (account == address(0)) {
+            revert IERC20.InvalidAccount();
+        }
+
+        _update(token, address(0), account, amount);
+    }
+
+    /**
+     * @dev Destroys `amount` tokens from `account`, reducing the
+     * total supply.
+     *
+     * Emits a {Transfer} event with `to` set to the zero address.
+     *
+     * Requirements:
+     *
+     * - `account` cannot be the zero address.
+     * - `account` must have at least `amount` tokens.
+     */
+    function burn(Token storage token, address account, uint256 amount) external {
+        if (account == address(0)) {
+            revert IERC20.InvalidAccount();
+        }
+
+        _update(token, account, address(0), amount);
+    }
+
+    /**
+     * @dev See {IERC20-approve}.
+     *
+     * NOTE: Prefer the {increaseAllowance} and {decreaseAllowance} methods, as
+     * they aren't vulnerable to the frontrunning attack described here:
+     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+     * See {IERC20-approve}.
+     *
+     * NOTE: If `amount` is the maximum `uint256`, the allowance is not updated on
+     * `transferFrom`. This is semantically equivalent to an infinite approval.
+     *
+     * Requirements:
+     *
+     * - `spender` cannot be the zero address.
+     */
+    function approve(Token storage token, address owner, address spender, uint256 amount) external returns (bool) {
+        _approve(token, owner, spender, amount);
+        return true;
+    }
+
+    /**
+     * @dev See {IERC20-transferFrom}.
+     *
+     * Emits an {Approval} event indicating the updated allowance. This is not
+     * required by the EIP. See the note at the beginning of {ERC20}.
+     *
+     * Requirements:
+     *
+     * - `sender` and `recipient` cannot be the zero address.
+     * - `sender` must have a balance of at least `amount`.
+     * - the caller must have allowance for ``sender``'s tokens of at least
+     * `amount`.
+     */
+    function transferFrom(Token storage token, address sender, address recipient, uint256 amount)
+        external
+        returns (bool)
+    {
+        uint256 _allowance = token.allowance[sender][msg.sender];
+
+        if (_allowance != type(uint256).max) {
+            if (_allowance < amount) {
+                revert IERC20.InsufficientAllowance(msg.sender, _allowance, amount);
+            }
+            unchecked {
+                _approve(token, sender, msg.sender, _allowance - amount);
+            }
+        }
+
+        _transfer(token, sender, recipient, amount);
+
+        return true;
+    }
+
+    /**
+     * @dev Atomically increases the allowance granted to `spender` by the caller.
+     *
+     * This is an alternative to {approve} that can be used as a mitigation for
+     * problems described in {IERC20-approve}.
+     *
+     * Emits an {Approval} event indicating the updated allowance.
+     *
+     * Requirements:
+     *
+     * - `spender` cannot be the zero address.
+     */
+    function increaseAllowance(Token storage token, address spender, uint256 addedValue) external returns (bool) {
+        uint256 _allowance = token.allowance[msg.sender][spender];
+        if (_allowance != type(uint256).max) {
+            _approve(token, msg.sender, spender, _allowance + addedValue);
+        }
+        return true;
+    }
+
+    /**
+     * @dev Atomically decreases the allowance granted to `spender` by the caller.
+     *
+     * This is an alternative to {approve} that can be used as a mitigation for
+     * problems described in {IERC20-approve}.
+     *
+     * Emits an {Approval} event indicating the updated allowance.
+     *
+     * Requirements:
+     *
+     * - `spender` cannot be the zero address.
+     * - `spender` must have allowance for the caller of at least
+     * `subtractedValue`.
+     */
+    function decreaseAllowance(Token storage token, address spender, uint256 subtractedValue) external returns (bool) {
+        uint256 _allowance = token.allowance[msg.sender][spender];
+        if (_allowance != type(uint256).max) {
+            if (_allowance < subtractedValue) {
+                revert IERC20.InsufficientAllowance(msg.sender, _allowance, subtractedValue);
+            }
+            unchecked {
+                _approve(token, msg.sender, spender, _allowance - subtractedValue);
+            }
+        }
+        return true;
+    }
+
+    function permit(
+        Token storage token,
+        bytes32 domainSeparator,
+        address issuer,
+        address spender,
+        uint256 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external {
+        if (block.timestamp > deadline) revert IERC20Permit.PermitExpired();
+
+        if (uint256(s) > 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0) {
+            revert IERC20Permit.InvalidS();
+        }
+
+        if (v != 27 && v != 28) revert IERC20Permit.InvalidV();
+
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                EIP191_PREFIX_FOR_EIP712_STRUCTURED_DATA,
+                domainSeparator,
+                keccak256(abi.encode(PERMIT_SIGNATURE_HASH, issuer, spender, value, token.nonces[issuer]++, deadline))
+            )
+        );
+
+        address recoveredAddress = ecrecover(digest, v, r, s);
+
+        if (recoveredAddress != issuer) revert IERC20Permit.InvalidSignature();
+
+        // _approve will revert if issuer is address(0x0)
+        _approve(token, issuer, spender, value);
+    }
+
+    /**
+     * @dev Moves tokens `amount` from `sender` to `recipient`.
+     *
+     * This is internal function is equivalent to {transfer}, and can be used to
+     * e.g. implement automatic token fees, slashing mechanisms, etc.
+     *
+     * Emits a {Transfer} event.
+     *
+     * Requirements:
+     *
+     * - `sender` cannot be the zero address.
+     * - `recipient` cannot be the zero address.
+     * - `sender` must have a balance of at least `amount`.
+     */
+    function _transfer(Token storage token, address sender, address recipient, uint256 amount) internal {
+        if (sender == address(0) || recipient == address(0)) {
+            revert IERC20.InvalidAccount();
+        }
+
+        _update(token, sender, recipient, amount);
+    }
+
+    /**
+     * @dev Sets `amount` as the allowance of `spender` over the `owner` s tokens.
+     *
+     * This internal function is equivalent to `approve`, and can be used to
+     * e.g. set automatic allowances for certain subsystems, etc.
+     *
+     * Emits an {Approval} event.
+     *
+     * Requirements:
+     *
+     * - `owner` cannot be the zero address.
+     * - `spender` cannot be the zero address.
+     */
+    function _approve(Token storage token, address owner, address spender, uint256 amount) internal {
+        if (owner == address(0) || spender == address(0)) {
+            revert IERC20.InvalidAccount();
+        }
+
+        token.allowance[owner][spender] = amount;
+        emit IERC20.Approval(owner, spender, amount);
+    }
+
+    /**
+     * @dev Transfers a `value` amount of tokens from `from` to `to`, or alternatively mints (or burns) if `from`
+     * (or `to`) is the zero address. All customizations to transfers, mints, and burns should be done by overriding
+     * this function.
+     *
+     * Emits a {Transfer} event.
+     */
+    function _update(Token storage token, address from, address to, uint256 value) internal {
+        if (from == address(0)) {
+            // Overflow check required: The rest of the code assumes that totalSupply never overflows
+            token.totalSupply += value;
+        } else {
+            uint256 fromBalance = token.balance[from];
+            if (fromBalance < value) {
+                revert IERC20.InsufficientBalance(from, fromBalance, value);
+            }
+            unchecked {
+                // Overflow not possible: value <= fromBalance <= totalSupply.
+                token.balance[from] = fromBalance - value;
+            }
+        }
+
+        if (to == address(0)) {
+            unchecked {
+                // Overflow not possible: value <= totalSupply or value <= fromBalance <= totalSupply.
+                token.totalSupply -= value;
+            }
+        } else {
+            unchecked {
+                // Overflow not possible: balance + value is at most totalSupply, which we know fits into a uint256.
+                token.balance[to] += value;
+            }
+        }
+
+        emit IERC20.Transfer(from, to, value);
+    }
+}
+
+// lib/tanssi-bridge-relayer/snowbridge/contracts/src/Token.sol
+
+// SPDX-FileCopyrightText: 2023 Axelar Network
+// SPDX-FileCopyrightText: 2023 Snowfork <hello@snowfork.com>
+
+/**
+ * @dev Implementation of the {IERC20} interface.
+ *
+ * This implementation is agnostic to the way tokens are created. This means
+ * that a supply mechanism has to be added in a derived contract using {_mint}.
+ * This supply mechanism has been added in {ERC20Permit-mint}.
+ *
+ * We have followed general OpenZeppelin guidelines: functions revert instead
+ * of returning `false` on failure. This behavior is conventional and does
+ * not conflict with the expectations of ERC20 applications.
+ *
+ * Additionally, an {Approval} event is emitted on calls to {transferFrom}.
+ * This allows applications to reconstruct the allowance for all accounts just
+ * by listening to these events. Other implementations of the EIP may not emit
+ * these events, as it isn't required by the specification.
+ *
+ * Finally, the non-standard {decreaseAllowance} and {increaseAllowance}
+ * functions have been added to mitigate the well-known issues around setting
+ * allowances. See {IERC20-approve}.
+ */
+contract Token is IERC20, IERC20Permit {
+    using TokenLib for TokenLib.Token;
+
+    address public immutable GATEWAY;
+    bytes32 public immutable DOMAIN_SEPARATOR;
+    uint8 public immutable decimals;
+
+    string public name;
+    string public symbol;
+    TokenLib.Token token;
+
+    error Unauthorized();
+
+    /**
+     * @dev Sets the values for {name}, {symbol}, and {decimals}.
+     */
+    constructor(string memory _name, string memory _symbol, uint8 _decimals) {
+        name = _name;
+        symbol = _symbol;
+        decimals = _decimals;
+        GATEWAY = msg.sender;
+        DOMAIN_SEPARATOR = keccak256(
+            abi.encode(
+                TokenLib.DOMAIN_TYPE_SIGNATURE_HASH,
+                keccak256(bytes(_name)),
+                keccak256(bytes("1")),
+                block.chainid,
+                address(this)
+            )
+        );
+    }
+
+    modifier onlyGateway() {
+        if (msg.sender != GATEWAY) {
+            revert Unauthorized();
+        }
+        _;
+    }
+
+    /**
+     * @dev Creates `amount` tokens and assigns them to `account`, increasing
+     * the total supply. Can only be called by the owner.
+     *
+     * Emits a {Transfer} event with `from` set to the zero address.
+     *
+     * Requirements:
+     *
+     * - `account` cannot be the zero address.
+     */
+    function mint(address account, uint256 amount) external onlyGateway {
+        token.mint(account, amount);
+    }
+
+    /**
+     * @dev Destroys `amount` tokens from the account.
+     */
+    function burn(address account, uint256 amount) external onlyGateway {
+        token.burn(account, amount);
+    }
+
+    /**
+     * @dev See {IERC20-transfer}.
+     *
+     * Requirements:
+     *
+     * - `recipient` cannot be the zero address.
+     * - the caller must have a balance of at least `amount`.
+     */
+    function transfer(address recipient, uint256 amount) external returns (bool) {
+        return token.transfer(msg.sender, recipient, amount);
+    }
+
+    /**
+     * @dev See {IERC20-approve}.
+     *
+     * NOTE: Prefer the {increaseAllowance} and {decreaseAllowance} methods, as
+     * they aren't vulnerable to the frontrunning attack described here:
+     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+     * See {IERC20-approve}.
+     *
+     * NOTE: If `amount` is the maximum `uint256`, the allowance is not updated on
+     * `transferFrom`. This is semantically equivalent to an infinite approval.
+     *
+     * Requirements:
+     *
+     * - `spender` cannot be the zero address.
+     */
+    function approve(address spender, uint256 amount) external returns (bool) {
+        return token.approve(msg.sender, spender, amount);
+    }
+
+    /**
+     * @dev See {IERC20-transferFrom}.
+     *
+     * Emits an {Approval} event indicating the updated allowance. This is not
+     * required by the EIP. See the note at the beginning of {ERC20}.
+     *
+     * Requirements:
+     *
+     * - `sender` and `recipient` cannot be the zero address.
+     * - `sender` must have a balance of at least `amount`.
+     * - the caller must have allowance for ``sender``'s tokens of at least
+     * `amount`.
+     */
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool) {
+        return token.transferFrom(sender, recipient, amount);
+    }
+
+    /**
+     * @dev Atomically increases the allowance granted to `spender` by the caller.
+     *
+     * This is an alternative to {approve} that can be used as a mitigation for
+     * problems described in {IERC20-approve}.
+     *
+     * Emits an {Approval} event indicating the updated allowance.
+     *
+     * Requirements:
+     *
+     * - `spender` cannot be the zero address.
+     */
+    function increaseAllowance(address spender, uint256 addedValue) external returns (bool) {
+        return token.increaseAllowance(spender, addedValue);
+    }
+
+    /**
+     * @dev Atomically decreases the allowance granted to `spender` by the caller.
+     *
+     * This is an alternative to {approve} that can be used as a mitigation for
+     * problems described in {IERC20-approve}.
+     *
+     * Emits an {Approval} event indicating the updated allowance.
+     *
+     * Requirements:
+     *
+     * - `spender` cannot be the zero address.
+     * - `spender` must have allowance for the caller of at least
+     * `subtractedValue`.
+     */
+    function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool) {
+        return token.decreaseAllowance(spender, subtractedValue);
+    }
+
+    function permit(address issuer, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s)
+        external
+    {
+        token.permit(DOMAIN_SEPARATOR, issuer, spender, value, deadline, v, r, s);
+    }
+
+    function balanceOf(address account) external view returns (uint256) {
+        return token.balance[account];
+    }
+
+    function nonces(address account) external view returns (uint256) {
+        return token.nonces[account];
+    }
+
+    function totalSupply() external view returns (uint256) {
+        return token.totalSupply;
+    }
+
+    function allowance(address owner, address spender) external view returns (uint256) {
+        return token.allowance[owner][spender];
+    }
+}

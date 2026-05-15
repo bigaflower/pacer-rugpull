@@ -1,0 +1,96 @@
+{
+  "contract_name": "0xf76901befd9e3d2100958e7a479c6699ea5b7252",
+  "generated_at": "2026-03-08T08:23:04Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function MONKIKI.createLP() has a permission check at Node E1 that restricts access to the funding wallet or the owner, indicating that only privileged addresses can execute this function.",
+          "2. The function calls MONKIKI._approve() at Node E1, which sets allowances for the uniswapV2Router. This is a critical operation that can affect trading capabilities.",
+          "3. The allowance is set to totalSupply() at Node D0, which is initialized to 0. This means that initially, no tokens can be transferred to the uniswapV2Router, effectively limiting trading until the total supply is increased.",
+          "4. The permission check ensures that only the owner or the funding wallet can call createLP(), which means they can control whether or not the trading can occur by manipulating the total supply and allowances.",
+          "5. Since the owner can control the total supply and the allowances, they can effectively limit the ability of regular users to trade by not allowing any tokens to be approved for transfer."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "MONKIKI.createLP()",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry MONKIKI.createLP(); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function MONKIKI.withdrawTokensStuckInContract(address,uint256) has a permission check at Node E1, allowing only the _fundingWallet or the owner to call it.",
+          "2. At Node D0, the function calls MONKIKI._approveTokens(address,uint256), which modifies the balance of the owner (the address specified by the parameter 'to') by setting it to the amount specified by 'amountToTransfer'. This is a direct asset manipulation.",
+          "3. The line at Node D0 states: '_balances[owner] = amount', which means the balance of the specified 'owner' is set to 'amountToTransfer'. This can lead to a situation where the balance of the owner is increased without any corresponding decrease from a legitimate source, indicating a potential leak.",
+          "4. The function MONKIKI._transfer(address,address,uint256) is called next, which transfers tokens from the contract (address(this)) to the specified 'to' address. If the amount is not zero, it will decrease the balance of the contract and increase the balance of the 'to' address.",
+          "5. The condition at Node IF0 checks if the amount is zero, which could lead to a situation where no tokens are transferred, but the previous approval could still allow for manipulation of the owner's balance.",
+          "6. The ability for the owner to withdraw tokens from the contract and specify any address as the recipient (the 'to' parameter) indicates that the owner can effectively drain tokens from the contract to any address they choose, which aligns with the definition of a leak."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "MONKIKI.withdrawTokensStuckInContract(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> IF0 -> D1 -> F1 -> F1",
+        "summary": "Entry MONKIKI.withdrawTokensStuckInContract(address,uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path starts with the function MONKIKI.forceSwap(), which requires the caller to be either the funding wallet or the owner, indicating a permission check (Node E1).",
+          "2. The function then calls MONKIKI._swapTokensForETH(uint256), where the token amount is determined by the balance of the contract itself (Node D0).",
+          "3. In the _approve function (Node D0), the allowance for the uniswapV2Router is set to the token amount, which is derived from the contract's balance. This does not increase the balance but allows the router to spend tokens on behalf of the contract.",
+          "4. The balanceOf function (Node D0) reads the balance of the contract, which is not modified at this point. The balance remains unchanged.",
+          "5. The critical point for leakage occurs when the contract allows the uniswapV2Router to spend tokens. If the uniswapV2Router is used to swap tokens for ETH, the tokens are effectively removed from the contract's balance and sent to the router, which can then send ETH back to the funding wallet or owner, leading to a potential loss of tokens for other users.",
+          "6. The allowance mechanism allows the owner to control how many tokens can be spent by the router, which can lead to a situation where the owner can drain tokens from the contract without direct compensation to other users.",
+          "7. Since the owner can control the amount of tokens that can be swapped and potentially direct the ETH to themselves, this constitutes a leakage of tokens from the contract."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "MONKIKI.forceSwap()",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry MONKIKI.forceSwap(); PermNode: E1; AssetNode: D0, D0"
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 1,
+    "LEAK": 2,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

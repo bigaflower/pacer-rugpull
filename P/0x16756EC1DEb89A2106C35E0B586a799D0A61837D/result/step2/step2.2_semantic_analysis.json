@@ -1,0 +1,128 @@
+{
+  "contract_name": "0x16756EC1DEb89A2106C35E0B586a799D0A61837D",
+  "generated_at": "2025-12-09T09:12:34Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function is CheddaToken.transfer(address,uint256), which leads to the _transfer function where asset changes occur.",
+          "2. The permission check at IF0 ensures that the sender is excluded from fees, but this does not directly affect the transfer logic or the balances.",
+          "3. In the asset node D0, the balance of the sender is decreased by the amount specified in the transfer: _balances[sender] = senderBalance - amount (L753). This indicates a decrease in the sender's balance.",
+          "4. The recipient's balance is increased by the same amount: _balances[recipient] += amount (L757). This indicates an increase in the recipient's balance.",
+          "5. The balance change is from sender's balance of 100 to 100 - amount, and recipient's balance from 0 to 0 + amount. This a standard transfer operation without any hidden minting or leaking.",
+          "6. There are no conditions that allow the owner or any privileged account to mint new tokens or leak tokens from other users' balances.",
+          "7. Therefore, this path does not exhibit any rugpull behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0",
+          "IF0",
+          "D1",
+          "D2"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "CheddaToken.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> IF0[PERM] -> D1 -> E1 -> D0[ASSET] -> F1 -> D2 -> F1",
+        "summary": "Entry CheddaToken.transfer(address,uint256); PermNode: IF0; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, exists asset Operation:_balances[sender] = senderBalance - amount and _balances[recipient] += amount. here sender is msg.sender, recipient is MarketWallet1, amount is local:marketFee.",
+          "2. senderBalance is through _balances[sender], amount is by local:marketFee, The privileged user can control this value.",
+          "3. because recipient is MarketWallet1, The privileged user can adjust local:marketFee to decrease msg.sender balance, while MarketWallet1 balance then will increase, This matches the definition of token leaking.",
+          "4. At node E1, CheddaToken._burn(address,uint256), will causing msg.sender balance decreases, amount is local:singleFee, The privileged user can control this value, further decrease msg.sender balance .",
+          "5. because The privileged user can arbitrarily specify affected accounts (msg.sender) , and can through adjust fee to transfer, Therefore this path matches the LEAK definition."
+        ],
+        "key_nodes": [
+          "D0",
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "CheddaToken.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> IF0[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> D2 -> F1",
+        "summary": "Entry CheddaToken.transfer(address,uint256); PermNode: IF0; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves the transfer of tokens from one address to another, specifically in the CheddaToken.transferFrom function.",
+          "2. In Node D0, the allowance is checked, and in Node D1, it is confirmed that the current allowance must be greater than or equal to the amount being transferred.",
+          "3. In Node D0 (ASSET), the balances are modified: _balances[sender] is decreased by amount (L753) and _balances[recipient] is increased by amount (L757). This indicates a transfer of tokens.",
+          "4. The key point is that the transfer can be initiated by a spender (msg.sender) on behalf of the owner (param:sender). If the spender is a privileged address, they can effectively control the transfer of tokens from the owner to any recipient.",
+          "5. The transfer logic allows the spender to deduct tokens from the owner's balance without the owner's direct action, which can lead to a situation where the spender can leak tokens from the owner's balance to themselves or others.",
+          "6. The ability to transfer tokens from any address (the owner) to any recipient (the recipient) without the owner's consent indicates a potential for leaking tokens.",
+          "7. Therefore, the path exhibits characteristics of a leak, as the spender can manipulate the transfer process to their advantage."
+        ],
+        "key_nodes": [
+          "D0",
+          "D1",
+          "D2"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "CheddaToken.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> IF0 -> D1 -> E1 -> D0[ASSET] -> F1 -> IF1[PERM] -> D2 -> E1 -> D0[ASSET] -> F1 -> D3 -> F1",
+        "summary": "Entry CheddaToken.transferFrom(address,address,uint256); PermNode: IF1; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, execute `_balances[sender] = senderBalance - amount` and `_balances[recipient] += amount`, This indicates sender balance decreases, while recipient balance increases.",
+          "2. Specifically, sender balance from 100 decrease local:marketFee, while recipient (MarketWallet1) balance increases by local:marketFee. because MarketWallet1 is address, The privileged user can control from sender to MarketWallet1 transfer .",
+          "3. At node D0, execute `_balances[account] = accountBalance - amount`, This indicatesThe privileged user can from arbitrary account (account) deductedion balance, while this account is specified by the parameter, not is the caller itself, This matches the definition of token leaking.",
+          "4. because The privileged user can call parameter specify arbitrary account performdeduction, behavior matches the Leak definition."
+        ],
+        "key_nodes": [
+          "D0",
+          "D0",
+          "D0",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "CheddaToken.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> IF0 -> D1 -> E1 -> D0[ASSET] -> F1 -> IF1[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> D3 -> F1",
+        "summary": "Entry CheddaToken.transferFrom(address,address,uint256); PermNode: IF1; AssetNode: D0, D0, D0, D0, D0"
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 0,
+    "LEAK": 3,
+    "EMPTY": 1,
+    "ERROR": 0
+  }
+}

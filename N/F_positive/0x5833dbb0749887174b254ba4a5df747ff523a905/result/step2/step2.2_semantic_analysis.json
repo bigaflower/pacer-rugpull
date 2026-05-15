@@ -1,0 +1,398 @@
+{
+  "contract_name": "0x5833dbb0749887174b254ba4a5df747ff523a905",
+  "generated_at": "2026-02-25T04:17:31Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The path starts with the function TokenERC20.transfer(address,uint256) which leads to the internal function TokenERC20._transfer(address,address,uint256).",
+          "2. In Node D0, there are several permission checks and asset manipulations. The checks ensure that the recipient address is not zero, that the sender has enough balance, and that the recipient's balance will not overflow.",
+          "3. The asset changes occur in lines L81 and L82 where the sender's balance is decreased by _value and the recipient's balance is increased by _value respectively.",
+          "4. The balance change for the sender (_from) is: balanceOf[_from] -= _value, which decreases the balance. The balance change for the recipient (_to) is: balanceOf[_to] += _value, which increases the balance.",
+          "5. Since the sender's balance is decreased and the recipient's balance is increased, this a normal transfer operation without any hidden minting, limiting, or leaking behavior.",
+          "6. There are no indications of the owner or any privileged account being able to manipulate the balances in a way that would classify as Mint, Limit, or Leak."
+        ],
+        "key_nodes": [
+          "D0",
+          "E1",
+          "F1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "TokenERC20.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0[PERM] -> F1 -> F1",
+        "summary": "Entry TokenERC20.transfer(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 0.0,
+        "reasoning": [
+          "1. The entry function is TokenERC20.transferFrom, which involves transferring tokens from one address to another based on the allowance set by the owner of the tokens.",
+          "2. In Node D0, the allowance is checked and then decremented: allowance[_from][msg.sender] -= _value. This indicates that the allowance is being reduced, not increased.",
+          "3. In Node D0 (depth=1), the _transfer function is called, which includes several checks and balances. The balance of the sender (_from) is checked to ensure it is greater than or equal to the value being transferred: require(bool)(balanceOf[_from] >= _value). This ensures that the transfer cannot occur if the sender does not have enough balance.",
+          "4. The balance of the sender is then decreased: balanceOf[_from] -= _value, and the balance of the recipient is increased: balanceOf[_to] += _value. This indicates a standard transfer of tokens without any hidden minting or leaking.",
+          "5. The checks in place ensure that the balances cannot go negative and that the transfer is valid. There are no indications of any privilege that allows for minting tokens or leaking tokens from arbitrary accounts.",
+          "6. Since the path does not allow for any increase in balance for any address without proper conditions being met, and all transfers are accounted for, it does not fall under any rugpull behavior."
+        ],
+        "key_nodes": [
+          "D0",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "TokenERC20.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0[PERM] -> F1 -> F1",
+        "summary": "Entry TokenERC20.transferFrom(address,address,uint256); PermNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, execute `require(balanceOf[msg.sender] >= _value)`, ensures caller balance performburn operation, but no limit burn target account .",
+          "2. to, execute `balanceOf[msg.sender] -= _value`, This indicates caller balance decreases by _value. because _value is a function parameter, caller can arbitrarily specify its value, thereforecan causing caller the balance is reduced.",
+          "3. because caller can specify _value, and the valuecan is arbitraryits balance value, causingits balance is or decrease, while there is no compensation, This matches the definition of token leaking.",
+          "4. This pathno asset increase, Therefore does not match MINT conditions."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "TokenERC20.burn(uint256)",
+        "trace": "E1 -> D0[PERM] -> F1",
+        "summary": "Entry TokenERC20.burn(uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, execute `balanceOf[_from] -= _value` and `allowance[_from][msg.sender] -= _value`, operation asset decrease .",
+          "2. The balance change formula is:balanceOf[_from] from 100 subtract _value, allowance[_from][msg.sender] also from 100 subtract _value. because variable initial valueis 100, execute balance will decrease .",
+          "3. privilege caller (msg.sender) can specify _from is arbitraryaddress, rather than limited to the caller themselves, This meansThe privileged user can deduction balance, matches the leak token definition.",
+          "4. Therefore, This path matches the LEAK definition, because The privileged user can through burnFrom functiondirectly decrease arbitrary user balance, rather thanor compensation ."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "TokenERC20.burnFrom(address,uint256)",
+        "trace": "E1 -> D0[PERM] -> F1",
+        "summary": "Entry TokenERC20.burnFrom(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_4",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. at node D0, there is a permission check require(bool)(balanceOf[_from] >= _value), ensures transfer balance, is asset check.",
+          "2. at node D1, exists require(bool)(limitAccount[_from] >= _value), This indicatesThe privileged user can modify limitAccount to limit user transfer amount, limit ordinary user transaction ability.",
+          "3. node D2 and D3 in, asset is transfer, _from balance decreases, _to balance increases, but because exists limitAccount limit, The privileged user can control user transfer ability.",
+          "4. because The privileged user can modify limitAccount to limit user transfer, This matches the LIMIT definition."
+        ],
+        "key_nodes": [
+          "D1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_4",
+        "function_signature": "XRUN.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0[PERM] -> IF0[PERM] -> D1[PERM] -> D2[ASSET] -> IF1[PERM] -> D3[ASSET] -> D4 -> F1 -> F1",
+        "summary": "Entry XRUN.transfer(address,uint256); PermNode: D0, IF0, D1, IF1; AssetNode: D2, D3"
+      }
+    },
+    {
+      "path_id": "path_5",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D1, exists require(bool)(limitAccount[_from] >= _value), This meansThe privileged user can modify limitAccount to limit user transfer amount.",
+          "2. node D0 and D1 is permission node, and D1 directly asset transfer, limit ordinary user transfer ability.",
+          "3. because limitAccount is The privileged user control variable, The privileged user can adjust this limit, thereby ordinary user transaction ability.",
+          "4. In this pathno asset increase or mint behavior, Therefore does not match MINT definition.",
+          "5. because The privileged user can modify limitAccount to limit user transfer, matches the LIMIT definition."
+        ],
+        "key_nodes": [
+          "D0",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_5",
+        "function_signature": "XRUN.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0[PERM] -> IF0[PERM] -> D1[PERM] -> D2[ASSET] -> IF1[PERM] -> D3[ASSET] -> D4 -> F1 -> F1",
+        "summary": "Entry XRUN.transferFrom(address,address,uint256); PermNode: D0, D0, IF0, D1, IF1; AssetNode: D2, D3"
+      }
+    },
+    {
+      "path_id": "path_6",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 1.0,
+        "reasoning": [
+          "In the path, node D0 is a permission node, asset changelogic. according to L128, caller balance _value, This meansonly at caller balance, executedeductionoperation.",
+          "At L130, caller the balance is reduced: balanceOf[msg.sender] -= _value. here 'msg.sender' is the caller itself, therefore balance decrease is, not other account balance change.",
+          "because nofind The privileged user can arbitrarily increase balance situation, also nofind The privileged user can limit transaction logic, Therefore this path does not match MINT or LIMIT definition.",
+          "also, asset is from caller itself balance deducted, rather thanis from other account intransfer, Therefore also does not match LEAK definition.",
+          "In summary, This path, there is no rugpull behavior, return empty string."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_6",
+        "function_signature": "XRUN.burn(uint256)",
+        "trace": "E1 -> D0[PERM] -> F1",
+        "summary": "Entry XRUN.burn(uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_7",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, execute `balanceOf[_from] -= _value` and `allowance[_from][msg.sender] -= _value`, This indicates `_from` balance and its allow at decrease .",
+          "2. The balance change formula is:`balanceOf[_from]` from 100 subtract `_value`, `allowance[_from][msg.sender]` also from 100 subtract `_value`.",
+          "3. because `_from` is a function parameter, privilege caller can arbitrarily specify, therefore `_from` account not is the caller itself, This matches the definition of token leaking.",
+          "4. because `_from` balance decreaseswhile no compensation, and `_from` can is arbitraryaddress, Therefore this path matches the LEAK characteristic."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_7",
+        "function_signature": "XRUN.burnFrom(address,uint256)",
+        "trace": "E1 -> D0[PERM] -> F1",
+        "summary": "Entry XRUN.burnFrom(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_8",
+      "path_type": "DIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function is XRUN.mintToken(address,uint256) which has a permission check at Node E1 requiring msg.sender to be the owner.",
+          "2. At Node D0, the line 'balanceOf[target] += mintedAmount' indicates that the balance of the target address is being increased by the mintedAmount.",
+          "3. The variable mintedAmount is likely a parameter of the function, which means the owner can specify any amount to mint and increase the balance of any address (target).",
+          "4. Since the owner can mint tokens at will and increase the balance of any address without any restrictions, this clearly falls under the definition of MINT.",
+          "5. The simulation shows that if the initial balance is 100 and mintedAmount is a positive value, the balance will increase beyond 100, confirming the MINT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_8",
+        "function_signature": "XRUN.mintToken(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> F1",
+        "summary": "Entry XRUN.mintToken(address,uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_9",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D2, execute `balanceOf[_from] -= _value` and `balanceOf[_to] += _value`, This indicates from contract address (address(this)) deductedion `local:amount` balance, will its increased to caller (msg.sender) balance in. here _from is the contract address, while _to is the caller, therefore does not is ordinary transfer, while is contract caller transfer asset .",
+          "2. At node D3, execute `limitAccount[_from] -= _value`, is from contract deducted from address `local:amount` balance . here _from is the contract address, indicates contract can decrease its itself limitAccount balance .",
+          "3. because contract address (address(this)) is The privileged user control, and can specify _to is msg.sender, causing contract can decrease its balance will its transfer arbitrary caller, This matches the definition of token leaking.",
+          "4. because contract can decrease its asset transfer caller, and there is no limit or, behavior is leak token."
+        ],
+        "key_nodes": [
+          "D2",
+          "D3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_9",
+        "function_signature": "XRUN.buy()",
+        "trace": "E1 -> D0 -> E1 -> D0[PERM] -> IF0[PERM] -> D1[PERM] -> D2[ASSET] -> IF1[PERM] -> D3[ASSET] -> D4 -> F1 -> F1",
+        "summary": "Entry XRUN.buy(); PermNode: D0, IF0, D1, IF1; AssetNode: D2, D3"
+      }
+    },
+    {
+      "path_id": "path_10",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, exists require(bool)(myAddress.balance >= amount * sellPrice) check, and sellPrice is initial is 0, This meansthe is, therefore this pathis .",
+          "2. At node D1, The privileged user can through require(bool)(limitAccount[_from] >= _value) to limit user transfer, only limitAccount in balance transfer amount, transfer will is allow .",
+          "3. because limitAccount is The privileged user control variable, The privileged user can adjust the account balance, thereby limit user transfer ability, This matches the LIMIT definition.",
+          "4. node D2 and D3 in asset changes are transfer, but because exists D1 in limit, The privileged user can adjust limitAccount to limit user transaction, therefore path is determined as LIMIT."
+        ],
+        "key_nodes": [
+          "D0",
+          "D1",
+          "D2",
+          "D3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_10",
+        "function_signature": "XRUN.sell(uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0[PERM] -> IF0[PERM] -> D1[PERM] -> D2[ASSET] -> IF1[PERM] -> D3[ASSET] -> D4 -> F1 -> F1",
+        "summary": "Entry XRUN.sell(uint256); PermNode: D0, IF0, D1, IF1; AssetNode: D2, D3"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'owned.transferOwnership(address)' is protected by 'onlyOwner', meaning only the owner can change the ownership of the contract. This gives the owner control over the 'sellPrice' variable through 'XRUN.setPrices(uint256,uint256)'.",
+          "The 'sellPrice' is then used in the 'XRUN.sell(uint256)' function, where there is a conditional check that requires the caller's balance to be sufficient based on the 'sellPrice'.",
+          "Since the owner can modify 'sellPrice', they can effectively control the conditions under which users can sell their tokens, thus limiting the ability of ordinary users to trade freely."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "owned.transferOwnership(address)",
+        "control_variable": "sellPrice",
+        "targets": [
+          "XRUN.sell(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'administrator.transferOwnership(address)' is controlled by 'onlyOwner', which means only the owner can change the ownership and subsequently the 'sellPrice'.",
+          "The 'sellPrice' variable is used in the 'XRUN.sell(uint256)' function as a condition for selling, specifically in the line 'require(bool)(myAddress.balance >= amount * sellPrice)'.",
+          "This means that if the owner sets the 'sellPrice' to a very high value, it could effectively limit the ability of normal users to sell their tokens, as they may not meet the balance requirement due to the inflated price.",
+          "Thus, the owner has the ability to control the selling conditions, which directly affects the trading capabilities of regular users, classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "administrator.transferOwnership(address)",
+        "control_variable": "sellPrice",
+        "targets": [
+          "XRUN.sell(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_2",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function XRUN.transferOwnership(address) is restricted by the onlyOwner modifier, allowing only the owner to change ownership.",
+          "Once ownership is transferred, the new owner can call XRUN.setPrices(uint256,uint256) to modify the sellPrice variable.",
+          "The sell function XRUN.sell(uint256) checks if myAddress.balance is sufficient based on the current sellPrice, which can be manipulated by the owner.",
+          "This means the owner can effectively control the selling conditions for all users by adjusting the sellPrice, thus limiting their ability to sell freely."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "XRUN.transferOwnership(address)",
+        "control_variable": "sellPrice",
+        "targets": [
+          "XRUN.sell(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_3",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function XRUN.setPrices(uint256,uint256) is controlled by onlyOwner, which means only the owner can modify the sellPrice.",
+          "This directly affects the conditional check in XRUN.sell(uint256), where the ability to sell is contingent on the balance being greater than or equal to amount * sellPrice.",
+          "If the owner sets the sellPrice to a very high value, it could effectively prevent users from selling their tokens, thus limiting their ability to trade.",
+          "Since the owner has the power to control the sellPrice, this constitutes a limitation on the trading capabilities of regular users."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "XRUN.setPrices(uint256,uint256)",
+        "control_variable": "sellPrice",
+        "targets": [
+          "XRUN.sell(uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 1,
+    "LIMIT": 7,
+    "LEAK": 4,
+    "EMPTY": 3,
+    "ERROR": 0
+  }
+}

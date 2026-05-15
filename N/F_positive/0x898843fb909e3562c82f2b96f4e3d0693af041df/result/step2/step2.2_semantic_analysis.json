@@ -1,0 +1,150 @@
+{
+  "contract_name": "0x898843fb909e3562c82f2b96f4e3d0693af041df",
+  "generated_at": "2026-02-25T14:56:01Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function Lemonrocks.transferFrom, which involves checking allowances and transferring tokens.",
+          "2. The key permission nodes (D0) enforce checks on whether the caller is blacklisted, which can restrict transfers based on the state of blacklistedWallets.",
+          "3. The presence of the blacklistedWallets checks (L1253, L1254, L1255) indicates that the owner can control who can transfer tokens by modifying the blacklistedWallets mapping.",
+          "4. If the owner adds an address to the blacklist, that address will be unable to transfer tokens, effectively limiting their ability to trade.",
+          "5. The allowance checks (L1004) also indicate that the owner can control the allowance mechanism, which can further limit transfers.",
+          "6. Therefore, the ability of the owner to manipulate the blacklistedWallets and the allowance mechanism leads to the conclusion that this path implements limiting behavior."
+        ],
+        "key_nodes": [
+          "D0",
+          "D1",
+          "L1253",
+          "L1254",
+          "L1255"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "Lemonrocks.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> IF0 -> D1 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> D0[PERM] -> IF0 -> D1 -> F1 -> F1",
+        "summary": "Entry Lemonrocks.transferFrom(address,address,uint256); PermNode: D0; AssetNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is Lemonrocks.withdrawTokens(), which checks permissions at node D0. Only the owner or marketingWallet can call this function, indicating a privileged access control.",
+          "2. At node D0 (Lemonrocks.balanceOf(address)), the balance of the contract itself (address(this)) is read, which is an asset operation. This balance is then used in the transfer function.",
+          "3. The transfer function (Lemonrocks._transfer) at node D0 checks several conditions, including whether the from and to addresses are not zero and whether they are not blacklisted. The transfer is initiated from the contract's address to the marketingWallet.",
+          "4. The amount transferred is equal to the balance of the contract (balanceOf(address(this))), which means the contract's balance is being reduced by this amount.",
+          "5. Since the marketingWallet is a fixed address (0x98107d1ae3eBFe85A7Faef817E6C589DC86cEbA7), the contract can transfer its entire balance to this address, which is controlled by the privileged caller.",
+          "6. This operation results in a decrease of the contract's balance without any equivalent compensation to the contract itself, which fits the definition of a leak.",
+          "7. The transfer does not involve the caller's own balance but rather the contract's balance, which is a clear indication of a leak."
+        ],
+        "key_nodes": [
+          "D0",
+          "D0",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "Lemonrocks.withdrawTokens()",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> F1 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0[PERM] -> IF0 -> D1 -> F1 -> F1",
+        "summary": "Entry Lemonrocks.withdrawTokens(); PermNode: D0, D0; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function `Lemonrocks.setFeesWallet(address)` is controlled by `onlyOwner`, which means only the owner can change the `marketingWallet` address.",
+          "The `Lemonrocks.withdrawTokens()` function has a conditional check that allows withdrawal only if the caller is either the owner or the `marketingWallet`. This means the owner can effectively control who can withdraw tokens by changing the `marketingWallet` address.",
+          "Since the owner can disable or enable the ability for the `marketingWallet` to withdraw tokens, this creates a limitation on the ability of other users to access their tokens, thus classifying it as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Lemonrocks.setFeesWallet(address)",
+        "control_variable": "marketingWallet",
+        "targets": [
+          "Lemonrocks.withdrawTokens()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `Lemonrocks.blacklist(address,bool)` is controlled by `onlyOwner`, which means only the owner can modify the `blacklistedWallets` mapping.",
+          "The `_transfer` function checks if the `from`, `to`, or `_msgSender()` addresses are blacklisted by requiring that they are not in the `blacklistedWallets` mapping.",
+          "If the owner sets an address as blacklisted, that address will be unable to transfer tokens, effectively limiting their ability to trade.",
+          "This control over the `blacklistedWallets` directly impacts the ability of users to perform transfers, thus classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Lemonrocks.blacklist(address,bool)",
+        "control_variable": "blacklistedWallets",
+        "targets": [
+          "Lemonrocks._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_2",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `Lemonrocks.renounceBlacklist()` is controlled by `onlyOwner`, allowing the owner to modify the `blacklistedWallets` variable.",
+          "The `_transfer` function checks if the `from`, `to`, or `_msgSender()` addresses are blacklisted by referencing the `blacklistedWallets` mapping.",
+          "If the owner renounces the blacklist, they can effectively control which addresses are blacklisted, thus limiting the ability of those addresses to transfer tokens.",
+          "This means that the owner can prevent specific users from transferring tokens, which directly aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Lemonrocks.renounceBlacklist()",
+        "control_variable": "blacklistedWallets",
+        "targets": [
+          "Lemonrocks._transfer(address,address,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 4,
+    "LEAK": 1,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

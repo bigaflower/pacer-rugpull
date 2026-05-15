@@ -1,0 +1,492 @@
+{
+  "contract_name": "0x589891a198195061cb8ad1a75357a3b7dbadd7bc",
+  "generated_at": "2025-12-10T07:21:58Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function is COSTokenBase.transfer(address,uint256), which leads to the _transfer function.",
+          "2. In the _transfer function, there are several [PERM] and [ASSET] nodes that control the transfer of tokens.",
+          "3. The key [ASSET] nodes are: L321 (balances[_from] -= _value) and L325 (balances[_to] += _value).",
+          "4. For L321, the balance of the sender (_from) is decreased by the value being transferred, which is a standard operation in token transfers.",
+          "5. For L325, the balance of the recipient (_to) is increased by the same value, which is also standard.",
+          "6. There are no indications of any hidden minting, limiting of transfers, or leaking of tokens to unauthorized addresses.",
+          "7. The transfer logic is straightforward and does not allow for any unauthorized manipulation of balances.",
+          "8. All balances are adjusted according to the transfer amount, with no additional fees or deductions that would indicate a leak."
+        ],
+        "key_nodes": [
+          "D0",
+          "L321",
+          "L325"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "COSTokenBase.transfer(address,uint256)",
+        "trace": "E1 -> M1 -> D0 -> E1 -> M1 -> D0[PERM] -> F1 -> F1",
+        "summary": "Entry COSTokenBase.transfer(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "In the path, node D0 code line L379 check _value is less than allowances[_from][msg.sender], This indicatesonly at The privileged user allow, transfer will is execute, thereforeThe privileged user can control transfer occur .",
+          "node D0 allowances modify, L381 in allowances[_from][msg.sender] -= _value indicatesThe privileged user can decrease address allow transfer, further limit ordinary user transfer ability.",
+          "because The privileged user can modify allowances to ordinary user transfer ability, Therefore this path matches the LIMIT definition."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "COSTokenBase.transferFrom(address,address,uint256)",
+        "trace": "E1 -> M1 -> D0[PERM] -> E1 -> M1 -> D0[PERM] -> F1 -> F1",
+        "summary": "Entry COSTokenBase.transferFrom(address,address,uint256); PermNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is COSTokenBase.burn(uint256), which indicates that tokens are being burned, meaning they are being removed from circulation.",
+          "2. At Node D0, the line 'require(balances[msg.sender] >= _value)' checks if the caller has enough balance to burn the specified amount. This a permission check, ensuring that only the caller can burn their own tokens.",
+          "3. The next line 'balances[msg.sender] -= _value' decreases the balance of the caller by the amount specified in _value. This indicates a decrease in the caller's balance, which is a normal operation for a burn function.",
+          "4. However, the burn function does not transfer tokens to another address or increase any balances; it simply reduces the caller's balance. Since the caller is the only one whose balance is affected, this does not constitute a leak in the sense of transferring tokens from one user to another.",
+          "5. The overall effect of the burn operation is a decrease in the caller's balance, which does not fit the definition of MINT or LIMIT. Therefore, it is classified as LEAK because the tokens are being removed from circulation, which can be seen as a form of value leakage from the total supply."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "COSTokenBase.burn(uint256)",
+        "trace": "E1 -> M1 -> D0[PERM] -> F1",
+        "summary": "Entry COSTokenBase.burn(uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 1.0,
+        "reasoning": [
+          "At node D0, there is a permission checkand asset changelogic. , L493 check `balances[msg.sender] + _value > balances[msg.sender]`, This meansonly `msg.sender` balance increases, this will through. , L495 check `totalSupply + _value > totalSupply`, ensuresalso will increase . , L497 execute `balances[msg.sender] += _value`, directlywill `_value` increased to `msg.sender` balance .",
+          "because `msg.sender` is the caller, and `_value` is a function parameter, The privileged user can arbitrarily specify `_value` value, thereby its balance arbitrary increase . This matches Hidden Mint definition, because The privileged user can increase address balance .",
+          "Therefore, this path is determined to be MINT."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "COSTokenBase.mint(uint256)",
+        "trace": "E1 -> M1 -> M2 -> D0[PERM] -> F1",
+        "summary": "Entry COSTokenBase.mint(uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_4",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, execute `balances[_from] -= _value` and `allowances[_from][msg.sender] -= _value`, This indicates `_from` the balance is reduced, while `msg.sender` is the caller, allow its from `_from` balance deductedspecified `_value`.",
+          "2. `_from` is a function parameter, caller can specify arbitraryaddress, thereforeThe privileged user can user balance performdeduction, This matches the definition of token leaking.",
+          "3. balance is `balances[_from]` from 100 subtract `_value`, This means `_from` balance decreases, matches the LEAK characteristic.",
+          "4. because `_from` is specified by the caller, The privileged user can arbitrarilyaffected account, thereforecan is directly leak ."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_4",
+        "function_signature": "COSTokenBase.burnFrom(address,uint256)",
+        "trace": "E1 -> M1 -> D0[PERM] -> F1",
+        "summary": "Entry COSTokenBase.burnFrom(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_5",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function COSTokenBase.transferOfPower(address) checks if the caller is the owner (D0, L553). This a permission check that restricts access to the function.",
+          "2. The function then retrieves the balance of the caller (msg.sender) and assigns it to 'value' (D0, L555). This indicates that the transfer of power is based on the caller's balance.",
+          "3. The subsequent function COSTokenBase._transfer(address,address,uint256) contains multiple permission checks (D0, L305, L309, L313) that ensure the transfer can only occur if certain conditions are met, including that the recipient address is not zero and that the sender has sufficient balance.",
+          "4. The critical aspect is that the owner can control the transfer process by potentially disabling transfers or modifying the state of the contract, which directly impacts the ability of regular users to execute transfers.",
+          "5. Since the owner can manipulate the transfer conditions, this leads to a scenario where ordinary users may be limited in their ability to transact, thus categorizing this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "D0",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_5",
+        "function_signature": "COSTokenBase.transferOfPower(address)",
+        "trace": "E1 -> M1 -> M2 -> D0[PERM] -> E1 -> M1 -> D0[PERM] -> F1 -> F1",
+        "summary": "Entry COSTokenBase.transferOfPower(address); PermNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_6",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "At node D0, there is a permission check require(bool)(allowances[msg.sender][_spender] + _addedValue > allowances[msg.sender][_spender]), This indicatesonlyprivileged identity (msg.sender) can increase address (_spender) allowance.",
+          "the node asset changes are allowances[msg.sender][_spender] += _addedValue, means The privileged user can control address allow, thereby the address transaction ability.",
+          "because The privileged user can modify allowance to limit ordinary user transfer ability, therefore this matches the LIMIT definition."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_6",
+        "function_signature": "COSTokenBase.increaseApproval(address,uint256)",
+        "trace": "E1 -> M1 -> D0[PERM] -> F1",
+        "summary": "Entry COSTokenBase.increaseApproval(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_7",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 0.0,
+        "reasoning": [
+          "1. The entry function is COSToken.transfer(address,uint256), which leads to the internal function COSToken._transfer(address,address,uint256).",
+          "2. In Node D0, there are several [PERM] and [ASSET] checks. The first check ensures that the recipient address (_to) is not zero, which is a standard safety check.",
+          "3. The second check requires that the balance of the sender (_from) is greater than or equal to the value being transferred (_value). This ensures that the sender has enough balance to perform the transfer.",
+          "4. The third check ensures that adding the value to the recipient's balance does not cause an overflow, which is a safety measure.",
+          "5. The balance changes occur in lines L321 and L325: balances[_from] -= _value and balances[_to] += _value. Here, the sender's balance decreases by _value, and the recipient's balance increases by _value.",
+          "6. The balances are manipulated based on the parameters provided to the transfer function, specifically the sender (msg.sender) and the recipient (_to).",
+          "7. Since the sender's balance is decreased and the recipient's balance is increased, there is no evidence of minting (no increase in total supply or balance without a corresponding decrease elsewhere).",
+          "8. There are no indications of limiting behavior, as the transfer function does not disable transfers or impose restrictions on trading.",
+          "9. The transfer function does not allow the owner or any privileged account to arbitrarily reduce or leak tokens from other users' balances, as the balance changes are strictly between the sender and the recipient.",
+          "10. Therefore, the path does not exhibit any rugpull behaviors and is classified as having no risk."
+        ],
+        "key_nodes": [
+          "D0",
+          "E1",
+          "M1",
+          "F1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_7",
+        "function_signature": "COSToken.transfer(address,uint256)",
+        "trace": "E1 -> M1 -> D0 -> E1 -> M1 -> D0[PERM] -> F1 -> F1",
+        "summary": "Entry COSToken.transfer(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_8",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, execute `allowances[_from][msg.sender] -= _value`, This indicatesThe privileged user can decrease arbitrary account allowance, and the account parameter `_from` specify, thereforeThe privileged user can control is deducted account .",
+          "2. at node D0 `_transfer` functionin, execute `balances[_from] -= _value` and `balances[_to] += _value`, This means `_from` balance decreases, while `_to` balance increases. because `_from` is provided by the parameter, The privileged user can arbitrarily specifythe account, Therefore this constitutes a leak behavior .",
+          "3. The balance change formula is:`balances[_from] -= _value` ( decrease ) and `balances[_to] += _value` ( increase ) . at this, The privileged user can through `_from` parameter specify arbitrary account, causingthe account balance decreases, while there is no compensation .",
+          "4. because `_from` is by provided, The privileged user can account performdeduction, therefore this matches the definition of token leaking."
+        ],
+        "key_nodes": [
+          "D0",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_8",
+        "function_signature": "COSToken.transferFrom(address,address,uint256)",
+        "trace": "E1 -> M1 -> D0[PERM] -> E1 -> M1 -> D0[PERM] -> F1 -> F1",
+        "summary": "Entry COSToken.transferFrom(address,address,uint256); PermNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_9",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, execute `require(balances[msg.sender] >= _value)`, ensures caller balance performburn operation, and this node is permission node, onlyThe privileged user can call.",
+          "2. at nodein, execute `balances[msg.sender] -= _value`, This indicates caller balance will decrease `_value`, from caller account deductedionspecified.",
+          "3. because `msg.sender` is the calleraddress, and noother account is specify is affected account, therefore does not matches the leak token definition, because deductionis caller itself balance, rather thanis arbitraryspecifiedother account .",
+          "4. In summary, althoughexists control, but because asset changes are caller itself balance, and noother account, Therefore does not match LEAK definition. judgeis risk ."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_9",
+        "function_signature": "COSToken.burn(uint256)",
+        "trace": "E1 -> M1 -> D0[PERM] -> F1",
+        "summary": "Entry COSToken.burn(uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_10",
+      "path_type": "DIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function is COSToken.mint(uint256), which indicates a minting operation.",
+          "2. At Node D0, there are two key checks: L493 requires that balances[msg.sender] + _value > balances[msg.sender], and L495 requires that totalSupply + _value > totalSupply. Both checks ensure that the minting operation will only proceed if it results in an increase in the sender's balance and the total supply.",
+          "3. The line L497 directly modifies the balance of the sender: balances[msg.sender] += _value, which clearly indicates an increase in the balance of the address calling the mint function.",
+          "4. Since the mint function allows the caller to specify the amount to mint (_value), and it directly increases the balance of the caller without any restrictions on the amount, this constitutes a hidden minting behavior.",
+          "5. The checks in L493 and L495 ensure that the minting operation is valid, but they do not prevent the caller from minting an arbitrary amount, thus confirming the MINT classification."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_10",
+        "function_signature": "COSToken.mint(uint256)",
+        "trace": "E1 -> M1 -> M2 -> D0[PERM] -> F1",
+        "summary": "Entry COSToken.mint(uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_11",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, execute `balances[_from] -= _value` and `allowances[_from][msg.sender] -= _value`, This indicates `_from` balance and allow at decrease .",
+          "2. here `_from` is a function parameter, means privilege caller can specify arbitraryaddress is deducted source, rather than limited to the caller themselves, This matches the definition of token leaking.",
+          "3. The balance change formula is:`balances[_from]` from 100 subtract `_value`, while `allowances[_from][msg.sender]` also decrease `_value`. assuming `_value` is 50, then `balances[_from]` is 50, `allowances[_from][msg.sender]` is 50.",
+          "4. because `_from` is by address, The privileged user can arbitrarilyaffected account, Therefore this path matches the leak tokencharacteristic."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_11",
+        "function_signature": "COSToken.burnFrom(address,uint256)",
+        "trace": "E1 -> M1 -> D0[PERM] -> F1",
+        "summary": "Entry COSToken.burnFrom(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_12",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function COSToken.transferOfPower(address) checks if the caller is the owner (Node D0, L553). Since owner is initialized to address(0), this condition is always false, making the function effectively inaccessible to anyone.",
+          "2. The transferOfPower function eventually calls _transfer (Node E1 -> M1 -> M2 -> D0), which contains several permission checks (Node D0, L305 and L309) that ensure the transfer can only occur if the sender has sufficient balance and the recipient is not the zero address.",
+          "3. The permission checks in the _transfer function (Node D0) indicate that only the owner can initiate transfers, and since the owner is address(0), no transfers can occur. This effectively limits the ability of any user to transfer tokens.",
+          "4. The presence of the require statement (Node D0, L553) that checks for ownership means that the owner can control whether transfers can happen or not, thus limiting the ability of ordinary users to transact freely.",
+          "5. Since the owner can control the transfer process, this behavior aligns with the LIMIT category as it restricts normal user transactions."
+        ],
+        "key_nodes": [
+          "D0",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_12",
+        "function_signature": "COSToken.transferOfPower(address)",
+        "trace": "E1 -> M1 -> M2 -> D0[PERM] -> E1 -> M1 -> D0[PERM] -> F1 -> F1",
+        "summary": "Entry COSToken.transferOfPower(address); PermNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_13",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "At node D0, there is a permission check require(bool)(allowances[msg.sender][_spender] + _addedValue > allowances[msg.sender][_spender]), This indicatesonlyprivileged identity ( contract owner) can control allowances increase .",
+          "the nodecode line L585: allowances[msg.sender][_spender] += _addedValue indicates allow The privileged user increase address allowance, will ordinary user transfer ability.",
+          "because The privileged user can modify allowances to limit ordinary user transfer ability, Therefore this path matches the LIMIT definition."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_13",
+        "function_signature": "COSToken.increaseApproval(address,uint256)",
+        "trace": "E1 -> M1 -> D0[PERM] -> F1",
+        "summary": "Entry COSToken.increaseApproval(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_14",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 0.0,
+        "reasoning": [
+          "In the path, node D0 permission check: L637 check key, L639 check msg.sender balance is 0. because L639 msg.sender balance 0, and there is no asset increase or decrease operation, therefore no asset change.",
+          "at this path in, noThe privileged user increase address balance, also there is no transaction control variable is modify, Therefore does not match MINT, LIMIT or LEAK definition.",
+          "all asset nodenocausing balance, and there is nocausing asset decrease or transfer ."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_14",
+        "function_signature": "COSToken.register(string)",
+        "trace": "E1 -> D0[PERM] -> F1",
+        "summary": "Entry COSToken.register(string); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function COSTokenBase.transferOfPower(address) is marked with the 'auth' modifier, indicating that only authorized users can call it. This function directly affects the owner variable in the COSToken.transferOfPower(address) function.",
+          "By changing the owner, the authorized user can control who has the power to execute further actions, including transferring tokens. This effectively allows the authorized user to limit or disable the ability of other users to transfer tokens, thus restricting their ability to trade.",
+          "Since the transferOfPower function can be called by an authorized user to change the owner, it creates a scenario where the normal users' ability to trade can be limited by the privileged user."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "COSTokenBase.transferOfPower(address)",
+        "control_variable": "owner",
+        "targets": [
+          "COSToken.transferOfPower(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function COSToken.transferOfPower(address) is marked with the 'stoppable' modifier, indicating that the owner can control whether the transfer of power can occur.",
+          "The affected target function COSTokenBase.transferOfPower(address) modifies the 'owner' variable, which implies that the owner can change the ownership of the token.",
+          "Since the owner can stop the transfer of power, this directly limits the ability of ordinary users to transfer or interact with the token, as they would be dependent on the owner's decision to allow or disallow transfers."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "COSToken.transferOfPower(address)",
+        "control_variable": "owner",
+        "targets": [
+          "COSTokenBase.transferOfPower(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_2",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function COSToken.stop() is marked with the 'auth' modifier, indicating that only authorized users (likely the owner) can call this function.",
+          "This function controls the variable 'owner' in the COSTokenBase.transferOfPower(address) function, which is responsible for modifying the state of the 'owner'.",
+          "By calling stop(), the owner can effectively prevent any transfers of power, thus limiting the ability of other users to interact with the token.",
+          "Since the ability to transfer power is directly controlled by the owner through the stop() function, this creates a scenario where the owner can restrict transactions, fitting the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "COSToken.stop()",
+        "control_variable": "owner",
+        "targets": [
+          "COSToken.transferOfPower(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_3",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function COSToken.stop() is marked with the 'auth' modifier, indicating that only an authorized entity (likely the owner) can call this function. This function controls the variable 'owner' in the COSTokenBase.transferOfPower(address) function.",
+          "By calling COSToken.stop(), the owner can effectively change the state of the 'owner' variable, which directly impacts the ability to transfer power. This means that the owner can restrict or enable the transfer of power, thereby limiting the ability of ordinary users to execute transfers.",
+          "Since the ability to transfer power is controlled by the owner and can be toggled, this constitutes a limitation on the normal transfer process for users, fitting the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "COSToken.stop()",
+        "control_variable": "owner",
+        "targets": [
+          "COSTokenBase.transferOfPower(address)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 2,
+    "LIMIT": 9,
+    "LEAK": 5,
+    "EMPTY": 3,
+    "ERROR": 0
+  }
+}

@@ -1,0 +1,349 @@
+{
+  "contract_name": "0xd85a6ae55a7f33b0ee113c234d2ee308edeaf7fd",
+  "generated_at": "2026-02-27T09:43:40Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, execute `_balances[holder] = _balances[holder].sub(value)`, This indicates from `holder` balance deducted `value`, therefore the node asset decrease .",
+          "2. `holder` is through parameter, privilege caller can arbitrarily specify `holder`, This meansThe privileged user can addressperformdeduction, rather than limited to the caller themselves.",
+          "3. according to, balance is from `holder` balance in decrease `value`, This matches the definition of token leaking, because The privileged user can directlydeduction account balance .",
+          "4. because path inthere is no increase balance operation, and The privileged user can specify arbitrary account performdeduction, Therefore this path is determined to be LEAK."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "CBK.lock(address,uint256,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry CBK.lock(address,uint256,uint256); PermNode: E1; AssetNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, execute `_balances[holder] = _balances[holder].sub(value)`, This means holder the balance is reduced, and holder is specified by the parameteraddress, rather thanis the caller itself, therefore this matches the definition of token leaking.",
+          "2. At node D0, `_balances[from] = _balances[from].sub(value)` also indicates caller the balance is reduced, and `from` is by `msg.sender`, This means caller balance will decrease.",
+          "3. because The privileged user can call `CBK._lock` functionto specify arbitrary holder address, causingthe address balance is deduction, while not is the caller itself, Therefore this constitutes a leaktokenbehavior.",
+          "4. because exists from holder deduction balance operation, and holder is by parameter specified, The privileged user can arbitrarilyaffected account, further confirms leak ."
+        ],
+        "key_nodes": [
+          "D0",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "CBK.transferWithLock(address,uint256,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry CBK.transferWithLock(address,uint256,uint256); PermNode: E1; AssetNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is CBK.unlock(address,uint256) which has permission checks at Node E1 and D0.",
+          "2. At Node D0, there is a permission check to ensure that the holder has lock information, which is a prerequisite for executing the unlock function.",
+          "3. At Node D0 (depth=1), the asset operation occurs: _balances[holder] = _balances[holder].add(releaseAmount). This indicates that the balance of the holder is increased by releaseAmount.",
+          "4. The variable releaseAmount is not defined in the provided nodes, but since it is added to the holder's balance, it implies that the holder's balance will increase.",
+          "5. The holder is determined by the function parameter, which means the privileged caller can specify any address as the holder, allowing them to mint tokens to any address they choose.",
+          "6. Therefore, this path allows the privileged user to increase the balance of any specified address, which fits the definition of MINT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "CBK.unlock(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[PERM] -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry CBK.unlock(address,uint256); PermNode: E1, D0; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'HxOwnable.transferOwnership(address)' is protected by the 'onlyOwner' modifier, which means only the current owner can change the ownership.",
+          "Once ownership is transferred, the new owner can control the state of the contract, including the ability to modify variables that affect transaction permissions.",
+          "The affected target 'CBK.balanceOf(address)' checks the condition 'timelockList[owner].length > 0', which indicates that the ability to check balances or perform transfers is dependent on the state of the 'timelockList' controlled by the owner.",
+          "If the owner can manipulate the 'timelockList', they can effectively limit or enable transfers for users, thus restricting their ability to trade freely."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "HxOwnable.transferOwnership(address)",
+        "control_variable": "owner",
+        "targets": [
+          "CBK.balanceOf(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_5",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function HxOwnable.acceptOwnership() is controlled by the modifier onlyNewOwner, which indicates that only a new owner can call this function. This gives the new owner control over the ownership of the contract.",
+          "The affected target CBK.balanceOf(address) checks the condition timelockList[owner].length > 0. This implies that the ability to check balances is dependent on the state of the timelockList for the current owner.",
+          "If the new owner decides to manipulate the timelockList, they can effectively control whether or not users can access their balances, thus limiting their ability to trade or transfer tokens.",
+          "Since the ownership can be transferred and the new owner can modify the timelockList, this creates a scenario where the new owner can restrict trading for users, fitting the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "HxOwnable.acceptOwnership()",
+        "control_variable": "owner",
+        "targets": [
+          "CBK.balanceOf(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_10",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'PauserRole.transferOwnership(address)' is protected by 'onlyOwner', indicating that only the owner can change the ownership of the contract.",
+          "Once ownership is transferred, the new owner can call 'ERC20Pausable.acceptOwnership()', which sets the 'owner' variable.",
+          "The affected target 'CBK.balanceOf(address)' has a conditional check that depends on 'timelockList[owner].length > 0'.",
+          "If the owner is changed, the new owner can manipulate the state of 'timelockList', potentially affecting whether users can access their balances or perform transfers.",
+          "This means the new owner can effectively limit the ability of users to trade or access their tokens, fitting the definition of a LIMIT rugpull."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "PauserRole.transferOwnership(address)",
+        "control_variable": "owner",
+        "targets": [
+          "CBK.balanceOf(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_15",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'PauserRole.acceptOwnership()' is controlled by the modifier 'onlyNewOwner', which indicates that only the new owner can call this function. This gives the new owner the ability to change the ownership of the contract.",
+          "The affected target 'CBK.balanceOf(address)' checks the condition 'timelockList[owner].length > 0'. If the new owner can manipulate the 'timelockList', they can effectively control whether the balance check passes or fails, thus limiting the ability of other users to interact with their balances.",
+          "Since the new owner can potentially modify the state of 'timelockList' and thereby control the outcome of balance checks, this creates a scenario where the owner can limit the trading capabilities of other users."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "PauserRole.acceptOwnership()",
+        "control_variable": "owner",
+        "targets": [
+          "CBK.balanceOf(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_20",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'Pausable.transferOwnership(address)' is controlled by 'onlyOwner', which means only the owner can change the ownership of the contract. This gives the owner the ability to control who can execute certain functions.",
+          "The affected target 'CBK.balanceOf(address)' has a conditional check that depends on 'timelockList[owner].length > 0'. This implies that the owner can manipulate the state of 'timelockList' to control whether the balance check passes or fails.",
+          "Since the owner can change the ownership and potentially manipulate the conditions under which balances are checked, this creates a scenario where the owner can limit the ability of other users to interact with their balances, effectively controlling the transfer process."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Pausable.transferOwnership(address)",
+        "control_variable": "owner",
+        "targets": [
+          "CBK.balanceOf(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_25",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function Pausable.acceptOwnership() is controlled by the modifier onlyNewOwner, which means only the new owner can call this function.",
+          "This function allows the new owner to take control of the contract, which can potentially include changing the state of variables that affect the ability to transfer tokens.",
+          "The affected target CBK.balanceOf(address) checks the condition timelockList[owner].length > 0, which implies that the owner has control over whether certain actions can be performed based on the state of the timelockList.",
+          "If the owner can manipulate the timelockList, they can effectively limit the ability of other users to transfer tokens, thus implementing a limiting behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Pausable.acceptOwnership()",
+        "control_variable": "owner",
+        "targets": [
+          "CBK.balanceOf(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_30",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function ERC20Pausable.transferOwnership(address) is controlled by the onlyOwner modifier, which means only the current owner can change the ownership.",
+          "Once ownership is transferred, the new owner can call CBK.balanceOf(address) which checks the condition 'timelockList[owner].length > 0'.",
+          "If the new owner sets the timelockList for their address to be empty, it effectively limits the ability of users to interact with the token, as the balance check could prevent transfers.",
+          "Thus, the ability to control the ownership and subsequently the conditions under which balances can be checked or transferred indicates a limiting behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "ERC20Pausable.transferOwnership(address)",
+        "control_variable": "owner",
+        "targets": [
+          "CBK.balanceOf(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_35",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function ERC20Pausable.acceptOwnership() is controlled by the modifier onlyNewOwner, which means only the new owner can call this function and gain ownership.",
+          "Once the ownership is accepted, the new owner can potentially manipulate the state of the contract, including the timelockList[owner].",
+          "The affected target CBK.balanceOf(address) checks if timelockList[owner].length > 0, which indicates that the owner can control whether or not certain balances can be accessed based on the state of this list.",
+          "This means that the new owner can effectively limit the ability of users to interact with their balances based on the state of the timelockList, thus restricting trading capabilities."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "ERC20Pausable.acceptOwnership()",
+        "control_variable": "owner",
+        "targets": [
+          "CBK.balanceOf(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_40",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function CBK.transferOwnership(address) is controlled by the onlyOwner modifier, which means only the owner can call this function and change the ownership of the contract.",
+          "The ownership change affects the owner variable, which is then used in the conditional check for CBK.balanceOf(address).",
+          "The condition 'timelockList[owner].length > 0' implies that the ability to check balances or perform transfers is dependent on the owner, who can control the state of the timelockList.",
+          "If the owner decides to modify the timelockList, they can effectively limit the ability of other users to interact with their balances, thus restricting trading capabilities."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "CBK.transferOwnership(address)",
+        "control_variable": "owner",
+        "targets": [
+          "CBK.balanceOf(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_45",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function CBK.acceptOwnership() is controlled by the modifier onlyNewOwner, which restricts access to the new owner only. This indicates that the ownership can be transferred to a new address, which can then control the state of the contract.",
+          "The affected target CBK.balanceOf(address) checks the condition timelockList[owner].length > 0. If the owner is changed, the new owner can manipulate the timelockList, potentially affecting the ability of users to transfer tokens based on this condition.",
+          "Since the new owner can control whether the condition is met or not, they can effectively limit the ability of users to perform transfers, thus classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "CBK.acceptOwnership()",
+        "control_variable": "owner",
+        "targets": [
+          "CBK.balanceOf(address)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 1,
+    "LIMIT": 10,
+    "LEAK": 2,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

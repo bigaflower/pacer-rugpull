@@ -1,0 +1,112 @@
+{
+  "contract_name": "0xdd974d5c2e2928dea5f71b9825b8b646686bd200",
+  "generated_at": "2026-02-27T10:50:08Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "At node D0, there is a permission check require(bool)((_value == 0) || (allowed[msg.sender][_spender] == 0)), This meansonlyThe privileged user can control _spender allowance value.",
+          "allowed[msg.sender][_spender] = _value indicatesThe privileged user can set arbitraryaddress allowance, will ordinary user transfer ability.",
+          "The privileged userwill allowance set is 0, ordinary user will perform transfer, therefore this matches limit transaction definition."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "StandardToken.approve(address,uint256)",
+        "trace": "E1 -> D0[PERM] -> F1",
+        "summary": "Entry StandardToken.approve(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "At node D0, there is a permission check require(bool)((_value == 0) || (allowed[msg.sender][_spender] == 0)), This meansonlyThe privileged user can control _spender allowance value.",
+          "allowed[msg.sender][_spender] = _value code allow The privileged user set address allowance, will ordinary user transfer ability.",
+          "The privileged userwill user allowance set is 0, ordinary user will perform transfer, This matches limit transaction definition."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "KyberNetworkCrystal.approve(address,uint256)",
+        "trace": "E1 -> D0[PERM] -> F1",
+        "summary": "Entry KyberNetworkCrystal.approve(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is KyberNetworkCrystal.burn(uint256), which has a permission check at Node E1 that restricts access to the tokenSaleContract. This means only the tokenSaleContract can call this function.",
+          "2. At Node D0, the asset operation is performed: balances[msg.sender] = balances[msg.sender].sub(_value). This indicates that the balance of the caller (msg.sender) is being decreased by the value of _value.",
+          "3. The balance change formula is: balances[msg.sender] = balances[msg.sender] - _value. Here, 'msg.sender' is the address of the caller, which is restricted to the tokenSaleContract due to the permission check.",
+          "4. The balance of the caller (msg.sender) is decreased, which indicates a leak of tokens from the caller's account. Since the caller is not the owner of the contract but rather a specific contract (tokenSaleContract), this constitutes a leak.",
+          "5. The simulation shows that if the initial balance is 100 and _value is a positive number, the new balance will be less than 100, confirming that tokens are being leaked from the caller's balance."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "KyberNetworkCrystal.burn(uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> F1",
+        "summary": "Entry KyberNetworkCrystal.burn(uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is KyberNetworkCrystal.burnFrom(address,uint256), which allows a specific contract (tokenSaleContract) to burn tokens from a specified address (_from). This controlled by the permission check at Node E1.",
+          "2. The asset node D0 indicates that the balance of the caller (msg.sender) is decreased by the value specified in the parameter _value: 'balances[msg.sender] = balances[msg.sender].sub(_value)'. This means that the caller's balance is reduced by the amount they are burning.",
+          "3. The parameter _from is bound to the input address, which means the caller can specify any address to burn tokens from, not just their own. This allows the caller to potentially burn tokens from other users' accounts, which constitutes a leak.",
+          "4. The balance change is clearly a decrease: if we assume the initial balance is 100, after the burn operation, the balance would be 100 - _value, which is less than 100. This confirms that the operation leads to a decrease in balance.",
+          "5. Since the caller can specify any address to burn from, this allows for the possibility of draining tokens from other users, which fits the definition of a leak."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "KyberNetworkCrystal.burnFrom(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1[PERM] -> M1 -> M2 -> D0 -> F1 -> E1[PERM] -> M1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry KyberNetworkCrystal.burnFrom(address,uint256); PermNode: E1, E1, E1; AssetNode: D0"
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 2,
+    "LEAK": 2,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

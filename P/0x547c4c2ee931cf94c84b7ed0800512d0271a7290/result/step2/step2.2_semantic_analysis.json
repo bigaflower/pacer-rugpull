@@ -1,0 +1,203 @@
+{
+  "contract_name": "0x547c4c2ee931cf94c84b7ed0800512d0271a7290",
+  "generated_at": "2025-12-10T06:46:31Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 0.0,
+        "reasoning": [
+          "1. The entry function is COINPIGGY.transfer(address,uint256), which has permission checks at Node E1 and Node D0.",
+          "2. At Node D0, several require statements ensure that the transfer is valid: the recipient address is not zero, the amount is greater than zero, the sender has sufficient balance, and neither the sender nor the recipient is blacklisted.",
+          "3. The asset changes occur at lines 285 and 287: balances[msg.sender] = balances[msg.sender].sub(_amount) (reducing the sender's balance) and balances[_to] = balances[_to].add(_amount) (increasing the recipient's balance).",
+          "4. The balances are modified based on the input parameters, specifically the sender's balance decreases and the recipient's balance increases by the same amount, indicating a normal transfer without any hidden minting or leaking.",
+          "5. The permissions at Node E1 and D0 do not allow for arbitrary minting or leaking of tokens, as the transfer logic is strictly controlled by the require statements.",
+          "6. Since the transfer logic does not allow for any unauthorized balance increases or decreases, and all changes are based on the sender's balance, this path does not exhibit any rugpull behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "COINPIGGY.transfer(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[PERM] -> F1",
+        "summary": "Entry COINPIGGY.transfer(address,uint256); PermNode: E1, D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, the following asset changes exist:",
+          "- L313: balances [_from] = balances [_from].sub (_amount)//deduct_amount from_from address",
+          "- L317: balances [_to] = balances [_to].add (_amount)//add_amount to_to address",
+          "2. here _from and _to is a function parameter, privilege caller can arbitrarily specify address, therefore _from balance can is The privileged user decrease, while _to balance increasesis by _from balance .",
+          "3. because _from is arbitraryaddress, The privileged user can through transferFrom functionfrom arbitrary user balance deductedtoken, while tokennot will is transfer The privileged useraddress, while is transfer arbitraryaddress, This matches the definition of token leaking.",
+          "4. balance : assuming _from Initial balance is 100, _amount is 50, _to Initial balance is 100, execute:",
+          "- _from: 100 - 50 = 50 (decrease)",
+          "- _to: 100 + 50 = 150 (increase)",
+          "- because _from is arbitraryaddress, The privileged user can user addressperformdeduction, Therefore this constitutes a leak.",
+          "5. The privileged user can call transferFrom function, directlyfrom arbitrary user balance deductedtoken, rather than compensation, This matches the definition of token leaking."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "COINPIGGY.transferFrom(address,address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[PERM] -> F1",
+        "summary": "Entry COINPIGGY.transferFrom(address,address,uint256); PermNode: E1, D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "At node D0, there is a permission check require(bool)((_amount == 0) || (allowed[msg.sender][_spender] == 0)), This meansonly at, caller modify allowed[msg.sender][_spender] value.",
+          "allowed[msg.sender][_spender] = _amount code indicates, The privileged user can set address allow, will ordinary user transfer ability.",
+          "The privileged userwill address allowed value set is 0, ordinary user will perform transfer operation, directly limit transaction ability, Therefore matches the LIMIT definition."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "COINPIGGY.approve(address,uint256)",
+        "trace": "E1 -> D0[PERM] -> F1",
+        "summary": "Entry COINPIGGY.approve(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function COINPIGGY.burn(uint256) has permission checks at Node E1, allowing only the admin or if the token is not locked to call this function.",
+          "2. At Node D0, there are two key asset-related checks: L353 requires that _amount > 0, and L355 checks that balances[msg.sender] >= _amount, ensuring that the caller has enough balance to burn.",
+          "3. The line L361 decreases the balance of the caller: balances[msg.sender] = balances[msg.sender].sub(_amount). This indicates that the caller's balance is reduced by the amount specified in the function parameter.",
+          "4. Since the function allows the caller to specify the amount to burn, and the balance of the caller is decreased without any compensation or transfer to another account, this constitutes a direct leak of tokens from the caller's balance.",
+          "5. The function does not allow for any increase in balance or minting of new tokens, as it only reduces the caller's balance.",
+          "6. The path does not allow for any arbitrary address to be specified for the balance reduction, as it is strictly tied to msg.sender, which limits the scope of the leak to the caller's own balance."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "COINPIGGY.burn(uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[PERM] -> F1",
+        "summary": "Entry COINPIGGY.burn(uint256); PermNode: E1, D0"
+      }
+    },
+    {
+      "path_id": "path_4",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, the following asset operations exist:",
+          "- L383: balances[_from] = balances[_from].sub(_amount) // [ASSET]",
+          "- L385: allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_amount) // [ASSET]",
+          "2. here _from is a function parameter, means caller can specify arbitraryaddress balance is deduction, rather than limited to the caller themselves.",
+          "3. because privileged identity (msg.sender == admin) can call burnFrom function, and can specify _from address, causingthe addressbalance decreases, and no compensation, matches the leak token definition.",
+          "4. balance : assuming _from Initial balance is 100, _amount is 50, then :",
+          "- 100 - 50 = 50 (reduced balance, complies with leak)",
+          "5. because The privileged user can arbitrarily specify _from address, and the address balance will is decrease, therefore this pathbelongs to LEAK."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_4",
+        "function_signature": "COINPIGGY.burnFrom(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[PERM] -> F1",
+        "summary": "Entry COINPIGGY.burnFrom(address,uint256); PermNode: E1, D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function COINPIGGY.updateBlackList(address,bool) is controlled by an admin-only modifier, which means only a privileged user can call this function.",
+          "This function modifies the blacklist variable, which directly affects the COINPIGGY.transferFrom(address,address,uint256) function.",
+          "If an address is added to the blacklist, it will prevent that address from transferring tokens, effectively limiting their ability to trade.",
+          "Since the privileged user can control who is blacklisted, they can restrict normal users from transferring tokens at will, thus implementing a limiting behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "COINPIGGY.updateBlackList(address,bool)",
+        "control_variable": "blacklist",
+        "targets": [
+          "COINPIGGY.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function COINPIGGY.updateBlackList(address,bool) is controlled by an admin-only modifier, which means only privileged users can call it (Node E1).",
+          "This function modifies the blacklist variable, which directly affects the transfer function COINPIGGY.transfer(address,uint256) (Node D0).",
+          "If an address is blacklisted, it will not be able to execute transfers, effectively limiting the ability of regular users to trade their tokens.",
+          "Thus, the privileged control over the blacklist variable allows the admin to restrict trading for any user, which fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "COINPIGGY.updateBlackList(address,bool)",
+        "control_variable": "blacklist",
+        "targets": [
+          "COINPIGGY.transfer(address,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 3,
+    "LEAK": 3,
+    "EMPTY": 1,
+    "ERROR": 0
+  }
+}

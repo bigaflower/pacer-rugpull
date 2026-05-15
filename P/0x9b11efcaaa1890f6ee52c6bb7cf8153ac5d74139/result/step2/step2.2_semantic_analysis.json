@@ -1,0 +1,376 @@
+{
+  "contract_name": "0x9b11efcaaa1890f6ee52c6bb7cf8153ac5d74139",
+  "generated_at": "2026-03-09T02:29:58Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function is StandardToken.transfer(address,uint256), which is a standard token transfer function.",
+          "2. The permission check at node IF0 ensures that the caller (msg.sender) has a sufficient balance to perform the transfer: balances[msg.sender] >= _value && _value > 0.",
+          "3. At node D0, the asset changes occur: balances[msg.sender] -= _value and balances[_to] += _value. This indicates that the balance of the sender decreases by _value and the balance of the recipient increases by _value.",
+          "4. The balances involved in the transfer are directly related to the caller (msg.sender) and the recipient (_to). There are no indications of any hidden minting, limiting of transfers, or leaking of tokens.",
+          "5. The balance change is straightforward: the sender's balance decreases and the recipient's balance increases, with no additional manipulation or unauthorized access to other accounts' balances.",
+          "6. Since the transfer is a standard operation without any rugpull behavior, the category is determined to be empty."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "StandardToken.transfer(address,uint256)",
+        "trace": "E1 -> IF0[PERM] -> D0[ASSET] -> F1",
+        "summary": "Entry StandardToken.transfer(address,uint256); PermNode: IF0; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 0.0,
+        "reasoning": [
+          "1. At node D0, execute asset Operation:L179: balances[_to] += _value and L181: balances[_from] -= _value. here, _to and _from is a function parameter, recipient and send address.",
+          "2. The balance formula is:_balances[_to] increase _value, _balances[_from] decrease _value. assuming initial valueis 100, _value is 50, then _to balance is 150, _from balance is 50.",
+          "3. because _from balance decreases, and _to balance increases, no minting behavior, Therefore does not match MINT definition.",
+          "4. permission node IF0 ensuresonly at (_from balance and allow transfer ) execute transfer operation, not limit ordinary user transaction ability, is ensures transfer .",
+          "5. because nofind The privileged user can deduction balance situation, also nofind can through privilege control transaction situation, Therefore does not match LIMIT and LEAK definition.",
+          "6. In summary, This pathnot belongs to rugpull behavior ."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "StandardToken.transferFrom(address,address,uint256)",
+        "trace": "E1 -> IF0[PERM] -> D0[ASSET] -> F1",
+        "summary": "Entry StandardToken.transferFrom(address,address,uint256); PermNode: IF0; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "At node D0, there is a permission check require(bool)((_value == 0) || (allowed[msg.sender][_spender] == 0)), This meansonly at, caller modify allowed[msg.sender][_spender] value.",
+          "allowed[msg.sender][_spender] = _value indicatesThe privileged user can set address allowance, directlythe address transfer ability.",
+          "The privileged userwill address allowance set is 0, ordinary user will perform transfer, This matches limit transaction definition."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "StandardToken.approve(address,uint256)",
+        "trace": "E1 -> D0[PERM] -> F1",
+        "summary": "Entry StandardToken.approve(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "At node D0, there is a permission check require(bool)((_value == 0) || (allowed[msg.sender][_spender] == 0)), This meansonlyThe privileged user can control _spender allowance value.",
+          "allowed[msg.sender][_spender] = _value code indicates, The privileged user can set arbitraryaddress allowance, directlyordinary user transfer ability.",
+          "The privileged userwill allowance set is 0, ordinary user will perform transfer, This matches limit transaction definition."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "ATMToken.approve(address,uint256)",
+        "trace": "E1 -> D0[PERM] -> F1",
+        "summary": "Entry ATMToken.approve(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function 'Owned.changeOwner(address)' which is protected by 'onlyOwner', indicating that only the owner can change the ownership.",
+          "The function 'ATMToken.setDisabled(bool)' allows the owner to set the 'disabled' variable, which is then checked in the 'ATMToken.transferFrom(address,address,uint256)' function.",
+          "If 'disabled' is set to true, the transfer will be blocked for all users, effectively limiting their ability to trade.",
+          "This control over the 'disabled' variable directly impacts the ability of ordinary users to perform transfers, thus classifying it as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Owned.changeOwner(address)",
+        "control_variable": "disabled",
+        "targets": [
+          "ATMToken.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function 'Owned.changeOwner(address)' is controlled by 'onlyOwner', indicating that only the owner can change the owner of the contract.",
+          "2. The function 'ATMToken.setDisabled(bool)' can be called by the owner to set the 'disabled' variable, which directly affects the ability to transfer tokens.",
+          "3. The 'ATMToken.transfer(address,uint256)' function checks the 'disabled' variable with a require statement, meaning if 'disabled' is true, transfers will be blocked.",
+          "4. Since the owner can toggle the 'disabled' state, they can effectively limit the ability of all other users to transfer tokens, thus implementing a limiting behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Owned.changeOwner(address)",
+        "control_variable": "disabled",
+        "targets": [
+          "ATMToken.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_4",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function 'ATMToken.setDisabled(bool)', which can be called by the owner to set the 'disabled' variable.",
+          "This 'disabled' variable is then used in the 'ATMToken.transferFrom(address,address,uint256)' function as a conditional check: 'require(!disabled)'.",
+          "If the owner sets 'disabled' to true, it will prevent all transfers from occurring, effectively limiting the ability of normal users to transact.",
+          "Thus, the owner has the power to control whether transfers can happen or not, which fits the definition of a LIMIT rugpull."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Owned.acceptOwnership()",
+        "control_variable": "disabled",
+        "targets": [
+          "ATMToken.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_5",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function 'ATMToken.setDisabled(bool)', which can be called by the owner to modify the 'disabled' variable.",
+          "This variable is then used in the 'ATMToken.transfer(address,uint256)' function as a conditional check: 'require(!disabled)'.",
+          "If the owner sets 'disabled' to true, it will prevent all transfers from occurring, effectively limiting the ability of regular users to trade.",
+          "Thus, the owner has the power to control whether transfers can happen or not, which fits the definition of a LIMIT rugpull."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Owned.acceptOwnership()",
+        "control_variable": "disabled",
+        "targets": [
+          "ATMToken.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_6",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function ATMToken.changeOwner(address) is restricted by the onlyOwner modifier, allowing only the owner to change the ownership of the contract. This indicates a privileged control over the contract's state.",
+          "The function ATMToken.setDisabled(bool) modifies the disabled variable, which is checked in the ATMToken.transferFrom(address,address,uint256) function with the condition require(!disabled).",
+          "If the owner sets disabled to true, it will prevent all users from executing the transferFrom function, effectively limiting their ability to trade tokens.",
+          "Thus, the owner has the power to enable or disable transfers, which directly impacts the ability of ordinary users to transact, classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "ATMToken.changeOwner(address)",
+        "control_variable": "disabled",
+        "targets": [
+          "ATMToken.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_7",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function ATMToken.changeOwner(address) is controlled by onlyOwner, which means only the owner can change the ownership and potentially disable transfers.",
+          "The function ATMToken.setDisabled(bool) allows the owner to set the 'disabled' variable, which is checked in the transfer function ATMToken.transfer(address,uint256).",
+          "If 'disabled' is set to true, the transfer function will revert, preventing any transfers from occurring for all users except the owner, who can control this state.",
+          "This creates a scenario where the owner can limit the ability of all other users to transfer tokens, thus classifying it as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "ATMToken.changeOwner(address)",
+        "control_variable": "disabled",
+        "targets": [
+          "ATMToken.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_10",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function ATMToken.acceptOwnership() allows the owner to call ATMToken.setDisabled(bool), which modifies the 'disabled' variable.",
+          "The transferFrom function checks the 'disabled' variable with a require statement: require(!disabled).",
+          "If 'disabled' is set to true by the owner, it will prevent any transfers from occurring, effectively limiting the ability of users to transfer tokens.",
+          "This control over the 'disabled' variable directly impacts the transfer functionality for all users, thus classifying it as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "ATMToken.acceptOwnership()",
+        "control_variable": "disabled",
+        "targets": [
+          "ATMToken.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_11",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function ATMToken.acceptOwnership() allows a privileged user to call ATMToken.setDisabled(bool), which modifies the 'disabled' variable.",
+          "The transfer function ATMToken.transfer(address,uint256) checks the condition require(!disabled) before allowing transfers to proceed.",
+          "If the privileged user sets 'disabled' to true, it effectively prevents all users from executing transfers, thus limiting their ability to trade.",
+          "This control over the 'disabled' variable directly impacts the ability of ordinary users to perform transactions, fitting the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "ATMToken.acceptOwnership()",
+        "control_variable": "disabled",
+        "targets": [
+          "ATMToken.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_12",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function ATMToken.setDisabled(bool) is controlled by onlyOwner, which means only the owner can call this function to change the state of the 'disabled' variable.",
+          "The transferFrom function checks the condition require(!disabled) before allowing a transfer to proceed. If the owner sets 'disabled' to true, it will prevent all transfers from occurring.",
+          "This means that the owner has the ability to control whether or not users can transfer tokens, effectively limiting their ability to sell or transfer their tokens.",
+          "Since the ability to change the transfer state is directly tied to the owner's privileges, this path clearly falls under the LIMIT category."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "ATMToken.setDisabled(bool)",
+        "control_variable": "disabled",
+        "targets": [
+          "ATMToken.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_13",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 1.0,
+        "reasoning": [
+          "The function ATMToken.setDisabled(bool) is controlled by onlyOwner, which means only the owner can call this function to change the state of the 'disabled' variable.",
+          "The transfer function ATMToken.transfer(address,uint256) has a conditional check that requires '!disabled' to allow transfers to proceed.",
+          "This means that if the owner sets 'disabled' to true, all transfers will be blocked for all users, effectively limiting their ability to trade.",
+          "Thus, the owner has the power to control whether users can freely transfer tokens, which fits the definition of a LIMIT rugpull."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "ATMToken.setDisabled(bool)",
+        "control_variable": "disabled",
+        "targets": [
+          "ATMToken.transfer(address,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 12,
+    "LEAK": 0,
+    "EMPTY": 2,
+    "ERROR": 0
+  }
+}

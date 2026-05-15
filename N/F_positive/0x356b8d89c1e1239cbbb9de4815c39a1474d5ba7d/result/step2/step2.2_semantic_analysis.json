@@ -1,0 +1,358 @@
+{
+  "contract_name": "0x356b8d89c1e1239cbbb9de4815c39a1474d5ba7d",
+  "generated_at": "2026-02-24T21:20:46Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "At node D0, there is a permission check [PERM], require(bool,string)(deadline_ >= block.timestamp,ERC20:P:EXPIRED), This indicatesonlyThe privileged user can control transaction .",
+          "node D0 asset operation [ASSET], allowance[owner_][spender_] = amount_, This meansThe privileged user can call permit functionto set address.",
+          "because The privileged user can modify transaction ( set deadline_) , directlyordinary user transfer ability, Therefore this path matches the LIMIT definition."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "ERC20.permit(address,address,uint256,uint256,uint8,bytes32,bytes32)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry ERC20.permit(address,address,uint256,uint256,uint8,bytes32,bytes32); PermNode: D0; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is MaplePool.permit, which includes permission checks and asset manipulation.",
+          "2. The node D0 contains a permission check (L621) that ensures the deadline is not expired, indicating that only authorized users can execute this function.",
+          "3. The asset manipulation occurs in L681, where the allowance for the spender is set to the specified amount. This means that the owner can control how much the spender can spend on their behalf.",
+          "4. The ability to set the allowance can effectively limit the spender's ability to transfer tokens, as the owner can adjust this allowance at will, thus controlling the flow of tokens.",
+          "5. Since the owner can modify the allowance, they can prevent users from transferring tokens by setting the allowance to zero or a very low value, which aligns with the LIMIT behavior."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "MaplePool.permit(address,address,uint256,uint256,uint8,bytes32,bytes32)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry MaplePool.permit(address,address,uint256,uint256,uint8,bytes32,bytes32); PermNode: D0; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. at node D0 (depth=2) in, execute `balanceOf[recipient_] += amount_`, among which recipient_ is `address(0)`, amount_ is `BOOTSTRAP_MINT`. This means contract can address 0 increase token, will causing decrease, because tokenis send address.",
+          "2. at node D0 (depth=2) in, `recipient_` is by parameter `receiver_`, while `receiver_` at node E1 (depth=1) inis by caller provided. This meansThe privileged user can will tokensend arbitraryaddress, address 0, causingtoken leak .",
+          "3. because `BOOTSTRAP_MINT` is by contract, The privileged user can control this value, thereby leak .",
+          "4. because node D0 (depth=2) operation is will tokensend address, causing decrease, Therefore it matches the definition of token leaking."
+        ],
+        "key_nodes": [
+          "D0",
+          "E1",
+          "D2"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "MaplePool.deposit(uint256,address)",
+        "trace": "E1[PERM] -> M1 -> M2 -> D0 -> E1 -> D0[PERM] -> IF0 -> D1 -> E1 -> D0[ASSET] -> F1 -> D2[PERM] -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> D0 -> E1 -> D0 -> IF0 -> D1 -> D2 -> F1 -> F1 -> F1",
+        "summary": "Entry MaplePool.deposit(uint256,address); PermNode: E1, D0, D2; AssetNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. In Node D0 (depth=2), the code `balanceOf[recipient_] += amount_` is executed where `recipient_` is set to `address(0)` and `amount_` is `BOOTSTRAP_MINT`. This means that the balance of the address `0` is increased by `BOOTSTRAP_MINT`, which is a direct leak of tokens since `address(0)` is not a valid recipient and represents a loss of tokens from the total supply.",
+          "2. The `BOOTSTRAP_MINT` value is initialized in Node D1 and is dependent on the `previewDeposit(assets_)` function, which is influenced by the assets deposited. This means that the amount being minted is not controlled by the user but rather by the contract's internal logic.",
+          "3. The presence of the `require` statements in Node D0 ensures that the minting process can only occur if certain conditions are met, but it does not prevent the loss of tokens to the zero address, which is a significant risk.",
+          "4. The path allows for the possibility of the contract owner or privileged user to mint tokens to an invalid address, effectively leaking tokens from the system without any compensation to the users."
+        ],
+        "key_nodes": [
+          "D0",
+          "D1",
+          "E1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "MaplePool.deposit(uint256,address)",
+        "trace": "E1[PERM] -> M1 -> M2 -> D0 -> E1 -> D0[PERM] -> IF0 -> D1 -> E1 -> D0[ASSET] -> F1 -> D2[PERM] -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> D0 -> E1 -> D0 -> IF0 -> D3 -> E1 -> D0 -> F1 -> D2 -> F1 -> F1 -> F1",
+        "summary": "Entry MaplePool.deposit(uint256,address); PermNode: E1, D0, D2; AssetNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_4",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. at node D0 (depth=2) in, execute `balanceOf[recipient_] += amount_`, among which recipient_ is address(0), amount_ is BOOTSTRAP_MINT. because recipient_ is address (address(0)) , This meanswill causingtoken leak, because tokenwill not will is user control .",
+          "2. at node D0 (depth=2) in, `amount_` is by BOOTSTRAP_MINT, while BOOTSTRAP_MINT is The privileged user control variable, thereforeThe privileged user can call the functionto increase its control token, rather than user .",
+          "3. because The privileged user can will tokenmint address(0), This meanstokenwill is use or transfer, tokenactual, matches the leak token definition.",
+          "4. In this pathno MINT or LIMIT behavior, all asset changetoken leak ."
+        ],
+        "key_nodes": [
+          "D0",
+          "E1",
+          "D2"
+        ]
+      },
+      "overview": {
+        "path_id": "path_4",
+        "function_signature": "MaplePool.depositWithPermit(uint256,address,uint256,uint8,bytes32,bytes32)",
+        "trace": "E1[PERM] -> M1 -> M2 -> D0 -> E1 -> D0 -> E1 -> D0 -> IF0 -> D1 -> D2 -> F1 -> F1 -> E1 -> D0[PERM] -> IF0 -> D1 -> E1 -> D0[ASSET] -> F1 -> D2[PERM] -> E1 -> D0[ASSET] -> F1 -> F1 -> F1",
+        "summary": "Entry MaplePool.depositWithPermit(uint256,address,uint256,uint8,bytes32,bytes32); PermNode: E1, D0, D2; AssetNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_5",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. at node D0 (depth=2) in, execute `balanceOf[recipient_] += amount_`, among which recipient_ is specified by the parameteraddress (address(0)), amount_ is BOOTSTRAP_MINT value. This meansThe privileged user can will tokenmint arbitraryaddress, while at here is address(0), will causingtokenactual decrease .",
+          "2. at node D2 (depth=1) in, execute `ERC20Helper.transferFrom(asset, caller_, address(this), assets_)`, from caller addresstransfer asset contract address. here asset source is caller_, rather thanis The privileged userspecifiedaddress, therefore does not Leak.",
+          "3. because at node D0 (depth=2) in, recipient_ is address(0), This meansThe privileged user can will tokenmint address, causingtoken, asset leak .",
+          "4. In this pathno MINT or LIMIT behavior, all asset changeThe privileged useroperation, and asset node is controlled by the privileged user."
+        ],
+        "key_nodes": [
+          "D0",
+          "D2"
+        ]
+      },
+      "overview": {
+        "path_id": "path_5",
+        "function_signature": "MaplePool.depositWithPermit(uint256,address,uint256,uint8,bytes32,bytes32)",
+        "trace": "E1[PERM] -> M1 -> M2 -> D0 -> E1 -> D0 -> E1 -> D0 -> IF0 -> D3 -> E1 -> D0 -> F1 -> D2 -> F1 -> F1 -> E1 -> D0[PERM] -> IF0 -> D1 -> E1 -> D0[ASSET] -> F1 -> D2[PERM] -> E1 -> D0[ASSET] -> F1 -> F1 -> F1",
+        "summary": "Entry MaplePool.depositWithPermit(uint256,address,uint256,uint8,bytes32,bytes32); PermNode: E1, D0, D2; AssetNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_6",
+      "path_type": "DIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is MaplePool.mint(uint256,address), which leads to the permission nodes E1 and D0, and asset nodes D0.",
+          "2. In Node D0, the line 'balanceOf[recipient_] += amount_' indicates that the balance of the recipient (which can be an arbitrary address) is increased by BOOTSTRAP_MINT.",
+          "3. The value of BOOTSTRAP_MINT is initialized in Node D1 and is dependent on the parameter bootstrapMint_ provided to the function, which can be controlled by the owner or privileged address.",
+          "4. Since the recipient can be set to address(0) in Node E1, this means that the contract can mint tokens to a non-existent address, effectively increasing the total supply without any checks on the recipient's balance.",
+          "5. The presence of the permission checks (e.g., require statements) does not prevent the minting behavior, as they only ensure that certain conditions are met before proceeding with the minting.",
+          "6. The overall flow allows for the creation of new tokens that are assigned to an arbitrary address, which fits the definition of a hidden mint."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_6",
+        "function_signature": "MaplePool.mint(uint256,address)",
+        "trace": "E1[PERM] -> M1 -> M2 -> D0 -> E1 -> D0[PERM] -> IF0 -> D1 -> E1 -> D0[ASSET] -> F1 -> D2[PERM] -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> D0 -> IF0 -> D1 -> D2 -> F1 -> F1",
+        "summary": "Entry MaplePool.mint(uint256,address); PermNode: E1, D0, D2; AssetNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_7",
+      "path_type": "DIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is MaplePool.mint(uint256,address), which is responsible for minting new tokens.",
+          "2. The first asset node D0 at depth 2 shows a balance change: balanceOf[recipient_] += amount_ where recipient_ is address(0) and amount_ is BOOTSTRAP_MINT.",
+          "3. This indicates that tokens are being minted to the address(0), which is typically a burn address, thus increasing the total supply without a corresponding decrease in any other account's balance.",
+          "4. The minting process is controlled by the permissions at nodes E1 and D0, which require certain conditions to be met, but ultimately allow the minting of new tokens.",
+          "5. The presence of the condition totalSupply == 0 && BOOTSTRAP_MINT != 0 at node IF0, dicates that minting can occur under specific circumstances, which are controlled by the contract's owner.",
+          "6. Since the minting process allows for an increase in the total supply and can be triggered by the owner, it falls under the category of MINT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_7",
+        "function_signature": "MaplePool.mint(uint256,address)",
+        "trace": "E1[PERM] -> M1 -> M2 -> D0 -> E1 -> D0[PERM] -> IF0 -> D1 -> E1 -> D0[ASSET] -> F1 -> D2[PERM] -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> D0 -> IF0 -> D3 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> D2 -> F1 -> F1",
+        "summary": "Entry MaplePool.mint(uint256,address); PermNode: E1, D0, D2; AssetNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_8",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. In Node D0 of MaplePool._mint(uint256,uint256,address,address), the line 'balanceOf[recipient_] += amount_' indicates that the balance of the recipient is increased by a certain amount. Here, recipient_ is set to address(0), which is a fixed address and not controlled by the caller.",
+          "2. The amount being added to the balance of address(0) is BOOTSTRAP_MINT, which is initialized from bootstrapMint_. This means that the contract can mint tokens to the zero address, effectively leaking tokens as they are not assigned to a valid user.",
+          "3. In Node D2, the line 'require(bool,string)(ERC20Helper.transferFrom(asset,caller_,address(this),assets_),P:M:TRANSFER_FROM)' indicates that the contract can transfer assets from the caller to itself, but since assets_ is set to 0 (as per the initialization), this transfer does not occur, and thus the assets are not actually transferred from the caller.",
+          "4. The critical point is that the contract can mint tokens to the zero address without any checks on the amount being minted, which leads to a situation where tokens are effectively leaked as they are not assigned to any valid user.",
+          "5. The presence of permission nodes (E1, D0, D2) indicates that only privileged users can trigger these actions, reinforcing the leak behavior."
+        ],
+        "key_nodes": [
+          "D0",
+          "D2"
+        ]
+      },
+      "overview": {
+        "path_id": "path_8",
+        "function_signature": "MaplePool.mintWithPermit(uint256,address,uint256,uint256,uint8,bytes32,bytes32)",
+        "trace": "E1[PERM] -> M1 -> M2 -> D0 -> E1 -> D0 -> IF0 -> D1 -> D2 -> F1 -> E1 -> D0[PERM] -> IF0 -> D1 -> E1 -> D0[ASSET] -> F1 -> D2[PERM] -> E1 -> D0[ASSET] -> F1 -> F1 -> F1",
+        "summary": "Entry MaplePool.mintWithPermit(uint256,address,uint256,uint256,uint8,bytes32,bytes32); PermNode: E1, D0, D2; AssetNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_9",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. In Node D0 of MaplePool._mint(uint256,uint256,address,address), the line 'balanceOf[recipient_] += amount_' indicates that the balance of the recipient (address(0)) is increased by BOOTSTRAP_MINT. This means that tokens are being minted to the address(0), which is typically a burn address, effectively leaking tokens.",
+          "2. The value of BOOTSTRAP_MINT is initialized from bootstrapMint_ which is a parameter that can be controlled by the owner or privileged account. This means the amount being minted is not fixed and can be manipulated.",
+          "3. In Node D2 of MaplePool._mint(uint256,uint256,address,address), the line 'balanceOf[recipient_] += amount_' indicates that the balance of the receiver (param:receiver_) is increased by shares_. This means that the owner can mint tokens to any address specified by the receiver parameter, which can lead to a leak of tokens from the pool.",
+          "4. The presence of multiple [PERM] nodes indicates that the minting process is controlled by privileged accounts, allowing them to manipulate the token supply and potentially leak tokens to arbitrary addresses."
+        ],
+        "key_nodes": [
+          "D0",
+          "D2",
+          "E1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_9",
+        "function_signature": "MaplePool.mintWithPermit(uint256,address,uint256,uint256,uint8,bytes32,bytes32)",
+        "trace": "E1[PERM] -> M1 -> M2 -> D0 -> E1 -> D0 -> IF0 -> D3 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> D2 -> F1 -> E1 -> D0[PERM] -> IF0 -> D1 -> E1 -> D0[ASSET] -> F1 -> D2[PERM] -> E1 -> D0[ASSET] -> F1 -> F1 -> F1",
+        "summary": "Entry MaplePool.mintWithPermit(uint256,address,uint256,uint256,uint8,bytes32,bytes32); PermNode: E1, D0, D2; AssetNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_10",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D1, _decreaseAllowance function, asset operation is decrease allowance, The code is L1086: _decreaseAllowance(owner_, msg.sender, shares_). here, msg.sender is the caller, while owner_ is address, indicatesThe privileged useraddress.",
+          "2. At node D0, reads allowance value, The code is spenderAllowance = allowance[owner_][spender_]. here spender is msg.sender, indicates caller, owner_ is The privileged useraddress.",
+          "3. At node D1, execute _approve function, The code is Approval(owner_, spender_, allowance[owner_][spender_] = amount_). here amount_ is through subtractedAmount_ from spenderAllowance insubtractvalue, means The privileged user can decrease caller allowance.",
+          "4. because allowance decrease is The privileged user control, and caller balance no increase, while is decrease its owner_ allowance, therefore this matches the definition of token leaking.",
+          "5. because The privileged user can through parameter specified decrease caller allowance, rather than limited to the caller themselves balance, therefore this is leak token."
+        ],
+        "key_nodes": [
+          "D1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_10",
+        "function_signature": "MaplePool.removeShares(uint256,address)",
+        "trace": "E1[PERM] -> M1 -> M2 -> D0 -> IF0[PERM] -> D1[PERM] -> E1 -> D0[ASSET] -> IF0 -> D1 -> E1 -> D0[ASSET] -> F1 -> F1 -> D2 -> F1",
+        "summary": "Entry MaplePool.removeShares(uint256,address); PermNode: E1, IF0, D1; AssetNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_11",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path starts with a permission check at Node E1, ensuring that the caller is allowed to execute the function only if _locked == 1.",
+          "2. The function MaplePool._requestRedeem(uint256,address) is called, which involves several asset-related operations.",
+          "3. At Node D0 (depth=1), the function binds shares_ and owner_ from the parameters, indicating that these values are controlled by the caller.",
+          "4. The critical asset operation occurs at Node D0 (depth=2) where balanceOf[owner_] is decreased by amount_ (escrowShares_) and balanceOf[recipient_] is increased by the same amount. This indicates a transfer of tokens.",
+          "5. The transfer operation at Node D0 (depth=2) allows the owner_ (which is a parameter) to specify any address as the recipient, meaning the caller can choose an arbitrary address to receive the tokens.",
+          "6. Since the caller can specify the recipient address, this constitutes a leak of tokens from the owner_ to an arbitrary address, which is a clear case of leaking tokens.",
+          "7. The balance of the owner_ decreases while the recipient's balance increases, confirming that tokens are being transferred without any equivalent compensation to the owner_."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0",
+          "D0",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_11",
+        "function_signature": "MaplePool.requestRedeem(uint256,address)",
+        "trace": "E1[PERM] -> M1 -> M2 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1 -> E1 -> D0[ASSET] -> IF0 -> D1 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF1 -> D2 -> E1 -> D0[ASSET] -> F1 -> D3 -> F1 -> F1",
+        "summary": "Entry MaplePool.requestRedeem(uint256,address); PermNode: E1, IF0; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_12",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with a permission check at Node E1, ensuring that the caller is not the owner, which allows for the possibility of a withdrawal request from a different user.",
+          "2. At Node D0, the function _decreaseAllowance is called, which modifies the allowance of the spender (msg.sender) by subtracting a certain amount (local:escrowShares_). This a critical asset node where the allowance is decreased, indicating a potential for leakage of tokens.",
+          "3. The allowance is read from the mapping allowance[owner_][spender_], where owner_ is the address of the owner and spender_ is the msg.sender. This means that the allowance can be manipulated by the owner, allowing them to control how much the spender can withdraw.",
+          "4. The transfer function at Node D0 also shows that the balance of the owner is decreased by amount_ (local:escrowShares_), while the recipient's balance is increased by the same amount. This indicates a transfer of tokens from the owner to another address, which could be controlled by the owner, leading to a potential leak of tokens.",
+          "5. The conditions at Node IF1 check if escrowShares_ is not zero and the destination is not the zero address, which means that the owner can specify any recipient address for the transfer, further indicating that the owner can leak tokens to any address they choose.",
+          "6. Overall, the ability of the owner to decrease allowances and transfer tokens to arbitrary addresses without equivalent compensation to the original holders indicates a clear case of token leakage."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0",
+          "IF1",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_12",
+        "function_signature": "MaplePool.requestWithdraw(uint256,address)",
+        "trace": "E1[PERM] -> M1 -> M2 -> D0 -> E1 -> D0 -> E1 -> D0 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1 -> IF0[PERM] -> D1 -> E1 -> D0[ASSET] -> IF0 -> D1 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF1 -> D2 -> E1 -> D0[ASSET] -> F1 -> D3 -> F1 -> F1",
+        "summary": "Entry MaplePool.requestWithdraw(uint256,address); PermNode: E1, IF0; AssetNode: D0, D0, D0"
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 2,
+    "LIMIT": 2,
+    "LEAK": 9,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

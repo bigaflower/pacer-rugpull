@@ -1,0 +1,1009 @@
+{
+  "contract_name": "0xea38eaa3c86c8f9b751533ba2e562deb9acded40",
+  "generated_at": "2026-03-08T14:46:17Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, there is a permission check require(bool)(balanceOf(msg.sender) >= _amount), ensures caller balance perform transfer, This indicatesonly balance user transfer function.",
+          "2. At node D0, asset operationoccur at L757 and L767:",
+          "- L757: balances [_address] = balances [_address].add (_amount) means to increase the_amount to the balance of_address,_address is specified by the parameter_to, which means that the privileged person can transfer any amount to any address.",
+          "- L767: balances [_address] = balances [_address].sub (_amount) means that_amount is deducted from msg.sender's balance, where_address is the caller itself, so it does not count as a leak.",
+          "3. because At L757, The privileged user can will transfer arbitraryaddress, while At L767, only caller balance is deduction, This matches the definition of token leaking, because The privileged user can through specify _to addressto control .",
+          "4. because The privileged user can through addToBalance functionwill transfer arbitraryaddress, while there is no limit, make This path matches the LEAK definition."
+        ],
+        "key_nodes": [
+          "D0",
+          "D0",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "FuelToken.transfer(address,uint256)",
+        "trace": "E1 -> M1 -> D0[PERM] -> E1 -> D0[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry FuelToken.transfer(address,uint256); PermNode: D0; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function `FuelToken.transferFrom(address,address,uint256)` which checks the allowance of the sender to spend tokens on behalf of the owner. This a permission check at Node D0 with the line `require(allowance(_from,msg.sender) >= _amount)`. This ensures that the transfer can only occur if the sender has been approved to spend the specified amount.",
+          "2. The first asset operation occurs at Node D0 where the allowance is decremented: `allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_amount)`. This operation reduces the allowance of the sender, which is a normal operation and does not constitute a leak.",
+          "3. The next asset operation occurs at Node D0 in the `decrementBalance` function: `balances[_address] = balances[_address].sub(_amount)`. Here, the balance of the `_from` address is decreased by `_amount`. This indicates that tokens are being taken from the `_from` address, which could be any address specified by the caller, not just the caller's own address. This a key indicator of a potential leak.",
+          "4. The final asset operation occurs at Node D0 in the `addToBalance` function: `balances[_address] = balances[_address].add(_amount)`. This increases the balance of the `_to` address by `_amount`. The `_to` address is also specified by the caller, which means the tokens are being transferred to an arbitrary address chosen by the caller.",
+          "5. Since the `_from` address can be any address specified by the caller and the balance is decreased without any equivalent compensation, this constitutes a leak of tokens from the `_from` address to the `_to` address. The fact that the caller can specify both addresses means that the function can be used to drain tokens from any account, which is a clear indication of a leak."
+        ],
+        "key_nodes": [
+          "D0",
+          "D0",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "FuelToken.transferFrom(address,address,uint256)",
+        "trace": "E1 -> M1 -> D0[PERM] -> E1 -> D0[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry FuelToken.transferFrom(address,address,uint256); PermNode: D0; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, there is a permission check [PERM], _value is 0 or allowance(msg.sender, _spender) is 0, This meansonly at, caller modify allowance.",
+          "2. at node D0 asset operationin, allowed[msg.sender][_spender] is valueis _value, This meansThe privileged user can control address allowance, while the address transfer ability.",
+          "3. because The privileged user can modify allowance to limit ordinary user transfer ability, therefore this matches the LIMIT definition."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "FuelToken.approve(address,uint256)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry FuelToken.approve(address,uint256); PermNode: D0; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, exists asset operation `balances[_address] = balances[_address].add(_amount)`, among which _address is crowdfundAddress, _amount is icoSupply.",
+          "2. the operationwill causing crowdfundAddress balance increases, because _amount is initial 26 * 10 ** 25, and the valueThe privileged user (owner) control .",
+          "3. The privileged user can call setCrowdfundAddress(address) function arbitrary set crowdfundAddress value, thereforecan will its set is address, thereby make the addressbalance increases.",
+          "4. because The privileged user can arbitrarily specify affected accounts (crowdfundAddress) , and the operationwill causingbalance increases, Therefore matches the MINT definition."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "FuelToken.setCrowdfundAddress(address)",
+        "trace": "E1[PERM] -> M1 -> M2 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry FuelToken.setCrowdfundAddress(address); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_4",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is FuelToken.transferFromCrowdfund(address,uint256), which requires the caller to be the crowdfundAddress (Node E1).",
+          "2. The first asset node (Node D0) checks if the balance of crowdfundAddress is greater than or equal to _amount. Since crowdfundAddress is initialized to address(0), this check will always fail unless the balance of address(0) is manipulated externally.",
+          "3. The second asset node (Node D0) decrements the balance of crowdfundAddress by _amount (Node D0, L767). This means that the balance of the crowdfundAddress decreases by the specified amount, which is a clear indication of a leak since the balance is being reduced.",
+          "4. The third asset node (Node D0) adds _amount to the balance of another address specified by the parameter _to (Node D0, L757). This means that while the crowdfundAddress loses tokens, another address gains them, which is characteristic of a leak.",
+          "5. The decrement operation on the crowdfundAddress allows the owner to specify any address to receive the tokens, which means the owner can effectively siphon tokens from the crowdfundAddress to any address they choose.",
+          "6. The overall flow indicates that the owner can reduce the balance of the crowdfundAddress and redirect those tokens to any arbitrary address, confirming the presence of a leak."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_4",
+        "function_signature": "FuelToken.transferFromCrowdfund(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> M2 -> M3 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry FuelToken.transferFromCrowdfund(address,uint256); PermNode: E1; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_5",
+      "path_type": "DIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function is FuelToken.releaseVanbexTeamTokens(), which is protected by a permission check (Node E1) that ensures only the owner can call it.",
+          "2. The function checks if vanbexTeamSupply is greater than 0 (Node D0), which it is initialized to 5 * 10 ** 25, allowing the function to proceed.",
+          "3. In Node D0, the balances of the vanbexTeamAddress are increased by vanbexTeamSupply: balances[_address] = balances[_address].add(_amount). This means the balance of vanbexTeamAddress will increase by 5 * 10 ** 25.",
+          "4. The balance change is from an initial value of 100 to 100 + 5 * 10 ** 25, which is a significant increase, confirming the behavior of MINT.",
+          "5. The owner has the ability to increase the balance of the vanbexTeamAddress without any checks on the current balance of that address, which aligns with the definition of hidden minting."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_5",
+        "function_signature": "FuelToken.releaseVanbexTeamTokens()",
+        "trace": "E1[PERM] -> M1 -> M2 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry FuelToken.releaseVanbexTeamTokens(); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_6",
+      "path_type": "DIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is FuelToken.finalizePresale(), which requires the caller to be the owner (Node E1). This indicates a permission check.",
+          "2. The function checks if presaleFinalized is false (Node D0), allowing the presale to proceed.",
+          "3. The amount is checked to ensure it is not zero (Node IF0). If the amount is non-zero, the function proceeds to add to the balance.",
+          "4. In Node D0, the balances are modified in Node D0 (ASSET) where balances[crowdfundAddress] is increased by amount. The address is bound to crowdfundAddress, which is initialized to address(0) in Node D1.",
+          "5. The operation balances[crowdfundAddress] = balances[crowdfundAddress].add(_amount) indicates that the balance of crowdfundAddress is increased by the amount specified, which is controlled by the owner.",
+          "6. Since the owner can specify the amount and the address (crowdfundAddress is initially address(0)), this allows the owner to mint tokens to an arbitrary address, thus classifying this as MINT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_6",
+        "function_signature": "FuelToken.finalizePresale()",
+        "trace": "E1[PERM] -> M1 -> D0 -> IF0 -> D1 -> E1 -> D0[ASSET] -> F1 -> D2 -> F1",
+        "summary": "Entry FuelToken.finalizePresale(); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_7",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is FuelToken.finalizeCrowdfund(), which has a permission check at Node E1 that requires msg.sender to be equal to crowdfundAddress.",
+          "2. At Node D0, there is a requirement that presaleFinalized must be true and crowdfundFinalized must be false. Given the initial state, both are false, allowing the function to proceed.",
+          "3. At Node D0 (depth=1), the balance of crowdfundAddress is read. Since crowdfundAddress is initialized to address(0), this means the balance being read is balances[address(0)].",
+          "4. At Node D1, the balance of crowdfundAddress (address(0)) is set to 0, effectively removing any tokens that were held by address(0). This a clear decrease in balance, indicating a leak.",
+          "5. The amount that is supposed to be added to platformAddress is derived from local:amount, which is not defined in the provided nodes but is assumed to be greater than 0 based on the context of the function.",
+          "6. At Node D0 (depth=1), the balance of platformAddress is increased by local:amount, which means tokens are being transferred from the zero address to platformAddress, resulting in a net loss of tokens from the total supply.",
+          "7. The key point is that the crowdfundAddress is set to address(0), and the function allows the owner to set this address's balance to 0, which is a direct leak of tokens from the contract."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_7",
+        "function_signature": "FuelToken.finalizeCrowdfund()",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> IF0 -> D1[ASSET] -> E1 -> D0[ASSET] -> F1 -> D2 -> F1",
+        "summary": "Entry FuelToken.finalizeCrowdfund(); PermNode: E1; AssetNode: D0, D1, D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'Ownable.transferOwnership(address)' is controlled by 'onlyOwner', which means only the owner can change the ownership of the contract.",
+          "Once the ownership is transferred, the new owner can call 'FuelToken.finalizePresale()'.",
+          "In 'finalizePresale()', there is a conditional check on 'presaleFinalized'. If the owner sets 'presaleFinalized' to true, it will prevent any further presale actions.",
+          "This effectively allows the owner to control whether the presale can be finalized or not, limiting the ability of other users to participate in the presale.",
+          "Thus, the owner can restrict the transaction flow by controlling the state of 'presaleFinalized', which directly impacts the ability of users to engage in the presale."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "presaleFinalized",
+        "targets": [
+          "FuelToken.finalizePresale()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_5",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'Ownable.transferOwnership(address)' is controlled by 'onlyOwner', which means only the owner can change the ownership of the contract. This can affect the ability to call 'FuelToken.finalizePresale()'.",
+          "The 'finalizePresale()' function has a conditional check that requires 'presaleFinalized' to be false. If the owner changes the ownership, they can potentially finalize the presale and lock out other users from participating in the presale process.",
+          "This indicates that the owner has the ability to control whether the presale can be finalized or not, effectively limiting the ability of other users to engage in the presale.",
+          "Since the owner can manipulate the state of 'presaleFinalized', it directly impacts the ability of users to trade or finalize their presale tokens, thus categorizing this path as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "presaleAmountRemaining",
+        "targets": [
+          "FuelToken.finalizePresale()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_9",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'Ownable.transferOwnership(address)' is marked with 'onlyOwner', indicating that only the owner can invoke this function, which allows them to transfer ownership of the contract.",
+          "The control variable 'presaleAmountRemaining' is modified in the function 'FuelToken.finalizePresale()', which can be called by the owner after transferring ownership.",
+          "The function 'FuelToken.deliverPresaleFuelBalance(address,uint256)' writes to 'presaleAmountRemaining', which means the owner can control how much presale fuel is delivered based on the remaining amount.",
+          "Since the owner can modify the presale amount and potentially restrict or allow transfers based on this variable, it creates a scenario where the owner can limit the ability of users to trade or access their funds."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "presaleAmountRemaining",
+        "targets": [
+          "FuelToken.deliverPresaleFuelBalance(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_3",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function 'Ownable.transferOwnership(address)', which is protected by the 'onlyOwner' modifier, indicating that only the owner can execute this function. This allows the owner to transfer ownership of the contract.",
+          "The variable 'presaleFinalized' is controlled by the function 'FuelToken.finalizePresale()', which can be called by the owner. If the owner sets 'presaleFinalized' to true, it enables the execution of 'FuelToken.finalizeCrowdfund()'.",
+          "The 'finalizeCrowdfund()' function has a conditional check that requires 'presaleFinalized' to be true and 'crowdfundFinalized' to be false. This means that the owner can control whether the crowdfunding can be finalized based on their ability to set 'presaleFinalized'.",
+          "By controlling 'presaleFinalized', the owner can effectively limit the ability of other users to finalize the crowdfunding process, thus restricting their ability to trade or access their funds."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "presaleFinalized",
+        "targets": [
+          "FuelToken.finalizeCrowdfund()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_4",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function 'Ownable.transferOwnership(address)', which is restricted by the 'onlyOwner' modifier, indicating that only the owner can execute this function.",
+          "The control variable 'crowdfundFinalized' is affected by the 'FuelToken.finalizeCrowdfund()' function, which has a conditional check that requires 'presaleFinalized' to be true and 'crowdfundFinalized' to be false.",
+          "If the owner calls 'transferOwnership', they can change the ownership of the contract, which could allow them to finalize the crowdfunding process at will, thus controlling whether or not the crowdfunding can be finalized.",
+          "This ability to control the state of 'crowdfundFinalized' directly impacts the ability of regular users to participate in the crowdfunding process, effectively limiting their ability to engage in transactions related to the crowdfunding.",
+          "Therefore, this path demonstrates a limiting behavior where the owner can restrict or enable the crowdfunding process, classifying it as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "crowdfundFinalized",
+        "targets": [
+          "FuelToken.finalizeCrowdfund()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_10",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function 'Ownable.transferOwnership(address)', which is protected by the 'onlyOwner' modifier, indicating that only the owner can change the ownership of the contract.",
+          "Once the ownership is transferred, the new owner can call 'FuelToken.setCrowdfundAddress(address)', which allows them to set the 'crowdfundAddress'.",
+          "The function 'FuelToken.finalizeCrowdfund()' checks the conditions 'require(presaleFinalized == true && crowdfundFinalized == false)'. If the new owner sets the 'crowdfundAddress' to a malicious address, they could potentially finalize the crowdfund without proper checks, thus controlling the flow of funds.",
+          "This ability to control the 'crowdfundAddress' and finalize the crowdfund effectively limits the ability of other users to participate freely in the crowdfund process, as the new owner can dictate the terms.",
+          "Therefore, the path demonstrates a clear case of limiting the ability of users to engage in transactions related to the crowdfund."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "crowdfundAddress",
+        "targets": [
+          "FuelToken.finalizeCrowdfund()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_12",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'Ownable.transferOwnership(address)' is controlled by the 'onlyOwner' modifier, which means only the owner can call this function. This allows the owner to transfer ownership to any address, which could potentially be a malicious actor.",
+          "Once ownership is transferred, the new owner can call 'FuelToken.setCrowdfundAddress(address)', which modifies the 'crowdfundAddress' variable. This could be used to control the flow of funds or restrict access to certain functionalities.",
+          "The ability to change the 'crowdfundAddress' could lead to limiting the ability of users to participate in the crowdfunding process, effectively controlling who can interact with the contract and under what conditions."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "crowdfundAddress",
+        "targets": [
+          "FuelToken.setCrowdfundAddress(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_13",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function 'Ownable.transferOwnership(address)', which is protected by the 'onlyOwner' modifier, indicating that only the owner can change the ownership of the contract.",
+          "Once the ownership is transferred, the new owner can call 'FuelToken.setCrowdfundAddress(address)', which allows them to set the 'crowdfundAddress'.",
+          "The function 'FuelToken.transferFromCrowdfund(address,uint256)' checks if the balance of 'crowdfundAddress' is greater than or equal to '_amount' before allowing a transfer. This means that the owner can control which address is used for transfers and can potentially set it to an address that they control.",
+          "By changing the 'crowdfundAddress', the owner can effectively limit or control the flow of tokens from the crowdfund, as they can dictate the conditions under which transfers occur, thus limiting the ability of regular users to freely transact."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "crowdfundAddress",
+        "targets": [
+          "FuelToken.transferFromCrowdfund(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_19",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'Pausable.transferOwnership(address)' is controlled by 'onlyOwner', which means only the owner can call this function.",
+          "This function can change the state of 'presaleFinalized', which is used in the 'FuelToken.finalizePresale()' function as a conditional check.",
+          "The condition 'require(presaleFinalized == false)' means that if 'presaleFinalized' is set to true by the owner, normal users will not be able to finalize the presale, effectively limiting their ability to interact with the contract.",
+          "Since the owner can control the state of 'presaleFinalized', they can prevent users from finalizing the presale, thus limiting their ability to trade or interact with the token."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Pausable.transferOwnership(address)",
+        "control_variable": "presaleFinalized",
+        "targets": [
+          "FuelToken.finalizePresale()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_24",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'Pausable.transferOwnership(address)' is controlled by 'onlyOwner', which means only the owner can change the ownership of the contract. This indicates a privileged access point.",
+          "The function 'FuelToken.finalizePresale()' checks the condition 'require(presaleFinalized == false)', which implies that the presale can only be finalized if it has not been finalized yet.",
+          "The variable 'presaleAmountRemaining' is affected by the presale finalization process, and since the owner can control the ownership and potentially the state of the presale, they can effectively limit the ability of other users to finalize the presale or participate in it.",
+          "This control over the presale process can restrict normal users from executing transactions related to the presale, thus fitting the definition of a LIMIT rugpull behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Pausable.transferOwnership(address)",
+        "control_variable": "presaleAmountRemaining",
+        "targets": [
+          "FuelToken.finalizePresale()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_28",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function `Pausable.transferOwnership(address)` is controlled by `onlyOwner`, which means only the owner can call this function and potentially change the ownership of the contract.",
+          "The `FuelToken.finalizePresale()` function modifies the `presaleAmountRemaining` variable, which is a control variable that can affect the presale process.",
+          "The `FuelToken.deliverPresaleFuelBalance(address,uint256)` function writes to `presaleAmountRemaining`, indicating that the owner can manipulate the presale balance and potentially restrict or allow presale transactions.",
+          "Since the owner can control the presale amount and thus influence whether users can participate in the presale, this constitutes a limitation on user transactions."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Pausable.transferOwnership(address)",
+        "control_variable": "presaleAmountRemaining",
+        "targets": [
+          "FuelToken.deliverPresaleFuelBalance(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_22",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `Pausable.transferOwnership(address)` is controlled by the `onlyOwner` modifier, which means only the owner can call this function. This indicates a privileged access point.",
+          "The control variable `presaleFinalized` is set within the `FuelToken.finalizePresale()` function, which is also controlled by the owner. This means the owner can finalize the presale at will.",
+          "The `FuelToken.finalizeCrowdfund()` function checks the condition `require(presaleFinalized == true && crowdfundFinalized == false)`. If the owner sets `presaleFinalized` to true, they can then finalize the crowdfund, effectively controlling whether or not the crowdfund can be finalized.",
+          "This ability to control the state of `presaleFinalized` directly impacts the ability of regular users to participate in the crowdfund, thus limiting their ability to transact freely."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Pausable.transferOwnership(address)",
+        "control_variable": "presaleFinalized",
+        "targets": [
+          "FuelToken.finalizeCrowdfund()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_23",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'Pausable.transferOwnership(address)' is controlled by 'onlyOwner', which means only the owner can change the ownership of the contract.",
+          "The control variable 'crowdfundFinalized' is used in the function 'FuelToken.finalizeCrowdfund()', which has a conditional check that requires 'presaleFinalized' to be true and 'crowdfundFinalized' to be false.",
+          "If the owner sets 'crowdfundFinalized' to true, it would prevent any further calls to 'finalizeCrowdfund()', effectively limiting the ability of other users to finalize the crowdfunding process.",
+          "This control over the 'crowdfundFinalized' variable directly impacts the ability of users to execute certain functions, thus classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Pausable.transferOwnership(address)",
+        "control_variable": "crowdfundFinalized",
+        "targets": [
+          "FuelToken.finalizeCrowdfund()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_29",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'Pausable.transferOwnership(address)' is controlled by 'onlyOwner', which means only the owner can change the ownership of the contract. This indicates a privileged access point.",
+          "The control variable 'crowdfundAddress' can be set by the owner through 'FuelToken.setCrowdfundAddress(address)', which is a direct manipulation of the state that affects the crowdfund process.",
+          "The affected target 'FuelToken.finalizeCrowdfund()' has a conditional check that requires 'presaleFinalized == true && crowdfundFinalized == false'. If the owner can control the 'crowdfundAddress', they can effectively control whether the crowdfund can be finalized or not.",
+          "This means the owner can prevent users from finalizing the crowdfund, thus limiting their ability to trade or access their funds, which fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Pausable.transferOwnership(address)",
+        "control_variable": "crowdfundAddress",
+        "targets": [
+          "FuelToken.finalizeCrowdfund()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_31",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `Pausable.transferOwnership(address)` is controlled by the `onlyOwner` modifier, which means only the owner can call this function. This function allows the owner to change the `crowdfundAddress` in the `FuelToken.setCrowdfundAddress(address)` function.",
+          "By changing the `crowdfundAddress`, the owner can potentially control where funds are directed, which can limit the ability of other users to interact with the contract as intended. This can effectively restrict normal users from participating in the crowdfunding process or transferring tokens.",
+          "Since the ability to change the `crowdfundAddress` directly affects the transferability and usability of the tokens, it falls under the category of LIMIT, as the owner can disable or restrict transactions based on the new address set."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Pausable.transferOwnership(address)",
+        "control_variable": "crowdfundAddress",
+        "targets": [
+          "FuelToken.setCrowdfundAddress(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_32",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `Pausable.transferOwnership(address)` is controlled by `onlyOwner`, which means only the owner can change the ownership of the contract. This gives the owner the ability to control the `crowdfundAddress` variable through `FuelToken.setCrowdfundAddress(address)`.",
+          "The `crowdfundAddress` is then used in the `FuelToken.transferFromCrowdfund(address,uint256)` function, which has a conditional check that requires the balance of `crowdfundAddress` to be greater than or equal to `_amount`.",
+          "If the owner sets the `crowdfundAddress` to an address with a low balance or disables transfers, they can effectively limit the ability of users to transfer tokens from the crowdfund, thus controlling the flow of tokens and limiting user transactions."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Pausable.transferOwnership(address)",
+        "control_variable": "crowdfundAddress",
+        "targets": [
+          "FuelToken.transferFromCrowdfund(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_38",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `FuelToken.finalizePresale()` checks the condition `require(presaleFinalized == false)`, which means that if `presaleFinalized` is set to true, the presale cannot be finalized.",
+          "The ownership transfer function `FuelToken.transferOwnership(address)` is controlled by `onlyOwner`, allowing the owner to change the state of `presaleFinalized`.",
+          "Once the owner finalizes the presale by calling `finalizePresale()`, they can effectively lock the presale state, preventing normal users from participating in any further transactions related to the presale.",
+          "This ability to control the presale state directly impacts the ability of regular users to trade or participate, thus classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "FuelToken.transferOwnership(address)",
+        "control_variable": "presaleFinalized",
+        "targets": [
+          "FuelToken.finalizePresale()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_43",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `FuelToken.finalizePresale()` is controlled by the `presaleFinalized` variable, which can be manipulated by the owner through the `FuelToken.transferOwnership(address)` function.",
+          "The `onlyOwner` modifier on `transferOwnership` indicates that only the owner can change the ownership, thus controlling the ability to finalize the presale.",
+          "If the presale is finalized, it can prevent normal users from participating in the presale or transferring tokens, effectively limiting their ability to trade.",
+          "This control over the presale status directly impacts the ability of users to engage in transactions, fitting the definition of a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "FuelToken.transferOwnership(address)",
+        "control_variable": "presaleAmountRemaining",
+        "targets": [
+          "FuelToken.finalizePresale()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_47",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function FuelToken.transferOwnership(address) is marked with onlyOwner, indicating that only the owner can call this function. This gives the owner control over the presaleAmountRemaining variable.",
+          "The function FuelToken.finalizePresale() modifies the presaleAmountRemaining variable, which is directly linked to the ability to deliver presale fuel balances.",
+          "The function FuelToken.deliverPresaleFuelBalance(address,uint256) writes to presaleAmountRemaining, meaning that the owner can manipulate this variable to control how much presale fuel is delivered.",
+          "Since the owner can change the presaleAmountRemaining, they can effectively limit the ability of other users to receive presale fuel, thus restricting their ability to trade or access their funds."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "FuelToken.transferOwnership(address)",
+        "control_variable": "presaleAmountRemaining",
+        "targets": [
+          "FuelToken.deliverPresaleFuelBalance(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_41",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `FuelToken.transferOwnership(address)` is marked with `onlyOwner`, indicating that only the owner can call this function, which allows them to change the ownership of the contract.",
+          "The control variable `presaleFinalized` is set in the `FuelToken.finalizePresale()` function, which is also controlled by the owner.",
+          "The function `FuelToken.finalizeCrowdfund()` checks the condition `require(presaleFinalized == true && crowdfundFinalized == false)`, meaning that if the owner sets `presaleFinalized` to true, they can finalize the crowdfunding process.",
+          "This gives the owner the ability to control whether the crowdfunding can be finalized or not, effectively limiting the ability of regular users to participate in the crowdfunding process."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "FuelToken.transferOwnership(address)",
+        "control_variable": "presaleFinalized",
+        "targets": [
+          "FuelToken.finalizeCrowdfund()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_42",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `FuelToken.finalizeCrowdfund()` checks the condition `require(presaleFinalized == true && crowdfundFinalized == false)` before allowing the finalization of the crowdfunding process.",
+          "The `crowdfundFinalized` variable can be controlled by the `transferOwnership(address)` function, which is restricted to the owner (onlyOwner). This means that the owner can change the state of `crowdfundFinalized` and thus control whether the crowdfunding can be finalized or not.",
+          "Since the owner can manipulate the `crowdfundFinalized` state, they can effectively limit the ability of other users to finalize the crowdfunding, which restricts their ability to trade or access their funds.",
+          "This behavior aligns with the definition of LIMIT, as the owner can enable or disable the finalization of the crowdfunding, directly impacting the transaction capabilities of regular users."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "FuelToken.transferOwnership(address)",
+        "control_variable": "crowdfundFinalized",
+        "targets": [
+          "FuelToken.finalizeCrowdfund()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_48",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `FuelToken.transferOwnership(address)` is controlled by the `onlyOwner` modifier, indicating that only the owner can execute this function. This function allows the owner to change the `crowdfundAddress`.",
+          "The `crowdfundAddress` is then used in the `FuelToken.finalizeCrowdfund()` function, which has a conditional check that requires `presaleFinalized` to be true and `crowdfundFinalized` to be false.",
+          "By changing the `crowdfundAddress`, the owner can control whether the `finalizeCrowdfund()` function can be executed, effectively limiting the ability of other users to finalize the crowdfunding process.",
+          "This control over the `crowdfundAddress` directly impacts the ability of users to interact with the crowdfunding mechanism, thus classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "FuelToken.transferOwnership(address)",
+        "control_variable": "crowdfundAddress",
+        "targets": [
+          "FuelToken.finalizeCrowdfund()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_50",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `FuelToken.transferOwnership(address)` is marked with the modifier `onlyOwner`, indicating that only the owner can call this function. This gives the owner control over the ownership of the contract.",
+          "The function `FuelToken.setCrowdfundAddress(address)` modifies the state variable `crowdfundAddress`, which can be used to control aspects of the contract's functionality, potentially affecting how funds are managed or transferred.",
+          "By changing the `crowdfundAddress`, the owner can influence the flow of funds or restrict access to certain functionalities, effectively limiting the ability of regular users to interact with the contract as intended.",
+          "Since the owner can modify the `crowdfundAddress`, this could lead to scenarios where the owner can prevent users from participating in the crowdfunding process or accessing their funds, thus classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "FuelToken.transferOwnership(address)",
+        "control_variable": "crowdfundAddress",
+        "targets": [
+          "FuelToken.setCrowdfundAddress(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_51",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function `FuelToken.transferOwnership(address)` is controlled by the `onlyOwner` modifier, indicating that only the owner can change the ownership of the contract.",
+          "The ownership change allows the owner to set the `crowdfundAddress` through the `FuelToken.setCrowdfundAddress(address)` function, which is a direct control over the address that can be used in the `transferFromCrowdfund(address,uint256)` function.",
+          "The `transferFromCrowdfund` function includes a conditional check that requires the balance of `crowdfundAddress` to be greater than or equal to `_amount` for the transfer to proceed. This means that if the owner sets the `crowdfundAddress` to an address with a low balance, they can effectively limit the ability of users to transfer tokens from that address.",
+          "Since the owner can control the `crowdfundAddress` and thus influence whether transfers can occur, this constitutes a limitation on the ability of users to freely transact, fitting the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "FuelToken.transferOwnership(address)",
+        "control_variable": "crowdfundAddress",
+        "targets": [
+          "FuelToken.transferFromCrowdfund(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_57",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function FuelToken.setCrowdfundAddress(address) is controlled by onlyOwner, which means only the owner can set the crowdfundAddress.",
+          "The crowdfundAddress is then used in the function FuelToken.finalizeCrowdfund() as part of a conditional check that requires presaleFinalized to be true and crowdfundFinalized to be false.",
+          "If the owner sets the crowdfundAddress to a specific address, they can control when the crowdfund can be finalized, effectively limiting the ability of other users to finalize the crowdfund.",
+          "This control over the crowdfund process means that the owner can prevent normal users from participating in or finalizing the crowdfund, which fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "FuelToken.setCrowdfundAddress(address)",
+        "control_variable": "crowdfundAddress",
+        "targets": [
+          "FuelToken.finalizeCrowdfund()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_58",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `FuelToken.setCrowdfundAddress(address)` is controlled by `onlyOwner`, which means only the owner can set the crowdfund address.",
+          "Once the crowdfund address is set, the `crowdfundFinalized` variable can be manipulated by the owner, allowing them to finalize the crowdfund by calling `FuelToken.finalizeCrowdfund()`.",
+          "The condition in `finalizeCrowdfund()` requires `crowdfundFinalized` to be false, which means the owner can control whether the crowdfund can be finalized or not, effectively limiting the ability of other users to participate in the crowdfund.",
+          "This control over the crowdfund process can restrict normal users from engaging in transactions related to the crowdfund, thus classifying it as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "FuelToken.setCrowdfundAddress(address)",
+        "control_variable": "crowdfundFinalized",
+        "targets": [
+          "FuelToken.finalizeCrowdfund()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_59",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function FuelToken.setCrowdfundAddress(address) is controlled by onlyOwner, which means only the owner can set the crowdfundAddress.",
+          "The transferFromCrowdfund function checks the balance of the crowdfundAddress before allowing a transfer, which means the owner can control whether transfers can occur by changing the crowdfundAddress.",
+          "If the owner sets the crowdfundAddress to an address with insufficient balance, it effectively limits the ability of users to transfer tokens from that address.",
+          "Thus, the owner has the power to enable or disable transfers based on the crowdfundAddress, which fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "FuelToken.setCrowdfundAddress(address)",
+        "control_variable": "crowdfundAddress",
+        "targets": [
+          "FuelToken.transferFromCrowdfund(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_60",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function FuelToken.finalizePresale() is controlled by the onlyOwner modifier, which means only the owner can call this function.",
+          "This function sets the presaleFinalized variable to true, which is a prerequisite for calling FuelToken.finalizeCrowdfund().",
+          "The finalizeCrowdfund() function has a conditional check that requires presaleFinalized to be true and crowdfundFinalized to be false.",
+          "By controlling the presaleFinalized variable, the owner can effectively limit when the crowdfund can be finalized, thus controlling the ability of users to participate in the crowdfund.",
+          "This creates a scenario where the owner can restrict or enable the crowdfund process, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "FuelToken.finalizePresale()",
+        "control_variable": "presaleFinalized",
+        "targets": [
+          "FuelToken.finalizeCrowdfund()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_61",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function FuelToken.finalizePresale() is controlled by onlyOwner, indicating that only the owner can call this function.",
+          "This function modifies the state variable crowdfundFinalized, which is then checked in the function FuelToken.finalizeCrowdfund().",
+          "The conditional check in finalizeCrowdfund() requires that crowdfundFinalized is false, meaning that the owner can control whether the crowdfunding can be finalized or not.",
+          "By controlling the crowdfundFinalized variable, the owner can effectively limit the ability of other users to finalize the crowdfunding process, thus restricting their ability to trade or interact with the token."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "FuelToken.finalizePresale()",
+        "control_variable": "crowdfundFinalized",
+        "targets": [
+          "FuelToken.finalizeCrowdfund()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_62",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function FuelToken.finalizePresale() is restricted to onlyOwner, indicating that only the owner can call this function.",
+          "This function modifies the presaleAmountRemaining variable, which is likely tied to the presale process and could affect the ability of users to purchase tokens during the presale.",
+          "Since the owner can control the presaleAmountRemaining, they can effectively limit or enable the presale, impacting the ability of regular users to participate in token sales.",
+          "Thus, the owner has the power to restrict transactions related to the presale, which fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "FuelToken.finalizePresale()",
+        "control_variable": "presaleAmountRemaining",
+        "targets": [
+          "FuelToken.deliverPresaleFuelBalance(address,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 3,
+    "LIMIT": 31,
+    "LEAK": 4,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

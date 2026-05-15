@@ -1,0 +1,177 @@
+{
+  "contract_name": "0x8586b2a8e6cd04cae359762a12435dd3b5c57920",
+  "generated_at": "2025-12-10T13:03:48Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function DividendDistributor.setShare(address,uint256) has a permission check at node E1, ensuring only the token owner can call it.",
+          "2. At node IF1, there is a condition that checks if amount > 0 and shares[shareholder].amount == 0, which indicates that the function can restrict the ability to set shares for shareholders who already have shares.",
+          "3. The function can potentially prevent shareholders from receiving dividends if their shares are not set, effectively limiting their ability to benefit from the contract.",
+          "4. The presence of the permission check and the ability to control shareholder shares indicates that the owner can limit the trading or dividend distribution capabilities of users.",
+          "5. Therefore, the path demonstrates limiting behavior as the owner can control who can receive dividends and under what conditions."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "DividendDistributor.setShare(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> IF0 -> D0 -> E1 -> IF0 -> F1 -> IF1 -> D1 -> E1 -> D0[ASSET] -> F1 -> D2 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry DividendDistributor.setShare(address,uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function DividendDistributor.setShare(address,uint256) has a permission check at Node E1, ensuring only the token owner can call it.",
+          "2. At Node D0, the function modifies the shareholders array and the shareholderIndexes mapping, which indicates a change in the state of the contract's asset management.",
+          "3. The asset manipulation occurs in Node D0, where the shareholder's index is updated, potentially removing them from the list of shareholders. This can lead to a situation where the owner can manipulate the distribution of dividends or shares without the shareholder's consent.",
+          "4. The path allows the owner to remove a shareholder without their agreement, which can be seen as a form of leaking tokens since the owner can effectively control who receives dividends and who does not.",
+          "5. The conditions in Node IF1 and IF2 indicate that the owner can set shares to zero for shareholders, which can lead to a loss of funds for those shareholders, further supporting the classification as a leak."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0",
+          "IF1",
+          "IF2"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "DividendDistributor.setShare(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> IF0 -> D0 -> E1 -> IF0 -> F1 -> IF1 -> IF2 -> D3 -> E1 -> D0[ASSET] -> F1",
+        "summary": "Entry DividendDistributor.setShare(address,uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is KoriInu.transferFrom(address,address,uint256), which involves transferring tokens from one address to another.",
+          "2. The permission check at Node IF0 ensures that the allowance for the sender is not the maximum value, which means the function can only be called if the allowance is less than the maximum.",
+          "3. At Node D0, the line of code '_allowances[sender][msg.sender] = _allowances[sender][msg.sender].sub(amount, Insufficient Allowance)' indicates that the allowance for the sender is decreased by the specified amount.",
+          "4. The balance of the sender is reduced, but there is no indication that the amount is transferred to the caller or any other address; it simply reduces the allowance.",
+          "5. Since the allowance is being decreased and the function is called by a third party (msg.sender), this indicates that the caller can reduce the allowance of the sender without transferring any tokens to themselves, which constitutes a leak.",
+          "6. The affected account (sender) is not the caller (msg.sender), which confirms that this a case of leaking tokens."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "KoriInu.transferFrom(address,address,uint256)",
+        "trace": "E1 -> IF0[PERM] -> D0[ASSET] -> D1 -> F1",
+        "summary": "Entry KoriInu.transferFrom(address,address,uint256); PermNode: IF0; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function KoriInu.setBot(address) requires the caller to be the owner, as indicated by the [PERM] node E1. This means only the owner can execute this function.",
+          "2. The function calls KoriInu._setIsDividendExempt(address,bool), which has another [PERM] check at node D0 that ensures the holder is not the contract itself or the pair address.",
+          "3. In node D2, the line 'distributor.setShare(holder,_balances[holder])' indicates that the balance of the holder is being read. The holder is determined by the input parameter, which can be any address specified by the owner.",
+          "4. Since the owner can specify any address as the holder, this allows the owner to manipulate the balances of arbitrary users by calling this function with their addresses. This constitutes a direct leak of tokens from the specified holder's balance to the distributor.",
+          "5. The balance of the holder is not increased; rather, it is being read and potentially manipulated by the owner, which aligns with the definition of a leak."
+        ],
+        "key_nodes": [
+          "E1",
+          "D2"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "KoriInu.setBot(address)",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0 -> IF0 -> D2[ASSET] -> F1 -> F1",
+        "summary": "Entry KoriInu.setBot(address); PermNode: E1; AssetNode: D2"
+      }
+    },
+    {
+      "path_id": "path_4",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function KoriInu.setIsDividendExempt(address,bool) is protected by a permission check (E1) that ensures only the owner can call it.",
+          "2. The function calls _setIsDividendExempt, where the holder and exempt parameters are bound to the input values.",
+          "3. In the asset node D2, the line 'distributor.setShare(holder,_balances[holder])' indicates that the balance of the holder is read, but there is no evidence of the balance being increased or decreased directly in this line.",
+          "4. However, the function allows the owner to set a holder as exempt from dividends, which could lead to a situation where the owner can manipulate the dividend distribution process, potentially leading to a leak of funds if the dividends are not distributed fairly.",
+          "5. The key point is that the owner can specify any address as the holder, which means they can control who receives dividends and who does not, effectively allowing them to leak potential earnings from other holders.",
+          "6. The balance of the holder is not directly modified in this function, but the ability to exempt holders from dividends can lead to a situation where the owner can indirectly control the flow of funds."
+        ],
+        "key_nodes": [
+          "E1",
+          "D2"
+        ]
+      },
+      "overview": {
+        "path_id": "path_4",
+        "function_signature": "KoriInu.setIsDividendExempt(address,bool)",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0 -> IF0 -> D2[ASSET] -> F1 -> F1",
+        "summary": "Entry KoriInu.setIsDividendExempt(address,bool); PermNode: E1; AssetNode: D2"
+      }
+    },
+    {
+      "path_id": "path_5",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function KoriInu.manualBurn(uint256) is protected by a permission check (Node E1), ensuring only the owner can call it.",
+          "2. In Node D0, the function calls KoriInu._basicTransfer(address,address,uint256) with the sender being the contract itself (address(this)) and the recipient being the DEAD address (0x000000000000000000000000000000000000dEaD).",
+          "3. In Node D0, the balance of the sender (the contract) is decreased by the amount specified in the parameter: _balances[sender] = _balances[sender].sub(amount, Insufficient Balance). This indicates a decrease in the contract's balance.",
+          "4. The recipient (DEAD) receives the same amount: _balances[recipient] = _balances[recipient].add(amount). This means the amount is effectively removed from circulation, as it is sent to a dead address.",
+          "5. The operation results in a net decrease in the total supply of tokens, as tokens are sent to an address that cannot be accessed or used again.",
+          "6. The owner can specify the amount to burn, which means they can control how many tokens are removed from circulation, leading to a potential leak of value from the contract.",
+          "7. Since the sender is the contract itself and the recipient is a fixed address (DEAD), this operation does not allow for arbitrary user balances to be manipulated, but it does allow the owner to effectively remove tokens from circulation."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_5",
+        "function_signature": "KoriInu.manualBurn(uint256)",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry KoriInu.manualBurn(uint256); PermNode: E1; AssetNode: D0"
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 1,
+    "LEAK": 5,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

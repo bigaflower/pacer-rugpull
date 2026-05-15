@@ -1,0 +1,531 @@
+{
+  "contract_name": "0x3fda9383a84c05ec8f7630fe10adf1fac13241cc",
+  "generated_at": "2026-02-24T23:19:10Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 1.0,
+        "reasoning": [
+          "In the path, DegoToken.mint(address,uint256) function allow The privileged userthrough mint arbitraryaddress increased balance . Specifically, node D0 incode line L491: _balances[account] = _balances[account].add(amount) indicatesThe privileged user can will specify account balance increases amount.",
+          "according tonode D0 permission check, only at _minters[msg.sender] is true situation, The privileged user mint, therefore this path asset changes are controlled by the privileged user.",
+          "because In this pathexistsThe privileged user can arbitrarily increase address balance logic, Therefore matches Hidden Mint definition."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "DegoToken.mint(address,uint256)",
+        "trace": "E1 -> D0[PERM] -> F1",
+        "summary": "Entry DegoToken.mint(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D1, execute `_balances[_burnPool] = _balances[_burnPool].add(burnFee)`, among which _burnPool is address (0x0000000000000000000000000000000000000000), This means fromthe address balance in increase burnFee, but this addressnot is the calleraddress, thereforetokenis from other user balance in leak .",
+          "2. At node D3, execute `_balances[_rewardPool] = _balances[_rewardPool].add(rewardFee)`, _rewardPool is address (0xEA6dEc98e137a87F78495a8386f7A137408f7722),, This means fromthe address balance in increase rewardFee, while this addressalso not is the calleraddress, thereforetokenalso is from other user balance in leak .",
+          "3. At node D4, execute `_balances[from] = _balances[from].sub(value)` and `_balances[to] = _balances[to].add(sendAmount)`, here from is the calleraddress, to is a parameterspecifiedaddress. although here from is the caller, but because D1 and D3 nodewill tokentransfer privilege address, therefore, The privileged userthrough set fee will tokenfrom ordinary user transfer privilege address, matches the leak token definition.",
+          "4. because The privileged user can through set burnFee and rewardFee to control from user balance deducted fromamount, and fee is privilege address, thereforecan is leak tokenbehavior."
+        ],
+        "key_nodes": [
+          "D1",
+          "D3",
+          "D4"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "DegoToken.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0[PERM] -> IF0 -> D1[ASSET] -> D2 -> IF1 -> D3[ASSET] -> D4[ASSET] -> F1 -> F1",
+        "summary": "Entry DegoToken.transfer(address,uint256); PermNode: D0; AssetNode: D1, D3, D4"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, _allowances[from][msg.sender] is decrease, indicates msg.sender(caller)can from from addresstransfer token. this from is parameter, may be an arbitrary address, thereforeThe privileged user can call transferFrom functionto asset .",
+          "2. At node D1, _balances[_burnPool] is increase, _burnPool is address (0x0000000000000000000000000000000000000000) , This means transfer in burnFee, will is transfer this address, asset decrease .",
+          "3. At node D3, _balances[_rewardPool] is increase, _rewardPool is address (0xEA6dEc98e137a87F78495a8386f7A137408f7722) , will causing asset decrease, and this address is The privileged user control .",
+          "4. At node D4, _balances[from] is decrease, _balances[to] is increase, indicates from from address deducted value, while to address increase is sendAmount, sendAmount less than value, causing asset leak .",
+          "5. because The privileged user can through parameter specify from address, and can control burnFee and rewardFee value, causing asset decrease, Therefore matches the Leak definition."
+        ],
+        "key_nodes": [
+          "D0",
+          "D1",
+          "D3",
+          "D4"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "DegoToken.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0[PERM] -> IF0 -> D1[ASSET] -> D2 -> IF1 -> D3[ASSET] -> D4[ASSET] -> F1 -> F1",
+        "summary": "Entry DegoToken.transferFrom(address,address,uint256); PermNode: D0; AssetNode: D0, D1, D3, D4"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The governance function 'Governance.setGovernance(address)' is controlled by 'onlyGovernance', allowing a privileged address to change the governance address.",
+          "This governance address can then modify the '_burnRate' in 'DegoToken.setRate(uint256,uint256)', which affects the transfer conditions in 'DegoToken._transfer(address,address,uint256)'.",
+          "The transfer function has a conditional check that requires '_openTransfer' to be true or the 'from' address to be the governance address. If the governance address sets '_openTransfer' to false, it effectively limits the ability of normal users to transfer tokens.",
+          "Thus, the privileged governance can control whether transfers can occur, which fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Governance.setGovernance(address)",
+        "control_variable": "_burnRate",
+        "targets": [
+          "DegoToken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_4",
+      "path_type": "INDIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function 'Governance.setGovernance(address)' is controlled by 'onlyGovernance', indicating that only a privileged entity can change the governance address.",
+          "2. The control variable '_totalBurnToken' is linked to the minting process in 'DegoToken.mint(address,uint256)', which allows the privileged entity to mint tokens to any address without restrictions.",
+          "3. The mint function modifies '_balances' and '_totalSupply', which means that the privileged entity can increase the total supply of tokens and allocate them to any address, fulfilling the criteria for a hidden mint.",
+          "4. There are no checks in place to prevent the privileged entity from minting an arbitrary amount of tokens to any address, confirming the presence of a hidden mint."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Governance.setGovernance(address)",
+        "control_variable": "_totalBurnToken",
+        "targets": [
+          "DegoToken.mint(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_2",
+      "path_type": "INDIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path starts with the Governance.setGovernance(address) function, which is controlled by the onlyGovernance modifier, indicating that only a privileged entity can call this function (Node E1).",
+          "2. The Governance.setGovernance function can modify the _minters variable, which is crucial for the minting process in DegoToken.",
+          "3. The DegoToken.mint(address,uint256) function is affected by the _minters variable, allowing those addresses to mint tokens. This function modifies the _balances and _totalSupply, which means it can increase the total supply of tokens.",
+          "4. Since the minting can be triggered by any address that is set as a minter, and the governance can change who is a minter, this creates a scenario where a privileged entity can mint tokens at will, leading to potential hidden minting.",
+          "5. There are no mechanisms in place to prevent the privileged entity from minting an arbitrary amount of tokens to any address, confirming the presence of the MINT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Governance.setGovernance(address)",
+        "control_variable": "_minters",
+        "targets": [
+          "DegoToken.mint(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_3",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Governance.setGovernance(address) is controlled by the modifier onlyGovernance, which indicates that only a privileged address can change the governance address.",
+          "In the DegoToken._transfer function, there is a conditional check that requires either _openTransfer to be true or the from address to be the governance address. This means that if the governance address is set to a different address, the privileged user can control whether transfers are allowed or not.",
+          "This ability to toggle the _openTransfer variable or set the governance address effectively allows the privileged user to limit or enable transfers for all users, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Governance.setGovernance(address)",
+        "control_variable": "governance",
+        "targets": [
+          "DegoToken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_5",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Governance.setGovernance(address) is controlled by onlyGovernance, which indicates that only a privileged entity can change the governance address.",
+          "The control variable _openTransfer is modified by the function DegoToken.enableOpenTransfer(), which is also controlled by governance.",
+          "In the _transfer function, there is a conditional check that requires _openTransfer to be true or the from address to be the governance address. This means that if the governance address is not the sender, the transfer will be blocked unless _openTransfer is enabled.",
+          "Thus, the governance can effectively limit the ability of ordinary users to transfer tokens by toggling the _openTransfer variable."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Governance.setGovernance(address)",
+        "control_variable": "_openTransfer",
+        "targets": [
+          "DegoToken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_8",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DegoToken.setGovernance(address) is controlled by the modifier onlyGovernance, which means only the governance address can call this function.",
+          "This function allows the governance to set the _burnRate, which is a parameter that can influence the transfer process.",
+          "In the _transfer function, there is a conditional check that requires either _openTransfer to be true or the from address to be the governance address. This means that if the governance address sets _openTransfer to false, it can effectively prevent all other users from transferring tokens.",
+          "Thus, the governance has the ability to limit the transfer functionality for all users, which fits the definition of a LIMIT rugpull behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DegoToken.setGovernance(address)",
+        "control_variable": "_burnRate",
+        "targets": [
+          "DegoToken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_12",
+      "path_type": "INDIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function DegoToken.setGovernance(address) is controlled by onlyGovernance, which indicates that only a privileged address can call this function.",
+          "2. This function modifies the control variable _totalBurnToken, which is then used in the mint function DegoToken.mint(address,uint256).",
+          "3. The mint function allows the privileged address to increase balances and total supply without any checks on the current balance of the target address.",
+          "4. Since the governance can set the _totalBurnToken and subsequently call mint, it can effectively mint new tokens to any address, thus implementing a hidden mint behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DegoToken.setGovernance(address)",
+        "control_variable": "_totalBurnToken",
+        "targets": [
+          "DegoToken.mint(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_10",
+      "path_type": "INDIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DegoToken.setGovernance(address) is controlled by the onlyGovernance modifier, which means only a privileged address can call it. This function can modify the _minters variable, allowing specific addresses to mint tokens.",
+          "The mint function DegoToken.mint(address,uint256) is affected by the _minters variable. If an address is added to _minters, it can call the mint function to increase balances and total supply without any checks on the current balance of the target address.",
+          "Since the mint function allows for arbitrary amounts to be minted to any address specified by the minter, this constitutes a hidden minting behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DegoToken.setGovernance(address)",
+        "control_variable": "_minters",
+        "targets": [
+          "DegoToken.mint(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_11",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DegoToken.setGovernance(address) is controlled by the modifier onlyGovernance, which indicates that only the governance address can call this function.",
+          "This function allows the governance address to potentially change the governance variable, which can influence the transfer behavior in the _transfer function.",
+          "In the _transfer function, there is a conditional check that requires either _openTransfer to be true or the from address to be the governance address. This means that if the governance address is set to a different address, it can control whether transfers are allowed or not.",
+          "Thus, the governance address can effectively limit the ability of other users to transfer tokens by toggling the _openTransfer variable or by being the only address allowed to transfer tokens.",
+          "This behavior aligns with the definition of LIMIT, as it allows a privileged entity to control the transfer process for all users."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DegoToken.setGovernance(address)",
+        "control_variable": "governance",
+        "targets": [
+          "DegoToken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_13",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DegoToken.setGovernance(address) is controlled by the modifier onlyGovernance, which means only a privileged address can call this function.",
+          "This function modifies the variable _openTransfer, which is used in the conditional check of the DegoToken._transfer function.",
+          "The _transfer function requires that either _openTransfer is true or the from address is the governance address. If _openTransfer is set to false, only the governance address can transfer tokens, effectively limiting the ability of regular users to trade.",
+          "Thus, the governance address can control whether transfers are allowed or not, which fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DegoToken.setGovernance(address)",
+        "control_variable": "_openTransfer",
+        "targets": [
+          "DegoToken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_16",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DegoToken.enableOpenTransfer() is controlled by the modifier onlyGovernance, which means only a privileged entity can call this function.",
+          "This function modifies the state variable _openTransfer, which is used in the conditional check of the DegoToken._transfer() function.",
+          "If _openTransfer is set to false, the transfer will be blocked unless the from address is the governance address, effectively limiting the ability of regular users to transfer tokens.",
+          "Thus, the governance can control whether transfers are allowed or not, which fits the definition of a LIMIT rugpull behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DegoToken.enableOpenTransfer()",
+        "control_variable": "_openTransfer",
+        "targets": [
+          "DegoToken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_17",
+      "path_type": "INDIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DegoToken.enableOpenTransfer() is controlled by onlyGovernance, which indicates that only a privileged entity can call this function.",
+          "This function modifies the control variable _totalBurnToken, which is linked to the minting process in DegoToken.mint(address,uint256).",
+          "The mint function allows the privileged entity to increase the balances of any address without any checks on the current balance, effectively allowing them to mint new tokens.",
+          "Since the minting can be triggered by a privileged entity and can increase the total supply without restrictions, this path clearly falls under the category of Hidden Mint."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DegoToken.enableOpenTransfer()",
+        "control_variable": "_totalBurnToken",
+        "targets": [
+          "DegoToken.mint(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_18",
+      "path_type": "INDIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DegoToken.addMinter(address) allows the governance to add new minters, which can then call the mint function.",
+          "The mint function DegoToken.mint(address,uint256) modifies the _balances and _totalSupply, allowing the specified address to receive an arbitrary amount of tokens.",
+          "Since the governance can add any address as a minter, this means that they can effectively mint tokens to any address without restrictions, which fits the definition of Hidden Mint."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DegoToken.addMinter(address)",
+        "control_variable": "_minters",
+        "targets": [
+          "DegoToken.mint(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_19",
+      "path_type": "INDIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DegoToken.removeMinter(address) is controlled by onlyGovernance, which indicates that only a privileged entity can call this function.",
+          "The affected target DegoToken.mint(address,uint256) allows the privileged entity to mint tokens to any address, increasing the balance of that address and the total supply without any checks on the balance of the caller.",
+          "Since the mint function can be called by the governance after removing a minter, it allows for the potential of hidden minting of tokens to arbitrary addresses, which fits the definition of MINT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DegoToken.removeMinter(address)",
+        "control_variable": "_minters",
+        "targets": [
+          "DegoToken.mint(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_20",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DegoToken.setRate(uint256,uint256) is controlled by onlyGovernance, which means only a privileged entity can modify the _burnRate.",
+          "This _burnRate is used in the DegoToken._transfer function, which has a conditional check that includes the variable _openTransfer.",
+          "If _openTransfer is set to false by the governance, it will prevent all transfers from occurring unless the from address is the governance address itself.",
+          "This gives the governance the ability to effectively limit or disable transfers for all other users, thus controlling the trading ability of ordinary users."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DegoToken.setRate(uint256,uint256)",
+        "control_variable": "_burnRate",
+        "targets": [
+          "DegoToken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_21",
+      "path_type": "INDIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DegoToken.setRate(uint256,uint256) is controlled by onlyGovernance, which indicates that only a privileged entity can call this function.",
+          "This function modifies the variable _totalBurnToken, which is then used in the DegoToken.mint(address,uint256) function.",
+          "The mint function allows for the modification of _balances and _totalSupply, meaning that the privileged entity can increase the balance of any address without any checks on their current balance.",
+          "Since the mint function can be called with any address as a parameter, this constitutes a hidden minting behavior, as the privileged entity can create tokens at will."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DegoToken.setRate(uint256,uint256)",
+        "control_variable": "_totalBurnToken",
+        "targets": [
+          "DegoToken.mint(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_22",
+      "path_type": "INDIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function DegoToken._transfer which is an internal function and there is no modifiers that restrict access.",
+          "The affected target is DegoToken.mint which modifies the state by writing to _balances and _totalSupply.",
+          "Since minting can increase the total supply and balances of any address without requiring a balance check, it indicates that a privileged entity can mint tokens at will.",
+          "There are no conditions or checks that prevent the privileged entity from minting an arbitrary amount of tokens to any address, which aligns with the definition of Hidden Mint."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DegoToken._transfer(address,address,uint256)",
+        "control_variable": "_totalBurnToken",
+        "targets": [
+          "DegoToken.mint(address,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 10,
+    "LIMIT": 8,
+    "LEAK": 2,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

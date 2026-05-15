@@ -1,0 +1,92 @@
+{
+  "contract_name": "0x5434fab78c0ef1f376e89997bafe28ed7ce66bda",
+  "generated_at": "2025-12-10T06:35:27Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is RyuInu.updateMarketingWallet(address,address,uint256), which has a permission check at node E1 that ensures only the owner can call it.",
+          "2. At node D0, the asset operation is _balances[a] = _balances[a].add(b). This indicates that the balance of address 'a' is increased by 'b'.",
+          "3. The address 'a' is a parameter of the function, meaning the owner can specify any address to receive the additional balance. This allows the owner to increase the balance of any arbitrary address, which is a form of leaking tokens.",
+          "4. Since the owner can specify the address 'a', this means they can direct funds to any address they choose, which aligns with the definition of leaking tokens.",
+          "5. The balance of the specified address increases, but since the owner can choose any address, it does not represent a minting of new tokens but rather a transfer of existing tokens to a specified address."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "RyuInu.updateMarketingWallet(address,address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> F1",
+        "summary": "Entry RyuInu.updateMarketingWallet(address,address,uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'Ownable.transferOwnership(address)' is marked with 'onlyOwner', indicating that only the owner can change the ownership of the contract.",
+          "Once the ownership is transferred, the new owner can call 'RyuInu.manualBurnLiquidityPairTokens(uint256)', which modifies the state variable 'lastManualLpBurnTime'.",
+          "If 'lastManualLpBurnTime' is used to control whether liquidity pair tokens can be burned or not, then the new owner can effectively limit the ability of other users to interact with liquidity tokens.",
+          "This creates a scenario where the owner can control the liquidity management process, thus limiting the ability of regular users to sell or manage their tokens."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "lastManualLpBurnTime",
+        "targets": [
+          "RyuInu.manualBurnLiquidityPairTokens(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function RyuInu.transferOwnership(address) is marked with onlyOwner, indicating that only the owner can call this function. This gives the owner control over the ownership of the contract.",
+          "The control variable lastManualLpBurnTime is modified in the function RyuInu.manualBurnLiquidityPairTokens(uint256), which can be called by the owner. This means the owner can change the state of lastManualLpBurnTime.",
+          "By controlling lastManualLpBurnTime, the owner can potentially manipulate the liquidity pair tokens and affect the ability of users to trade or burn liquidity, effectively limiting their ability to sell.",
+          "Since the owner can change the state that directly impacts trading behavior, this path fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "RyuInu.transferOwnership(address)",
+        "control_variable": "lastManualLpBurnTime",
+        "targets": [
+          "RyuInu.manualBurnLiquidityPairTokens(uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 2,
+    "LEAK": 1,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

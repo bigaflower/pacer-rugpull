@@ -1,0 +1,118 @@
+{
+  "contract_name": "0x0e29e5abbb5fd88e28b2d355774e73bd47de3bcd",
+  "generated_at": "2026-02-24T14:08:26Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, execute `allowance[from][msg.sender] = sub(allowance[from][msg.sender],amount)`, This means `msg.sender` can decrease `from` allowance, causing `from` balance is deduction.",
+          "2. At node D1, execute `balanceOf[from] = sub(balanceOf[from],amount)`, directly decrease `from` balance, and `from` is by `msg.sender` specified, This meansThe privileged user can specify affected account, rather than limited to the caller themselves.",
+          "3. because `from` is by parameter provide, The privileged user can call `transferFrom` function, arbitrary specify account decrease its balance, This matches the definition of token leaking.",
+          "4. In this path, there is nobalance increasesoperation, all asset node balance decrease, and there is no minting, Therefore does not match MINT definition.",
+          "5. because The privileged user can through `transferFrom` functiondirectly decrease balance, and noprovide compensation, This matches the LEAK definition."
+        ],
+        "key_nodes": [
+          "D0",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "Hakka.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> IF0[PERM] -> D0[ASSET] -> E1 -> D0 -> F1 -> D1[PERM] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1 -> F1",
+        "summary": "Entry Hakka.transfer(address,uint256); PermNode: IF0, D1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D1, execute `balanceOf[from] = sub(balanceOf[from], amount)`, This indicates from `from` address balance deducted `amount`, alsoat `balanceOf[to] = add(balanceOf[to], amount)` in, `to` addressbalance increases by `amount`.",
+          "2. here `from` is provided by the function parameter, rather thanis the caller itself, thereforeThe privileged user can call `transferFrom` function, specify arbitraryaddress `from`, thereby decrease the address balance, This matches the definition of token leaking.",
+          "3. At node D0, `allowance[from][msg.sender] = sub(allowance[from][msg.sender], amount)` also indicates, The privileged user can call, decrease `from` address allow transfer, This further supports leak behavior.",
+          "4. because `from` address is provided by the parameter, The privileged user can arbitrarily specify affected accounts, Therefore this path matches the leak tokencharacteristic."
+        ],
+        "key_nodes": [
+          "D1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "Hakka.transferFrom(address,address,uint256)",
+        "trace": "E1 -> IF0[PERM] -> D0[ASSET] -> E1 -> D0 -> F1 -> D1[PERM] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry Hakka.transferFrom(address,address,uint256); PermNode: IF0, D1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function Hakka.mint(address,uint256) has a permission check at Node E1, ensuring only the owner can call it. This indicates a privileged action.",
+          "2. At Node D0, the line 'balanceOf[to] = add(balanceOf[to],amount)' shows that the balance of the address 'to' is increased by 'amount'. This a clear indication of a balance increase.",
+          "3. The variable 'amount' is a parameter of the mint function, which can be controlled by the owner. Therefore, the owner can specify any amount to mint to any address.",
+          "4. The simulation shows that if the initial balance of 'to' is 100 and 'amount' is a positive value, the new balance will be greater than 100, confirming that this a minting action.",
+          "5. Since the owner can mint tokens to any address without restrictions, this path clearly falls under the category of MINT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "Hakka.mint(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry Hakka.mint(address,uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, execute `allowance[from][msg.sender] = sub(allowance[from][msg.sender],amount)`, This indicates from `from` address allowance deductedion `amount`, is asset decrease operation.",
+          "2. At node D1, execute `balanceOf[from] = sub(balanceOf[from],amount)`, This indicates from `from` addressdeducted from the balance of `amount`, is asset decrease operation.",
+          "3. because `from` is provided by the function parameter, rather thanis the caller itself, thereforeThe privileged user can specify arbitrary account performdeduction, This matches the definition of token leaking.",
+          "4. In this path, there is no asset increase operation, all asset operation is decrease, Therefore does not match MINT definition.",
+          "5. because The privileged user can through `Hakka.burn` functiondirectlydeductionarbitrary user balance, and noprovide compensation, This matches the LEAK definition."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D0",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "Hakka.burn(address,uint256)",
+        "trace": "E1 -> IF0[PERM] -> D0[ASSET] -> E1 -> D0 -> F1 -> D1[ASSET] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry Hakka.burn(address,uint256); PermNode: IF0; AssetNode: D0, D1"
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 1,
+    "LIMIT": 0,
+    "LEAK": 3,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

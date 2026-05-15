@@ -1,0 +1,287 @@
+{
+  "contract_name": "0xca2796f9f61dc7b238aab043971e49c6164df375",
+  "generated_at": "2026-03-08T06:36:29Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function is YeedToken.transfer(address,uint256), which involves transferring tokens from the caller to another address.",
+          "2. The permission checks at nodes E1 and D0 ensure that the caller is not locked and has sufficient balance to perform the transfer.",
+          "3. At node D0, the balance changes are as follows: L415 deducts 'value' from the caller's balance (_balances[msg.sender] = _balances[msg.sender].sub(value)), and L417 adds 'value' to the recipient's balance (_balances[to] = _balances[to].add(value)).",
+          "4. The balance formula indicates that the caller's balance decreases while the recipient's balance increases, which is a standard transfer operation.",
+          "5. Since the transfer only modifies the balances of the caller and the recipient, and does not allow for any arbitrary increase in balance or unauthorized deductions from other accounts, it does not fit the definitions of MINT, LIMIT, or LEAK.",
+          "6. The conditions for the transfer to occur are based on the caller's balance and the recipient's address being valid, which are standard checks in token transfer functions."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "YeedToken.transfer(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> M2 -> D0[PERM] -> F1",
+        "summary": "Entry YeedToken.transfer(address,uint256); PermNode: E1, D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, the following asset operations exist:",
+          "- L457:_balances [from] =_balances [from].sub (value)//deduct 'value' from 'from' address",
+          "- L459:_balances [to] =_balances [to].add (value)//Add 'value' to 'to' address",
+          "- here 'from' is a function parameter, may be an arbitrary address, rather thanis the caller itself, thereforecan is The privileged user specify .",
+          "2. because 'from' address balance is deduction, while 'to' addressbalance increases, and 'from' is by address, This matches the definition of token leaking.",
+          "3. The privileged user can call transferFrom function, specify arbitrary 'from' address, directly decrease the address balance, while there is no compensation, directly leak .",
+          "4. because existspermission node E1 and D0, The privileged user can control asset change, further confirms leak risk ."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "YeedToken.transferFrom(address,address,uint256)",
+        "trace": "E1[PERM] -> M1 -> M2 -> D0[PERM] -> F1",
+        "summary": "Entry YeedToken.transferFrom(address,address,uint256); PermNode: E1, D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 0.0,
+        "reasoning": [
+          "In the path, node E1 is a permission node, caller addressnot At lockAddress, This meansonlyis address approve function.",
+          "node D0 is asset node, execute `_approvals[msg.sender][spender] = value`, This indicates that `value` value `msg.sender` for `spender` .",
+          "at this nodein, `msg.sender` is the calleraddress, while `spender` is a function parameter, `value` also is a function parameter. because `msg.sender` is the caller itself, and there is no balance increase or decrease, therefore no MINT or LEAK situation.",
+          "This path, there is no asset increase or decrease, is set, Therefore does not match rugpull behavior definition."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "YeedToken.approve(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> F1",
+        "summary": "Entry YeedToken.approve(address,uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 0.0,
+        "reasoning": [
+          "1. The entry function is YeedToken.increaseApproval(address,uint256), which is responsible for increasing the approval amount for a spender.",
+          "2. The permission node E1 checks if the caller's address is not locked, allowing only certain addresses to call this function.",
+          "3. The asset node D0 modifies the _approvals mapping: _approvals[msg.sender][_spender] = (_approvals[msg.sender][_spender].add(_addedValue)). This indicates that the approval amount for the spender is increased by the _addedValue.",
+          "4. The balance change formula indicates an increase in the approval amount for the spender, which does not directly affect the token balance of any user. It only affects the allowance mechanism.",
+          "5. Since the function increases the approval amount and does not decrease or reset any balances, it does not fall under the categories of MINT, LIMIT, or LEAK.",
+          "6. The approval increase does not allow for any direct transfer of tokens or manipulation of balances that would constitute a rugpull behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "YeedToken.increaseApproval(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> F1",
+        "summary": "Entry YeedToken.increaseApproval(address,uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_4",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, reads _approvals[msg.sender][_spender] value, is oldValue.",
+          "2. At node IF0, check _subtractedValue is oldValue, this operation.",
+          "3. At node D1, _approvals[msg.sender][_spender] is set is 0, This means caller is, causingits _spender perform transfer .",
+          "4. because _spender is address (function parameter provide ) , rather thanis the caller itself, Therefore this constitutes balance directly leak, matches the Leak definition.",
+          "5. node D2 is, no increase balance, therefore does not Mint.",
+          "6. because The privileged user can through decreaseApproval function, causingperform transfer, behavior matches the Leak characteristic."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_4",
+        "function_signature": "YeedToken.decreaseApproval(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> IF0 -> D1[ASSET] -> D2[ASSET] -> F1",
+        "summary": "Entry YeedToken.decreaseApproval(address,uint256); PermNode: E1; AssetNode: D0, D1, D2"
+      }
+    },
+    {
+      "path_id": "path_5",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is YeedToken.decreaseApproval(address,uint256), which is a permissioned function (E1) that checks if the caller's address is not locked.",
+          "2. In Node D0, the old approval value is read from _approvals[msg.sender][_spender]. This indicates that the approval amount for the spender is being accessed.",
+          "3. In Node IF0, there is a condition that checks if _subtractedValue > oldValue. If this condition is true, it would lead to a scenario where the approval amount is being decreased by more than the current approval, which is not possible since approvals cannot be negative.",
+          "4. In Node D3, the approval amount is decreased: _approvals[msg.sender][_spender] = oldValue.sub(_subtractedValue). This means that the approval for the spender is being reduced, which is a decrease in the allowance for that address.",
+          "5. The approval amount is being decreased, which means that the total approval for the spender is reduced, and thus the caller can limit the spender's ability to transfer tokens on their behalf.",
+          "6. The function does not allow for any increase in balance or minting of tokens, nor does it allow for arbitrary transfers from other users' balances. However, it does allow the owner to control the approval amounts, which can limit the ability of users to transact.",
+          "7. Since the approval can be decreased to zero or any value less than the current approval, it can be seen as a limitation on the ability of users to transfer tokens, thus fitting the definition of LEAK."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0",
+          "D3",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_5",
+        "function_signature": "YeedToken.decreaseApproval(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> IF0 -> D3[ASSET] -> D2[ASSET] -> F1",
+        "summary": "Entry YeedToken.decreaseApproval(address,uint256); PermNode: E1; AssetNode: D0, D3, D2"
+      }
+    },
+    {
+      "path_id": "path_6",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function YeedToken.burnTokens(uint256) is restricted to the owner (Node E1). This indicates that only the owner can call this function, which is a permission check.",
+          "2. In Node D0, there is a check to ensure that the caller's balance is sufficient to burn the specified amount of tokens: require(_balances[msg.sender] >= tokensAmount). This means the caller must have enough tokens to proceed.",
+          "3. The line _balances[msg.sender] = _balances[msg.sender].sub(tokensAmount) indicates that the caller's balance will be decreased by tokensAmount. This a direct reduction of the caller's balance.",
+          "4. Since the function is called by the owner and the balance is reduced, this indicates that the owner can effectively remove tokens from their own balance, but it does not allow for arbitrary reductions from other users' balances.",
+          "5. However, the function does not allow the owner to specify another user's address to burn tokens from; it only allows the owner to burn their own tokens. Therefore, while the owner can reduce their own balance, they cannot leak tokens from other users.",
+          "6. Given that the owner can reduce their own balance but cannot leak tokens from others, this does not fit the definition of a leak in the context of leaking tokens from arbitrary users.",
+          "7. The overall conclusion is that while the owner can burn their own tokens, it does not constitute a leak of tokens from other users, but rather a controlled burn of their own tokens."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_6",
+        "function_signature": "YeedToken.burnTokens(uint256)",
+        "trace": "E1[PERM] -> M1 -> M2 -> D0[PERM] -> F1",
+        "summary": "Entry YeedToken.burnTokens(uint256); PermNode: E1, D0"
+      }
+    },
+    {
+      "path_id": "path_7",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is YeedToken.emergencyTransfer(address), which is restricted to the owner (E1).",
+          "2. In node D0, the line `require(emergencyAddress != owner)` ensures that the emergency address cannot be the owner, which is a safety check.",
+          "3. The line `_balances[owner] = _balances[owner].add(_balances[emergencyAddress])` indicates that the balance of the owner is increased by the balance of the emergency address. Since the owner is initialized to address(0), this means the owner is receiving tokens from the emergency address.",
+          "4. The line `Transfer(emergencyAddress, owner, _balances[emergencyAddress])` indicates that tokens are being transferred from the emergency address to the owner, which is a direct asset manipulation.",
+          "5. The line `_balances[emergencyAddress] = 0` sets the balance of the emergency address to zero, indicating that the tokens are being drained from this address.",
+          "6. The emergency address is an input parameter, which means the owner can specify any address to drain tokens from, thus allowing the owner to leak tokens from arbitrary accounts.",
+          "7. Since the owner can specify the emergency address and drain its balance, this constitutes a leak of tokens from the specified address to the owner's balance."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_7",
+        "function_signature": "YeedToken.emergencyTransfer(address)",
+        "trace": "E1[PERM] -> M1 -> M2 -> D0[ASSET] -> F1",
+        "summary": "Entry YeedToken.emergencyTransfer(address); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Lockable.setLockAddress(address,bool) is controlled by the owner (onlyOwner modifier), which means that only the owner can set the lockAddress variable.",
+          "This lockAddress variable can potentially be used to restrict or allow transfers in the YeedToken.transferFrom function, which modifies the _balances and _approvals state variables.",
+          "If the owner sets the lockAddress to a specific address, they can effectively prevent transfers to or from that address, limiting the ability of regular users to trade.",
+          "Thus, the owner has the ability to control the transfer process, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Lockable.setLockAddress(address,bool)",
+        "control_variable": "lockAddress",
+        "targets": [
+          "YeedToken.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function YeedToken.setLockAddress(address,bool) is controlled by the owner (onlyOwner modifier), which means only the owner can change the lockAddress variable.",
+          "This lockAddress variable can potentially be used to restrict or allow transfers in the transferFrom function, which modifies the _approvals and _balances.",
+          "If the owner sets lockAddress to true, it could prevent users from transferring tokens, effectively limiting their ability to trade.",
+          "Thus, the owner has the ability to control the transfer state, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "YeedToken.setLockAddress(address,bool)",
+        "control_variable": "lockAddress",
+        "targets": [
+          "YeedToken.transferFrom(address,address,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 2,
+    "LEAK": 5,
+    "EMPTY": 3,
+    "ERROR": 0
+  }
+}

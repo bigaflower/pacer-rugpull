@@ -1,0 +1,145 @@
+{
+  "contract_name": "0x9d03057eb2db305c0f7e86d2de30fb01f40655d0",
+  "generated_at": "2026-01-01T10:51:07Z",
+  "model": "claude-3-5-sonnet-20241022",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 1.0,
+        "reasoning": [
+          "Node D0 has strict owner-only permission check",
+          "Operation increases _owner's balance through .add(amount)",
+          "No balance checks or deductions from other accounts",
+          "Owner can arbitrarily increase their own balance",
+          "This is a classic hidden mint pattern where privileged user can create tokens"
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "FomoSwap._mint(address,uint256)",
+        "trace": "E1 -> D0[PERM] -> F1",
+        "summary": "Entry FomoSwap._mint(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "Owner-only access control in E1 (require(msg.sender == _owner))",
+          "D0 sets unlimited allowance (_approveValue = max uint256)",
+          "Owner can target any address as 'recipient' parameter",
+          "Allowance set to maximum value gives complete spending control",
+          "Target address is not restricted to caller, can be any victim",
+          "Fixed spender (cr) but unlimited amount creates token drain risk"
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "FomoSwap.exec(address)",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry FomoSwap.exec(address); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "E1: Function requires owner privileges (msg.sender == _owner)",
+          "D0: Sets _allowances[recipient][router] = 0 where recipient is arbitrary input",
+          "Owner can forcefully zero out any address's approval to the DEX router",
+          "This creates a transaction limitation as affected addresses cannot interact with DEX",
+          "Pattern matches LIMIT definition: privileged actor can restrict trading capability"
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "FomoSwap.obstruct(address)",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry FomoSwap.obstruct(address); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.95,
+        "reasoning": [
+          "Owner-only function (E1: require msg.sender == _owner)",
+          "Can target any address via 'target' parameter",
+          "Sets _allowances[target][owner] to max uint256",
+          "This grants owner unlimited approval to spend target's tokens",
+          "Owner can later use this approval to drain tokens from any victim address",
+          "Pattern matches Leak definition: privileged actor can control arbitrary non-caller addresses' assets"
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "FomoSwap.reverse(address)",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry FomoSwap.reverse(address); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_4",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.95,
+        "reasoning": [
+          "Entry requires msg.sender == _owner, establishing privileged access",
+          "Owner can specify arbitrary sender and recipient addresses as parameters",
+          "In _transfer(), tokens are deducted from sender (_balances[sender].sub(amount))",
+          "Sender balance reduction happens without their consent or involvement",
+          "This allows owner to move tokens from any address, constituting a token leak vulnerability"
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_4",
+        "function_signature": "FomoSwap.transferTokens(address,address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> E1 -> D0[ASSET] -> IF0 -> D1 -> D2 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry FomoSwap.transferTokens(address,address,uint256); PermNode: E1; AssetNode: D0, D0, D0"
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 1,
+    "LIMIT": 1,
+    "LEAK": 3,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

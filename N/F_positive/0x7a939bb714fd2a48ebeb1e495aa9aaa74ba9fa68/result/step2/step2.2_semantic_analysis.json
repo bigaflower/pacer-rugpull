@@ -1,0 +1,350 @@
+{
+  "contract_name": "0x7a939bb714fd2a48ebeb1e495aa9aaa74ba9fa68",
+  "generated_at": "2026-02-25T12:11:36Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, execute `_balances[holder] = _balances[holder].sub(value)`, This indicates from `holder` balance deducted `value`, therefore the node asset decrease .",
+          "2. `holder` is function parameter, The privileged user can arbitrarily specifythis address, thereforeThe privileged user can user balance performdeduction, This matches the definition of token leaking.",
+          "3. because `value` is by caller provided parameter, The privileged user can control this valuesize, causing `holder` balance decreases, and there is no compensation, This further supports the leak classification.",
+          "4. In this path, there is no increase balance operation, and The privileged user can specify affected account, thereforecan is leak tokenbehavior."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "EVZ.lock(address,uint256,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry EVZ.lock(address,uint256,uint256); PermNode: E1; AssetNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. at node D0 (EVZ._transfer) in, execute _balances[from] = _balances[from].sub(value) and _balances[to] = _balances[to].add(value), here from is msg.sender, to is param:holder, value is param:value.",
+          "2. This means the caller's balance decreases value, while recipient balance increases by value. this nofind balance increasessituation, Therefore does not match MINT conditions.",
+          "3. at node D0 (EVZ._lock) in, execute _balances[holder] = _balances[holder].sub(value), here holder is param:holder, value is param:value. this holder is parameter specifiedaddress, The privileged user can arbitrarily specify holder, Therefore this constitutes balance directlydeduction.",
+          "4. because holder is specified by the parameter, The privileged user can addressperformdeduction, This matches the definition of token leaking, therefore this pathis classified as LEAK."
+        ],
+        "key_nodes": [
+          "D0",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "EVZ.transferWithLock(address,uint256,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry EVZ.transferWithLock(address,uint256,uint256); PermNode: E1; AssetNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is EVZ.unlock(address,uint256) which has permission checks at nodes E1 and D0.",
+          "2. At node D0, there is a permission check that ensures the caller has the right to access the unlock functionality.",
+          "3. In node D0, the line '_balances[holder] = _balances[holder].add(releaseAmount)' indicates that the balance of the 'holder' is increased by 'releaseAmount'.",
+          "4. The 'holder' is a parameter passed to the function, meaning the caller can specify any address to receive the increased balance.",
+          "5. Since the balance of the 'holder' is increased without any checks on the previous balance or limits on the amount that can be released, this constitutes a hidden minting behavior.",
+          "6. The ability to specify the 'holder' address means that the privileged caller can mint tokens to any address they choose."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "EVZ.unlock(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[PERM] -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry EVZ.unlock(address,uint256); PermNode: E1, D0; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The path involves the function 'Ownable.transferOwnership(address)', which is protected by the 'onlyOwner' modifier, indicating that only the owner can change the ownership of the contract.",
+          "Once ownership is transferred, the new owner can call 'Pausable.acceptOwnership()', which allows them to take control of the contract's functionalities.",
+          "The affected target 'EVZ.balanceOf(address)' includes a conditional check that depends on 'timelockList[owner].length > 0'. This means that the ability to check balances is contingent on the state of the 'timelockList' for the current owner.",
+          "If the owner can manipulate the 'timelockList', they can effectively control whether users can access their balances or not, thus limiting their ability to trade or transfer tokens."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "owner",
+        "targets": [
+          "EVZ.balanceOf(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_9",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function Ownable.acceptOwnership() is controlled by the modifier onlyNewOwner, which indicates that only the new owner can call this function. This gives the new owner the ability to change the ownership of the contract.",
+          "The affected target EVZ.balanceOf(address) checks the condition timelockList[owner].length > 0. If the owner can be changed by the new owner, they can manipulate the timelockList, which directly affects whether users can access their balances.",
+          "Since the new owner can control the state of timelockList, they can effectively limit the ability of other users to interact with their balances, thus classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.acceptOwnership()",
+        "control_variable": "owner",
+        "targets": [
+          "EVZ.balanceOf(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_10",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'PauserRole.transferOwnership(address)' is protected by 'onlyOwner', indicating that only the owner can change the ownership of the contract.",
+          "Once the ownership is transferred, the new owner can call 'Pausable.acceptOwnership()', which sets the 'owner' variable.",
+          "The affected target 'EVZ.balanceOf(address)' checks the condition 'timelockList[owner].length > 0'. If the owner is changed, the new owner can manipulate the 'timelockList' and potentially control whether users can access their balances or perform transfers.",
+          "This means that the new owner can effectively limit the ability of users to trade or access their tokens, which fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "PauserRole.transferOwnership(address)",
+        "control_variable": "owner",
+        "targets": [
+          "EVZ.balanceOf(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_19",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'PauserRole.acceptOwnership()' is controlled by the modifier 'onlyNewOwner', which indicates that only a specific privileged account can call this function and change the 'owner'.",
+          "The affected target 'EVZ.balanceOf(address)' checks the condition 'timelockList[owner].length > 0', which implies that the ability to check balances or perform actions based on this balance is contingent on the 'owner' being set correctly.",
+          "Since the 'owner' can be changed by a privileged account, this allows the privileged account to potentially manipulate the state of 'timelockList' and thus control whether users can access their balances or perform transfers.",
+          "This creates a scenario where the privileged account can limit the ability of regular users to trade or access their tokens, fitting the definition of a LIMIT rugpull."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "PauserRole.acceptOwnership()",
+        "control_variable": "owner",
+        "targets": [
+          "EVZ.balanceOf(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_20",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `Pausable.transferOwnership(address)` is controlled by the `onlyOwner` modifier, which means only the current owner can call it. This indicates a privileged access control.",
+          "The `owner` variable is modified through the `Pausable.acceptOwnership()` function, which allows the new owner to take control.",
+          "The affected target `EVZ.balanceOf(address)` checks the condition `timelockList[owner].length > 0`. If the owner is changed, the ability to access or interact with the `timelockList` can be manipulated by the new owner.",
+          "Since the new owner can potentially change the state of `timelockList` and thus control whether transfers can occur based on this condition, it creates a scenario where the owner can limit the ability of other users to trade or transfer tokens."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Pausable.transferOwnership(address)",
+        "control_variable": "owner",
+        "targets": [
+          "EVZ.balanceOf(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_29",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function `Pausable.acceptOwnership()` is controlled by the modifier `onlyNewOwner`, which means only the new owner can call this function. This indicates a privileged access control.",
+          "The affected target `EVZ.balanceOf(address)` checks the condition `timelockList[owner].length > 0`. If the owner is set to a new address, the ability to check the balance based on this condition can be manipulated by the owner.",
+          "Since the owner can change the state of `timelockList`, they can effectively control whether the balance check passes or fails, thus limiting the ability of other users to interact with the contract based on their balance.",
+          "This control over the balance check can prevent normal users from executing transfers or accessing their funds, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Pausable.acceptOwnership()",
+        "control_variable": "owner",
+        "targets": [
+          "EVZ.balanceOf(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_30",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function ERC20Pausable.transferOwnership(address) is controlled by onlyOwner, which means only the owner can change the ownership of the contract.",
+          "Once the ownership is transferred, the new owner can call Pausable.acceptOwnership(), which updates the owner variable.",
+          "The affected target EVZ.balanceOf(address) checks the condition timelockList[owner].length > 0, which implies that the ability to check balances is dependent on the owner's status.",
+          "If the owner can be changed, the new owner can potentially manipulate the timelockList, thereby controlling whether users can access their balances or not.",
+          "This creates a scenario where the new owner can limit the ability of users to trade or access their tokens, thus fitting the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "ERC20Pausable.transferOwnership(address)",
+        "control_variable": "owner",
+        "targets": [
+          "EVZ.balanceOf(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_39",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function ERC20Pausable.acceptOwnership() is controlled by the modifier onlyNewOwner, which means only the new owner can call this function. This indicates a privileged access control.",
+          "The affected target EVZ.balanceOf(address) has a conditional check that depends on the state of timelockList[owner]. If the owner can modify this list, they can effectively control whether the balance check passes or fails.",
+          "Since the owner can manipulate the timelockList, they can indirectly control whether transfers can occur based on the balance of the owner, thus limiting the ability of other users to transact freely."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "ERC20Pausable.acceptOwnership()",
+        "control_variable": "owner",
+        "targets": [
+          "EVZ.balanceOf(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_40",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'EVZ.transferOwnership(address)' is controlled by the 'onlyOwner' modifier, which means only the current owner can execute it. This indicates a privileged access point.",
+          "The control chain shows that the ownership can be transferred through 'Pausable.acceptOwnership()', which further confirms that the owner can change the ownership status.",
+          "The affected target 'EVZ.balanceOf(address)' has a conditional check that depends on 'timelockList[owner].length > 0'. If the owner can manipulate the ownership, they can also control whether this condition is met, thus affecting the ability of users to check their balances or perform transfers.",
+          "Since the owner can control the state of the contract and potentially disable transfers or manipulate conditions that affect user transactions, this path fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "EVZ.transferOwnership(address)",
+        "control_variable": "owner",
+        "targets": [
+          "EVZ.balanceOf(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_49",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function EVZ.acceptOwnership() is controlled by the modifier onlyNewOwner, which indicates that only the new owner can call this function.",
+          "This function does not directly manipulate balances but allows the new owner to potentially control the state of the contract, including the timelockList.",
+          "The affected target EVZ.balanceOf(address) checks the condition timelockList[owner].length > 0, which implies that the owner can influence whether certain balances can be accessed or not based on the state of the timelockList.",
+          "If the owner can manipulate the timelockList, they can effectively limit the ability of other users to access their balances, thus restricting trading or transfers.",
+          "Since the owner has the ability to control the state that affects balance checks, this path can be classified as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "EVZ.acceptOwnership()",
+        "control_variable": "owner",
+        "targets": [
+          "EVZ.balanceOf(address)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 1,
+    "LIMIT": 10,
+    "LEAK": 2,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

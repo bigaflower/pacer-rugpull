@@ -1,0 +1,284 @@
+{
+  "contract_name": "0x99bc08db67f52010f2d6017b7ad968808113db10",
+  "generated_at": "2026-03-09T02:18:49Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function is ERC20Token.transfer(address,uint256), which involves permission checks and asset modifications.",
+          "2. The first permission node E1 checks if the block number is greater than lockedUntilBlock, which is a condition that must be satisfied for the transfer to proceed.",
+          "3. The first asset node D0 decreases the balance of the sender (msg.sender) by the value of the transfer: balances[msg.sender] = safeSub(balanceOf(msg.sender),_value). This indicates a decrease in the sender's balance.",
+          "4. The second asset node D0 increases the balance of the recipient (_to) by the value of the transfer: balances[_to] = safeAdd(balanceOf(_to),_value). This indicates an increase in the recipient's balance.",
+          "5. The balance change for the sender is calculated as follows: starting balance = 100, after transfer = 100 - _value. This results in a decrease in balance, which does not indicate minting.",
+          "6. The balance change for the recipient is calculated as follows: starting balance = 100, after transfer = 100 + _value. This results in an increase in balance, but does not indicate minting either.",
+          "7. There are no nodes that allow the owner to arbitrarily mint tokens or restrict transfers, nor are there any nodes that allow for the leakage of tokens from arbitrary accounts.",
+          "8. The permission checks ensure that only valid transfers can occur, and there are no indications of any rugpull behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "ERC20Token.transfer(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> F1 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry ERC20Token.transfer(address,uint256); PermNode: E1; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is ERC20Token.approve(address,uint256), which is a standard function for approving allowances.",
+          "2. The permission node E1 checks if the current block number is greater than lockedUntilBlock, which indicates that the function can only be executed if the lock period has expired.",
+          "3. The asset node D0 modifies the allowances mapping: allowances[msg.sender][_spender] = _value. This means that the allowance for the spender is being set to a specific value.",
+          "4. The ability to approve allowances can be controlled by the owner or a privileged account, which can potentially limit the ability of users to spend their tokens if the approval is revoked or set to zero.",
+          "5. Since the approval process can be manipulated by the owner, it can lead to a situation where users are unable to transfer their tokens freely, thus classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "ERC20Token.approve(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> F1",
+        "summary": "Entry ERC20Token.approve(address,uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function ERC20Token.approveAndCall has permission checks at Node E1, which require the block number to be greater than lockedUntilBlock, indicating that only certain conditions allow execution.",
+          "2. The function calls approve at Node E1, which also has permission checks and modifies the allowances mapping at Node D0.",
+          "3. The allowances mapping is modified with the line 'allowances[msg.sender][_spender] = _value', which allows the owner to set allowances for any spender, effectively controlling how much they can spend.",
+          "4. Since the owner can control the allowances, they can prevent users from spending their tokens by setting the allowance to zero or any other value, thus limiting their ability to transfer tokens.",
+          "5. The ability to modify allowances directly impacts the transfer capabilities of users, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "ERC20Token.approveAndCall(address,uint256,bytes)",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1[PERM] -> M1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry ERC20Token.approveAndCall(address,uint256,bytes); PermNode: E1, E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function ERC20Token.transferFrom, which includes permission checks and asset manipulations.",
+          "2. The first asset node D0 checks the validity of the addresses involved in the transfer and then modifies balances.",
+          "3. In D0, the balance of the sender (_from) is decreased: 'balances[_from] = safeSub(balanceOf(_from), _value)'. This indicates a decrease in the sender's balance.",
+          "4. The balance of the recipient (_to) is increased: 'balances[_to] = safeAdd(balanceOf(_to), _value)'. This indicates an increase in the recipient's balance.",
+          "5. The allowances are also modified: 'allowances[_from][msg.sender] = safeSub(allowances[_from][msg.sender], _value)'. This indicates a decrease in the allowance for the spender.",
+          "6. The key point is that the sender (_from) can be any address specified by the caller, not just the caller themselves. This means that the owner can specify any address to deduct tokens from, which constitutes a direct leak of tokens.",
+          "7. The permission checks (E1) ensure that only authorized users can execute the transfer, but they do not prevent the owner from specifying arbitrary addresses for the transfer.",
+          "8. Therefore, the ability for the owner to deduct tokens from any address without their consent qualifies this path as a Leak."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "ERC20Token.transferFrom(address,address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> F1 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry ERC20Token.transferFrom(address,address,uint256); PermNode: E1; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_4",
+      "path_type": "DIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function is ERC20Token.mint(address,uint256), which is designed to mint new tokens.",
+          "2. The permission check at Node D0 (L453) ensures that only the designated minting contract can call this function, which is a clear indication of a privileged access control.",
+          "3. The asset modification occurs at Node D0 (L457), where the balance of the recipient (_to) is increased by the amount specified (_amount). This a direct increase in the balance of the specified address.",
+          "4. The balance change formula is: balances[_to] = safeAdd(balances[_to], _amount). This indicates that the balance of the address specified by _to is increased by _amount.",
+          "5. The variable _amount is a parameter of the mint function, which can be controlled by the caller (the minting contract). Therefore, the minting contract can specify any amount to be added to the recipient's balance.",
+          "6. Since the minting contract can increase the balance of any address without any restrictions on the amount, this behavior fits the definition of a Hidden Mint."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_4",
+        "function_signature": "ERC20Token.mint(address,uint256)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry ERC20Token.mint(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_5",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 0.0,
+        "reasoning": [
+          "1. The entry function is ApodTokenContract.transfer(address,uint256), which checks if the transfer is allowed based on the lockedUntilBlock condition (Node E1). This a permission check and does not affect asset balances directly.",
+          "2. The first asset node (Node D0) performs a balance deduction from the sender: balances[msg.sender] = safeSub(balanceOf(msg.sender),_value). Here, the balance of the sender decreases by the value being transferred. Assuming the initial balance is 100, if _value is 50, the new balance would be 50, indicating a decrease.",
+          "3. The second asset operation (Node D0) increases the balance of the recipient: balances[_to] = safeAdd(balanceOf(_to),_value). If the recipient's initial balance is also 100 and they receive 50, their new balance would be 150, indicating an increase.",
+          "4. The balance changes are as follows: sender's balance decreases (from 100 to 50 if _value is 50) and recipient's balance increases (from 100 to 150 if they receive 50). There is no evidence of hidden minting as there is no increase in total supply or arbitrary balance increases.",
+          "5. The permission checks do not allow for arbitrary balance manipulation by the owner; they only control whether the transfer can occur based on the lockedUntilBlock condition.",
+          "6. There are no conditions that allow the owner to leak tokens from arbitrary accounts or manipulate fees, as the transfer logic only affects the balances of the sender and recipient."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_5",
+        "function_signature": "ApodTokenContract.transfer(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry ApodTokenContract.transfer(address,uint256); PermNode: E1; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_6",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is ApodTokenContract.approve(address,uint256), which includes a permission check at Node E1 that requires block.number to be greater than lockedUntilBlock. This indicates that only certain conditions allow the function to be executed, which is a characteristic of a permissioned operation.",
+          "2. At Node D0, the line allowances[msg.sender][_spender] = _value modifies the allowances mapping, which is an asset-related operation. This means that the approval process can change the allowance for a spender, but it does not directly transfer tokens or increase balances.",
+          "3. The permission check at Node E1 indicates that the function can only be executed under certain conditions, which can limit the ability of users to approve allowances freely. If the lockedUntilBlock condition is not met, users cannot approve any allowances, effectively limiting their ability to interact with the token.",
+          "4. The allowance mechanism can be seen as a way to control how much a spender can spend on behalf of the owner. If the owner can set or reset these allowances at will, it can limit the ability of users to transfer tokens, especially if the owner decides to revoke allowances.",
+          "5. Therefore, the ability of the owner to control the approval process and the conditions under which it can be executed indicates a limiting behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_6",
+        "function_signature": "ApodTokenContract.approve(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> F1",
+        "summary": "Entry ApodTokenContract.approve(address,uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_7",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is ApodTokenContract.approveAndCall(address,uint256,bytes), which has permission checks at nodes E1 and E1, ensuring that only certain addresses can execute it.",
+          "2. The first permission check at E1 requires that block.number > lockedUntilBlock, which means that the function can only be executed after a certain block, indicating a control over when the function can be called.",
+          "3. The second permission check at E1 (depth=1) also requires the same condition, reinforcing that only the owner or a privileged address can call this function.",
+          "4. The asset node D0 (depth=1) modifies the allowances mapping: allowances[msg.sender][_spender] = _value. This means that the owner can set allowances for any spender, which can limit the ability of other users to transfer tokens if their allowances are set to zero or a very low value.",
+          "5. Since the owner can control the allowances, they can effectively limit the transfer capabilities of other users, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_7",
+        "function_signature": "ApodTokenContract.approveAndCall(address,uint256,bytes)",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1[PERM] -> M1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry ApodTokenContract.approveAndCall(address,uint256,bytes); PermNode: E1, E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_8",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is `ApodTokenContract.transferFrom(address,address,uint256)`, which involves transferring tokens from one address to another.",
+          "2. The first asset node D0 (L403) decreases the balance of `_from` by `_value`: `balances[_from] = safeSub(balanceOf(_from),_value)`. This indicates that the balance of the sender is reduced.",
+          "3. The second asset node D0 (L405) increases the balance of `_to` by `_value`: `balances[_to] = safeAdd(balanceOf(_to),_value)`. This indicates that the balance of the recipient is increased.",
+          "4. The third asset node D0 (L407) decreases the allowance of `_from` for `msg.sender` by `_value`: `allowances[_from][msg.sender] = safeSub(allowances[_from][msg.sender],_value)`. This indicates that the allowance is reduced.",
+          "5. The balances are manipulated based on the parameters provided to the function, specifically the `_from` and `_to` addresses. If `_from` is not the caller, this allows the caller to reduce the balance of any arbitrary address, which constitutes a leak.",
+          "6. The permission checks (E1 nodes) ensure that only authorized users can call the function, but they do not prevent the leakage of tokens from arbitrary accounts.",
+          "7. Since the function allows the caller to specify the `_from` address, it can lead to unauthorized token transfers from users who did not initiate the transaction."
+        ],
+        "key_nodes": [
+          "D0",
+          "E1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_8",
+        "function_signature": "ApodTokenContract.transferFrom(address,address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry ApodTokenContract.transferFrom(address,address,uint256); PermNode: E1; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_9",
+      "path_type": "DIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function is ApodTokenContract.mint(address,uint256) which is responsible for minting new tokens.",
+          "2. The permission check at Node D0 ensures that only the address specified as mintingContract can call this function, which is a privileged action.",
+          "3. At Node D0, the line 'balances[_to] = safeAdd(balances[_to],_amount)' indicates that the balance of the address '_to' is increased by '_amount'.",
+          "4. The safeAdd function checks that the new balance does not exceed MAX_UINT256, but it does not prevent the balance from increasing, confirming that the minting process can add tokens to any address specified by the caller.",
+          "5. Since the mintingContract can specify any address to receive the newly minted tokens, this constitutes a hidden minting behavior where the privileged address can create tokens out of thin air."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_9",
+        "function_signature": "ApodTokenContract.mint(address,uint256)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry ApodTokenContract.mint(address,uint256); PermNode: D0"
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 2,
+    "LIMIT": 4,
+    "LEAK": 2,
+    "EMPTY": 2,
+    "ERROR": 0
+  }
+}

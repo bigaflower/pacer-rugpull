@@ -1,0 +1,94 @@
+{
+  "contract_name": "0x6d2a77cf1b377e22bd984200ca361a5eece6650a",
+  "generated_at": "2025-12-10T10:01:04Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function SHIBUZI.createLP() has a permission check at Node E1 that restricts access to the funding wallet or the owner.",
+          "2. The function SHIBUZI._approve() at Node D0 modifies the _allowances mapping, allowing the uniswapV2Router to spend the total supply of tokens, which is currently 0.",
+          "3. The permission check at Node E1 ensures that only the funding wallet or the owner can call createLP(), which means they can control the approval process and indirectly control token transfers.",
+          "4. Since the owner can set allowances and potentially control the flow of tokens, this creates a scenario where the owner can limit or enable transfers by adjusting allowances, thus restricting normal users' ability to trade.",
+          "5. The presence of the permission check and the ability to modify allowances indicates that the owner has significant control over the token's transferability, which aligns with the LIMIT category."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "SHIBUZI.createLP()",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0 -> F1 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry SHIBUZI.createLP(); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function SHIBUZI.withdrawTokensStuckInContract(address,uint256) has a permission check (Node E1) that allows only the funding wallet or the owner to call it, indicating a privileged access.",
+          "2. In Node D0, the balance of the owner is set to the amount specified in the function parameter: _balances[owner] = amount. This means the owner's balance can be directly increased by the amount specified, which is controlled by the caller.",
+          "3. The function allows the caller to withdraw tokens from the contract to an arbitrary address (param:to), which means the caller can specify any address to receive the tokens. This indicates a potential for leaking tokens from the contract to any address, not just the caller's own address.",
+          "4. The asset manipulation occurs in Node D0 where the owner's balance is increased without any corresponding decrease in the contract's balance, which could lead to a situation where tokens are effectively leaked from the contract to the owner or any specified address.",
+          "5. The presence of the permission check does not negate the fact that the function allows for arbitrary withdrawals, which aligns with the definition of leaking tokens."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "SHIBUZI.withdrawTokensStuckInContract(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> IF0 -> D1 -> F1 -> F1",
+        "summary": "Entry SHIBUZI.withdrawTokensStuckInContract(address,uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with a permission check at Node E1, which ensures that only the funding wallet or the owner can call the function SHIBUZI.forceSwap(). This indicates that a privileged entity can execute the function.",
+          "2. At Node D0, the balance of the contract (address(this)) is read, which is crucial for understanding the asset flow. The balance is then used in the approval process at Node D0 (depth=2), where the allowance for the uniswapV2Router is set based on the tokenAmount.",
+          "3. The approval at Node D0 (depth=2) does not directly change balances but sets the allowance for the router to spend tokens on behalf of the contract. This means that the router can later execute swaps that could potentially lead to a leak of tokens.",
+          "4. The balance of the contract is read again at Node D0 (depth=1), but there is no direct manipulation of balances in this path. However, the ability to approve the router to spend tokens indicates that the owner can control how many tokens can be swapped, which could lead to a situation where tokens are drained from the contract.",
+          "5. The key aspect of the leak is that the privileged entity (owner or funding wallet) can control the amount of tokens that can be swapped without any checks on the actual balance being drained from other users or the contract itself.",
+          "6. The path does not show any direct minting of tokens, nor does it limit trading in a way that would prevent users from selling. However, the ability to approve the router and potentially drain tokens from the contract indicates a leak."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "SHIBUZI.forceSwap()",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry SHIBUZI.forceSwap(); PermNode: E1; AssetNode: D0, D0"
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 1,
+    "LEAK": 2,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

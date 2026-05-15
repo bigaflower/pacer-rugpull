@@ -1,0 +1,222 @@
+{
+  "contract_name": "0x604e56f49e34beb2ea566e069c6911c60193acd7",
+  "generated_at": "2025-12-10T08:38:21Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, execute `allowance[_from][msg.sender] -= _value`, This indicates from `_from` address allowance deductedion `_value`.",
+          "2. the operation variable `allowance` is, allow address (`_from`) otheraddress (`msg.sender`) perform transfer . here `_from` is parameter, may be an arbitrary address, rather thanis the caller itself, thereforeThe privileged user can call `transferFrom` functionto decrease arbitrary user allowance.",
+          "3. because `_from` is by provided, The privileged user can addressperformoperation, This matches the definition of token leaking. The privileged user can callthis function, decrease account allowance, rather than compensation .",
+          "4. This pathno balance increase or minting, Therefore does not match MINT definition."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "TokenERC20.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[PERM] -> F1",
+        "summary": "Entry TokenERC20.transferFrom(address,address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, execute `balanceOf[msg.sender] -= _value`, This indicates caller balance decreases by _value.",
+          "2. the nodepermission check `require(balanceOf[msg.sender] >= _value)` ensures caller balance, but no limit caller decrease balance, and noother account limit .",
+          "3. because `msg.sender` is the caller, and noother account limit, although caller balance decreases, but noother account increase, therefore does not Leak directly.",
+          "4. but is, burn functionis allow user burn token, althoughno directlytransfer other account, but from, user asset is decrease, can is asset leak .",
+          "5. because noother account, asset is decrease rather thanis increase, Therefore does not match MINT conditions."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "TokenERC20.burn(uint256)",
+        "trace": "E1 -> D0[PERM] -> F1",
+        "summary": "Entry TokenERC20.burn(uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, execute `balanceOf[_from] -= _value` and `allowance[_from][msg.sender] -= _value`, This indicates `_from` balance and its allow at decrease .",
+          "2. The balance formula is:balanceOf[_from] = balanceOf[_from] - _value, affectedaddress is `_from`, while `_from` is a function parameter, privilege caller can arbitrarily specify the address.",
+          "3. because `_from` is by caller providedaddress, The privileged user can user addressperformdeduction, Therefore this constitutes a leaktokenbehavior.",
+          "4. balance : assuming `_from` Initial balance is 100, After execution, balance becomes 100 - _value, if _value > 0, then balance decreases, matches the LEAK definition.",
+          "5. because The privileged user can specify arbitrary `_from` addressperformdeduction, and there is no compensation, Therefore this path matches the leak tokencharacteristic."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "TokenERC20.burnFrom(address,uint256)",
+        "trace": "E1 -> D0[PERM] -> F1",
+        "summary": "Entry TokenERC20.burnFrom(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is WADCoin.transferFrom(address,address,uint256), which indicates a transfer operation involving allowances.",
+          "2. In Node D0, the line 'require(bool)(_value <= allowance[_from][msg.sender])' checks if the amount to be transferred is less than or equal to the allowance set for the sender. This a permission check, ensuring that the transfer can only occur if the allowance is sufficient.",
+          "3. The line 'allowance[_from][msg.sender] -= _value' decreases the allowance of the sender (_from) by the amount being transferred (_value). This an asset operation that modifies the allowance variable.",
+          "4. The allowance is being decreased, which indicates that the transfer is taking place, but it does not directly affect the balances of the sender or receiver in this node. However, the transferFrom function typically implies that the balance of the sender (_from) will also decrease by _value, and the balance of the receiver (_to) will increase by _value.",
+          "5. The key point here is that the allowance is being manipulated by the caller (msg.sender), but the actual transfer of tokens can be initiated by any address that has been approved to spend on behalf of the _from address. This means that the _from address can be any arbitrary address, not just the caller, which allows for potential leakage of tokens.",
+          "6. Since the allowance is being decreased without a corresponding increase in the balance of the _from address, and the _from address can be specified by the caller, this indicates a potential leak of tokens from the _from address to the _to address, which is controlled by the caller."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "WADCoin.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[PERM] -> F1",
+        "summary": "Entry WADCoin.transferFrom(address,address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_4",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is WADCoin.burn(uint256), which allows the caller to burn tokens from their own balance.",
+          "2. In Node D0, the line 'require(bool)(balanceOf[msg.sender] >= _value)' checks if the caller has enough balance to burn the specified amount. This a permission check that ensures only the caller can burn their own tokens.",
+          "3. The line 'balanceOf[msg.sender] -= _value' decreases the balance of the caller by the amount specified. This indicates a decrease in the caller's balance, which is a normal operation for a burn function.",
+          "4. However, since the burn function only affects the caller's balance and does not allow for any external accounts to be specified for burning, it does not fit the criteria for a leak where a privileged account could reduce another user's balance.",
+          "5. The operation does not increase any balances, nor does it allow for any manipulation of transfer controls or fees. Therefore, it does not constitute a hidden mint or limiting sell.",
+          "6. The only asset operation present is a decrease in the caller's balance, which is expected behavior for a burn function."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_4",
+        "function_signature": "WADCoin.burn(uint256)",
+        "trace": "E1 -> D0[PERM] -> F1",
+        "summary": "Entry WADCoin.burn(uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_5",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function `burnFrom(address,uint256)` allows the caller to burn tokens from a specified address `_from` if they have sufficient allowance and balance.",
+          "2. The first asset node D0 checks if `balanceOf[_from] >= _value`, which ensures that the `_from` address has enough balance to burn the specified amount.",
+          "3. The second asset node D0 decreases the balance of `_from` by `_value` with the line `balanceOf[_from] -= _value`, which indicates a reduction in the balance of the specified address.",
+          "4. The allowance for the caller to burn tokens from `_from` is also decreased with `allowance[_from][msg.sender] -= _value`, which is another reduction in the allowance of the `_from` address.",
+          "5. The key point is that the `_from` address is specified by the caller, which means the caller can choose any address to burn tokens from, not just their own. This allows for the potential to leak tokens from any address they specify.",
+          "6. Since the function allows the caller to specify an arbitrary address to burn from, this constitutes a leak of tokens from that address to the total supply, as the tokens are effectively destroyed without compensation."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_5",
+        "function_signature": "WADCoin.burnFrom(address,uint256)",
+        "trace": "E1 -> D0[PERM] -> F1",
+        "summary": "Entry WADCoin.burnFrom(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_6",
+      "path_type": "DIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function is WADCoin.mintToken(address,uint256), which has a permission check at Node E1 that requires msg.sender to be the owner.",
+          "2. At Node D0, the code 'balanceOf[target] += mintedAmount' indicates that the balance of the target address is increased by the minted amount.",
+          "3. The balance change formula is 'balanceOf[target] += mintedAmount', which clearly shows an increase in the balance of the specified target address.",
+          "4. The variable 'mintedAmount' is a parameter of the function and can be controlled by the owner, allowing them to mint tokens at will.",
+          "5. Since the owner can increase the balance of any address (target) without any restrictions, this behavior falls under the definition of Hidden Mint."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_6",
+        "function_signature": "WADCoin.mintToken(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> F1",
+        "summary": "Entry WADCoin.mintToken(address,uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_7",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 0.0,
+        "reasoning": [
+          "1. The entry function is WADCoin.transfer(address,uint256), which calls the internal function WADCoin._transfer(address,address,uint256).",
+          "2. In Node D0, there are several permission checks (L517, L521, L525) that ensure the transfer is valid, including checks for the recipient address not being zero, the sender having enough transferable balance, and ensuring the recipient's balance will not overflow.",
+          "3. The asset changes occur in L533 and L537, where the sender's balance is decreased by _value and the recipient's balance is increased by _value respectively.",
+          "4. The balance change for the sender (_from) is: balanceOf[_from] -= _value, which decreases the balance, and for the recipient (_to) is: balanceOf[_to] += _value, which increases the balance.",
+          "5. The initial balance for both accounts is assumed to be 100. After the transfer, the sender's balance would be 100 - _value and the recipient's balance would be 100 + _value.",
+          "6. Since the transfer logic does not allow for any arbitrary increase in balance for any address, and only allows for a decrease in the sender's balance and an increase in the recipient's balance, this does not fit the criteria for MINT or LEAK.",
+          "7. There are no indications of the owner or any privileged account being able to manipulate the balances in a way that would lead to a rugpull scenario.",
+          "8. The checks in place ensure that the transfer is valid and that balances are adjusted correctly without any hidden minting or leaking of tokens."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0",
+          "F1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_7",
+        "function_signature": "WADCoin.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0[PERM] -> F1 -> F1",
+        "summary": "Entry WADCoin.transfer(address,uint256); PermNode: D0"
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 1,
+    "LIMIT": 0,
+    "LEAK": 6,
+    "EMPTY": 1,
+    "ERROR": 0
+  }
+}

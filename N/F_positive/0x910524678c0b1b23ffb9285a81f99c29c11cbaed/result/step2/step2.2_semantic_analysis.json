@@ -1,0 +1,568 @@
+{
+  "contract_name": "0x910524678c0b1b23ffb9285a81f99c29c11cbaed",
+  "generated_at": "2026-02-25T16:16:07Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path starts with the transfer function, which checks if the caller is the owner or if transfers are not locked (Node D0). This indicates that the owner has control over the transfer process.",
+          "2. The transfer function checks if the caller's balance is sufficient to cover the transfer amount (Node D2). This a standard check to prevent overdrawing.",
+          "3. If the burnAmount is not zero (Node IF1), the contract calls the _burn function (Node E1), which reduces the caller's balance by the burnAmount (Node D0). The line '_balances[account] = _balances[account].sub(amount, ERC20: burn amount exceeds balance)' indicates that the balance of the caller is decreased by the burnAmount.",
+          "4. The _burn function allows the owner to effectively reduce the balance of any user by specifying the burnAmount, which can be controlled by the owner. This means the owner can choose to burn tokens from any user's balance, leading to a potential leak of tokens from users to the owner.",
+          "5. Since the transfer function allows the owner to dictate the burnAmount and thus reduce the balances of users without their consent, this constitutes a leak of tokens."
+        ],
+        "key_nodes": [
+          "D0",
+          "D2",
+          "D3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "AzukiToken.transfer(address,uint256)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2[PERM] -> E1 -> D0[ASSET] -> F1 -> IF1 -> D3 -> E1 -> D0[ASSET] -> F1 -> D4 -> F1",
+        "summary": "Entry AzukiToken.transfer(address,uint256); PermNode: D0, IF0, D2; AssetNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path starts with the function AzukiToken.transferFrom, which checks permissions at node D0. The permission check allows the owner to execute the transfer, which is a typical pattern for privileged access.",
+          "2. At node D2, there is a check to ensure the sender has sufficient balance to cover the transfer amount. This a standard check to prevent overdrawing.",
+          "3. At node D3, the burnAmount is initialized, and if it is not zero, the function proceeds to burn tokens from the sender's balance at node D0 (in AzukiToken._burn).",
+          "4. In node D0 of the _burn function, the balance of the sender is decreased by the burnAmount, which is a direct reduction of the sender's balance. This a clear indication of token leakage since the sender's balance is reduced without any compensation.",
+          "5. The key point is that the sender is determined by the function parameter, which means the owner can specify any address to burn tokens from, leading to a potential leak of tokens from arbitrary accounts.",
+          "6. The balance change at the asset node D0 in the _burn function is a decrease, as it executes _balances[account] = _balances[account].sub(amount). This confirms that tokens are being removed from the sender's balance."
+        ],
+        "key_nodes": [
+          "D0",
+          "D2",
+          "D3",
+          "D0 (in _burn)"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "AzukiToken.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> F1 -> IF0 -> D1 -> D2 -> E1 -> D0[ASSET] -> F1 -> IF1 -> D3 -> E1 -> D0[ASSET] -> F1 -> D4 -> F1",
+        "summary": "Entry AzukiToken.transferFrom(address,address,uint256); PermNode: D0; AssetNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function AzukiToken.mint(address,uint256) is called, which is a minting function.",
+          "2. The permission checks at nodes E1, IF0, and D0 ensure that only authorized minters can call this function and that the owner cannot mint tokens.",
+          "3. At node D0, the balance of the account specified by the 'to' parameter is increased by the 'amount' parameter as seen in the line: '_balances[account] = _balances[account].add(amount)'.",
+          "4. Since the balance of the specified account can be increased without any restrictions on the amount or the address (as long as it is not the zero address), this constitutes a hidden minting behavior.",
+          "5. The minting process does not require any prior balance or conditions that would limit the increase, confirming that the function can mint tokens at will for any valid address."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "AzukiToken.mint(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> IF0[PERM] -> D0[PERM] -> E1 -> D0 -> F1 -> D1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry AzukiToken.mint(address,uint256); PermNode: E1, IF0, D0; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function AzukiToken.burn(uint256) is called, which requires the caller to have a sufficient balance to burn tokens.",
+          "2. The first permission node D0 checks if the amount to burn is greater than 0 and if the caller's balance is sufficient (L736 and L737). Both conditions must be met for the burn to proceed.",
+          "3. The balance of the caller is retrieved in node E1 (L436), which is a read operation and does not change any balances.",
+          "4. The burn operation occurs in node D0 of the _burn function (L585), where the balance of the caller is decreased by the amount specified. The line '_balances[account] = _balances[account].sub(amount, ERC20: burn amount exceeds balance)' indicates that the caller's balance is reduced by the amount being burned.",
+          "5. Since the amount is deducted from the caller's balance, this a decrease in assets, which aligns with the definition of a leak, as the tokens are being destroyed and not transferred to another account.",
+          "6. The function does not allow for arbitrary accounts to be specified for burning; it only allows the caller to burn their own tokens, which prevents it from being classified as a direct leak to another account.",
+          "7. However, the act of burning tokens itself results in a loss of tokens from the total supply, which can be seen as a form of leaking value from the ecosystem."
+        ],
+        "key_nodes": [
+          "D0",
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "AzukiToken.burn(uint256)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry AzukiToken.burn(uint256); PermNode: D0; AssetNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_4",
+      "path_type": "DIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function AzukiToken.releaseMint() checks permissions to ensure only the owner can call it (Node E1).",
+          "2. The mintAmount is initialized to 0, and the function checks that mintAmount is not zero (Node D0). Since mintAmount is 0, the mint operation cannot proceed, but if it were a non-zero value, it would allow minting.",
+          "3. The function AzukiToken._mint(address,uint256) is called with mintTo as the account and mintAmount as the amount (Node E1).",
+          "4. In the _mint function (Node D0), it checks that the account is not the zero address and then increases the balance of the account by the mintAmount (Node D0).",
+          "5. The line _balances[account] = _balances[account].add(amount) indicates that the balance of the account specified by mintTo will increase by mintAmount.",
+          "6. Since the owner can call releaseMint() and control the mintAmount, they can mint tokens to any address, which constitutes a hidden minting behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_4",
+        "function_signature": "AzukiToken.releaseMint()",
+        "trace": "E1[PERM] -> M1 -> D0[PERM] -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry AzukiToken.releaseMint(); PermNode: E1, D0; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function 'Ownable.renounceOwnership()' is a [PERM] node that allows the owner to relinquish ownership, which could lead to a scenario where the contract can be manipulated by a malicious actor if ownership is not properly managed.",
+          "2. The function 'AzukiToken.releaseMint()' is an [ASSET] node that modifies the state by writing to 'mintAmount' and 'mintTo'. This indicates that the contract can mint tokens to a specified address.",
+          "3. The control variable 'operationLockTime' can be manipulated by the owner through the function 'gonnaLockTransfer()', which suggests that the owner can control the timing of operations, potentially allowing them to mint tokens at will.",
+          "4. Since the owner can increase the balance of any address through the minting process without any checks on the current balance or limits, this behavior aligns with the definition of Hidden Mint."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "operationLockTime",
+        "targets": [
+          "AzukiToken.releaseMint()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_12",
+      "path_type": "INDIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function 'Ownable.renounceOwnership()', which is protected by 'onlyOwner'. This indicates that only the owner can call this function, thus establishing a privilege.",
+          "The control variable 'mintAmount' can be manipulated by the owner through the function 'AzukiToken.gonnaMint(address,uint256)', which allows the owner to set the mint amount.",
+          "The function 'AzukiToken.releaseMint()' writes to 'mintAmount' and 'mintTo', allowing the owner to mint tokens to any address without any balance checks.",
+          "Since the owner can increase the mint amount and release it to any address, this constitutes a hidden minting behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "mintAmount",
+        "targets": [
+          "AzukiToken.releaseMint()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_14",
+      "path_type": "INDIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The control source is 'Ownable.renounceOwnership()', which is a privileged function that can only be called by the owner due to the 'onlyOwner' modifier. This indicates that the owner has control over the contract's ownership.",
+          "2. The control chain shows that the function 'AzukiToken.gonnaMint(address,uint256)' can set the 'mintTo' variable, which is used in the 'AzukiToken.releaseMint()' function.",
+          "3. The 'releaseMint()' function modifies the state by writing to 'mintAmount' and 'mintTo'. Since 'mintTo' can be set to any address by the owner, this allows the owner to mint tokens to any arbitrary address without any checks on the balance or supply.",
+          "4. The ability to mint tokens to any address without restrictions constitutes a hidden minting behavior, as the owner can increase the total supply at will."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "mintTo",
+        "targets": [
+          "AzukiToken.releaseMint()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_9",
+      "path_type": "INDIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function 'Ownable.renounceOwnership()', which is a privileged function that can only be called by the owner due to the 'onlyOwner' modifier (Node E1).",
+          "2. The control variable 'operationTimelockEnabled' is modified by the function 'AzukiToken.lockAddMinter()', which indicates that the owner can enable or disable minting operations.",
+          "3. The affected target 'AzukiToken.mint(address,uint256)' checks the condition 'operationTimelockEnabled' before allowing minting to occur. If this variable is set to true, the owner can mint tokens to any address without restrictions.",
+          "4. Since the owner can control the minting process and increase balances of any address at will, this constitutes a hidden minting behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "operationTimelockEnabled",
+        "targets": [
+          "AzukiToken.mint(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_10",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'Ownable.renounceOwnership()' allows the owner to renounce ownership, which could potentially lead to the 'operationTimelockEnabled' variable being manipulated.",
+          "The 'AzukiToken.transferFrom' function has a conditional check that requires either the sender to be the owner or the 'operationTimelockEnabled' to be false. This means that if the owner renounces ownership and the timelock is enabled, normal users will be unable to execute transfers.",
+          "This creates a scenario where the owner can effectively lock the transfer functionality for all users, thereby limiting their ability to trade.",
+          "Since the ability to control the transfer state is directly tied to the owner's privileges, this path fits the definition of a LIMIT rugpull."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "operationTimelockEnabled",
+        "targets": [
+          "AzukiToken.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_11",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'Ownable.renounceOwnership()' allows the owner to renounce ownership, which means they can no longer control the contract. However, before renouncing, they can set 'operationTimelockEnabled' to true or false, which directly affects the transfer function.",
+          "The 'AzukiToken.transfer(address,uint256)' function has a conditional check that requires either the caller to be the owner or for 'operationTimelockEnabled' to be false. If 'operationTimelockEnabled' is true, the transfer is locked, preventing normal users from executing transfers.",
+          "This means that the owner can effectively control whether transfers can occur or not, thus limiting the ability of ordinary users to trade their tokens. This behavior aligns with the definition of LIMIT, as the owner can toggle the transfer ability at will."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "operationTimelockEnabled",
+        "targets": [
+          "AzukiToken.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_8",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `Ownable.renounceOwnership()` allows the owner to renounce ownership, which could lead to the ability to modify the `transferBlacklist` variable.",
+          "The `transferBlacklist` is used in the `AzukiToken.transfer(address,uint256)` function as a conditional check to determine if the transfer is allowed based on the sender's address.",
+          "If the owner renounces ownership and subsequently adds addresses to the `transferBlacklist`, it would prevent those addresses from being able to transfer tokens, effectively limiting their ability to trade.",
+          "This creates a scenario where the owner can control who can and cannot transfer tokens, thus implementing a limiting behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "transferBlacklist",
+        "targets": [
+          "AzukiToken.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_36",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function 'Ownable.renounceOwnership()', which is a privileged action that can only be executed by the owner (node E1).",
+          "This function modifies the 'transferFromBlacklist' variable, which is used in the 'AzukiToken.transferFrom(address,address,uint256)' function (node IF0) as a conditional check.",
+          "If 'transferFromBlacklist[recipient]' is true, the transfer will be blocked, effectively limiting the ability of users to transfer tokens to certain addresses.",
+          "Since the owner can control the state of 'transferFromBlacklist', they can prevent normal users from executing transfers, thus implementing a limiting behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "transferFromBlacklist",
+        "targets": [
+          "AzukiToken.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_56",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'Ownable.transferOwnership(address)' is controlled by 'onlyOwner', which means only the owner can change the ownership of the contract.",
+          "This ownership transfer can affect the 'operationLockTime' variable in 'AzukiToken.gonnaLockTransfer()', which is likely used to control whether transfers are allowed.",
+          "If the owner sets 'operationLockTime' to a value that disables transfers, it would prevent normal users from executing transactions, thus limiting their ability to trade.",
+          "The 'releaseMint()' function modifies 'mintAmount' and 'mintTo', which indicates that the owner can mint tokens, but the primary concern here is the ability to lock transfers, which directly affects user transactions."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "operationLockTime",
+        "targets": [
+          "AzukiToken.releaseMint()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_68",
+      "path_type": "INDIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path allows the owner to transfer ownership through the function Ownable.transferOwnership(address), which is protected by the onlyOwner modifier (Node E1).",
+          "Once ownership is transferred, the new owner can call AzukiToken.gonnaMint(address,uint256), which sets the mintAmount variable (Control Chain).",
+          "The function AzukiToken.releaseMint() then modifies the state by writing to mintAmount and mintTo (Node D0).",
+          "Since the mintAmount can be set to any value by the owner, this constitutes a hidden minting behavior where the owner can increase the total supply or balance of any address without restrictions."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "mintAmount",
+        "targets": [
+          "AzukiToken.releaseMint()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_70",
+      "path_type": "INDIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function 'Ownable.transferOwnership(address)' is marked with 'onlyOwner', indicating that only the owner can call this function, which is a permission control node [E1].",
+          "2. The control variable 'mintTo' is set by the function 'AzukiToken.gonnaMint(address,uint256)', which allows the owner to specify any address to receive minted tokens.",
+          "3. The function 'AzukiToken.releaseMint()' modifies the state by writing to 'mintAmount' and 'mintTo', which means that the owner can mint tokens to any address specified by 'mintTo'.",
+          "4. Since the owner can increase the balance of any address without any checks on the current balance or supply, this constitutes a hidden minting behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "mintTo",
+        "targets": [
+          "AzukiToken.releaseMint()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_65",
+      "path_type": "INDIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves the function 'AzukiToken.mint(address,uint256)', which is a direct asset manipulation node.",
+          "2. The control source is 'Ownable.transferOwnership(address)', which is restricted to the owner (onlyOwner). This indicates that only the owner can trigger the minting process.",
+          "3. The variable 'operationTimelockEnabled' is checked before allowing minting, but since it is controlled by the owner, they can enable it at will.",
+          "4. The mint function allows the owner to increase the balance of any address without any checks on the current balance, which fits the definition of Hidden Mint.",
+          "5. The confidence is high because the owner has direct control over the minting process and can manipulate the state to allow for minting at any time."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "operationTimelockEnabled",
+        "targets": [
+          "AzukiToken.mint(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_66",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `Ownable.transferOwnership(address)` is controlled by `onlyOwner`, which means only the owner can change the ownership of the contract.",
+          "The variable `operationTimelockEnabled` can be modified by the owner through the function `AzukiToken.lockAddMinter()`, which indicates that the owner has the ability to enable or disable this operation.",
+          "In the `AzukiToken.transferFrom(address,address,uint256)` function, there is a conditional check that requires either the sender to be the owner or for `operationTimelockEnabled` to be false. If the owner sets `operationTimelockEnabled` to true, it effectively locks the transfer functionality for all other users, preventing them from executing transfers.",
+          "This means that the owner can control whether transfers can occur, which directly limits the ability of ordinary users to trade their tokens."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "operationTimelockEnabled",
+        "targets": [
+          "AzukiToken.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_67",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function 'Ownable.transferOwnership(address)', which is protected by the 'onlyOwner' modifier, indicating that only the owner can execute this function. This allows the owner to change the ownership of the contract.",
+          "The control variable 'operationTimelockEnabled' can be modified by the owner through the function 'AzukiToken.lockAddMinter()'. This means the owner can enable or disable the timelock feature.",
+          "In the 'AzukiToken.transfer(address,uint256)' function, there is a conditional check that requires either the sender to be the owner or the 'operationTimelockEnabled' to be false. If the owner enables the timelock, they can effectively prevent all other users from transferring tokens, thus limiting their ability to trade.",
+          "Since the owner has the ability to control whether transfers are allowed or not, this constitutes a limiting behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "operationTimelockEnabled",
+        "targets": [
+          "AzukiToken.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_64",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function 'Ownable.transferOwnership(address)', which is controlled by 'onlyOwner'. This indicates that only the owner can change the ownership of the contract, which is a privileged action.",
+          "The control chain shows that the owner can call 'AzukiToken.addToTransferBlacklist(address)', which modifies the 'transferBlacklist' variable. This variable is then used in the 'AzukiToken.transfer(address,uint256)' function as a conditional check.",
+          "The condition 'transferBlacklist[msg.sender]' means that if the sender's address is blacklisted, they cannot execute the transfer. This gives the owner the ability to prevent specific addresses from transferring tokens, effectively limiting the ability of users to trade.",
+          "Since the owner can manipulate the 'transferBlacklist' and thus control who can or cannot transfer tokens, this behavior fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "transferBlacklist",
+        "targets": [
+          "AzukiToken.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_92",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path allows the owner to call the function 'transferOwnership' which can change the 'transferFromBlacklist' variable.",
+          "This variable is used in the 'transferFrom' function as a conditional check to determine if the recipient is blacklisted.",
+          "If the owner modifies 'transferFromBlacklist', they can effectively control whether transfers to certain addresses are allowed or not, thus limiting the ability of normal users to transact freely.",
+          "The ability to modify this blacklist directly impacts the transfer functionality for all users, making it a clear case of limiting sell."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "transferFromBlacklist",
+        "targets": [
+          "AzukiToken.transferFrom(address,address,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 9,
+    "LIMIT": 9,
+    "LEAK": 3,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

@@ -1,0 +1,199 @@
+{
+  "contract_name": "0x586a7cfe21e55ec0e24f0bfb118f77fe4ca87bab",
+  "generated_at": "2026-02-25T04:20:07Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path includes multiple permission nodes (E1) that require the caller to be the owner, indicating that only the owner can execute certain functions.",
+          "The function 'excludeFromMaxTransaction' allows the owner to modify transaction limits for specific addresses, which can prevent normal users from trading freely.",
+          "The presence of the 'require' statements in the permission nodes ensures that only the owner can control the transaction limits, thus restricting the ability of regular users to transact.",
+          "The asset nodes (D0) do not show any increase in balances, but rather focus on the control of transaction limits, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "CRYPTO.goLive()",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1[PERM] -> M1 -> D0 -> F1 -> E1[PERM] -> M1 -> D0 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry CRYPTO.goLive(); PermNode: E1, E1, E1; AssetNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function CRYPTO.removeStuckTokenBalance() is called, which requires the caller to be the owner (Node E1).",
+          "2. The function checks if the token balance is greater than 0 (Node D0), which is a prerequisite for proceeding with the transfer.",
+          "3. The balance of the contract (address(this)) is read (Node D0), and the amount to be transferred is stored in local variable tokenBalance.",
+          "4. The transfer function is called (Node E1), where the from address is the contract itself (address(this)), and the to address is devWallet (Node D0).",
+          "5. The transfer logic deducts the tokenBalance from the contract's balance and adds it to devWallet (Node D1).",
+          "6. If tokenBalance is greater than 0, the contract's balance decreases while the devWallet's balance increases, indicating a leak of tokens from the contract to the devWallet.",
+          "7. The transfer is controlled by the owner, who can specify the amount to be transferred, which is not dependent on the caller's balance, thus allowing for arbitrary withdrawals from the contract's balance."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "CRYPTO.removeStuckTokenBalance()",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> IF0 -> D1 -> F1 -> F1",
+        "summary": "Entry CRYPTO.removeStuckTokenBalance(); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "1. The function 'Ownable.renounceOwnership()' is a permissioned function that can only be called by the owner, as indicated by the 'onlyOwner' modifier (Node ID: E1).",
+          "2. This function allows the owner to renounce ownership, which could potentially lead to the owner losing control over the contract, but it also implies that the owner has the ability to modify critical variables such as 'devWallet'.",
+          "3. The function 'CRYPTO.updateDevWallet(address)' allows the owner to set the 'devWallet', which can be used to direct funds or tokens to a specific address controlled by the owner.",
+          "4. The function 'CRYPTO.removeStuckTokenBalance()' checks if 'tokenBalance > 0' before executing, which indicates that the owner can remove tokens from the contract, but only if there are tokens available.",
+          "5. The ability to change the 'devWallet' and subsequently call 'removeStuckTokenBalance()' means that the owner can control where tokens go, effectively limiting the ability of other users to access or utilize those tokens."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "devWallet",
+        "targets": [
+          "CRYPTO.removeStuckTokenBalance()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The path involves the function 'Ownable.transferOwnership(address)', which is controlled by 'onlyOwner'. This indicates that only the owner can change the ownership of the contract, which can lead to a situation where the new owner can manipulate the 'devWallet'.",
+          "The function 'CRYPTO.updateDevWallet(address)' allows the owner to set the 'devWallet' to any address, which can potentially be used to redirect funds.",
+          "The function 'CRYPTO.removeStuckTokenBalance()' checks if 'tokenBalance > 0' before executing, but since the owner can control the 'devWallet', they can effectively limit or control the flow of tokens by manipulating the wallet address.",
+          "Thus, the owner has the ability to limit the transfer of tokens by controlling the 'devWallet', which can prevent ordinary users from accessing their funds."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "devWallet",
+        "targets": [
+          "CRYPTO.removeStuckTokenBalance()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_2",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "1. The function CRYPTO.renounceOwnership() is marked with onlyOwner, indicating that only the owner can call this function, which allows them to change the devWallet address.",
+          "2. The devWallet can be updated through the function CRYPTO.updateDevWallet(address), which is controlled by the owner.",
+          "3. The function CRYPTO.removeStuckTokenBalance() checks if the tokenBalance is greater than 0 before executing, but the ability to change the devWallet means the owner can direct funds to any address they control.",
+          "4. Since the owner can control the devWallet and potentially restrict or manipulate the flow of tokens, this creates a scenario where the owner can limit the ability of other users to transact freely by controlling the destination of funds."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "CRYPTO.renounceOwnership()",
+        "control_variable": "devWallet",
+        "targets": [
+          "CRYPTO.removeStuckTokenBalance()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_3",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function CRYPTO.transferOwnership(address) is protected by the onlyOwner modifier, allowing only the owner to change the ownership of the contract. This indicates a privileged control over the contract's state.",
+          "The control chain shows that the devWallet can be updated by the owner, which could potentially allow the owner to direct funds to a wallet of their choosing.",
+          "The affected target CRYPTO.removeStuckTokenBalance() has a conditional check that requires tokenBalance to be greater than 0. If the owner can manipulate the devWallet and subsequently call removeStuckTokenBalance(), they can effectively control the flow of tokens out of the contract.",
+          "Since the owner can change the state of devWallet and potentially restrict or allow the removal of tokens, this creates a scenario where the owner can limit the ability of other users to interact with the token balance, thus classifying it as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "CRYPTO.transferOwnership(address)",
+        "control_variable": "devWallet",
+        "targets": [
+          "CRYPTO.removeStuckTokenBalance()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_4",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function CRYPTO.updateDevWallet(address) is controlled by onlyOwner, which means only the owner can change the devWallet address.",
+          "This control allows the owner to potentially redirect funds or manipulate the wallet that receives tokens from the function CRYPTO.removeStuckTokenBalance().",
+          "The function CRYPTO.removeStuckTokenBalance() has a conditional check that requires tokenBalance to be greater than 0, which indicates that the owner can control when and how much token balance can be removed.",
+          "Since the owner can change the devWallet and subsequently call removeStuckTokenBalance(), this creates a scenario where the owner can limit the ability of other users to access their tokens or manipulate the flow of tokens."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "CRYPTO.updateDevWallet(address)",
+        "control_variable": "devWallet",
+        "targets": [
+          "CRYPTO.removeStuckTokenBalance()"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 6,
+    "LEAK": 1,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

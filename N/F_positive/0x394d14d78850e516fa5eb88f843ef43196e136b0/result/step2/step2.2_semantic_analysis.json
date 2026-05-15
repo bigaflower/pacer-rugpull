@@ -1,0 +1,1438 @@
+{
+  "contract_name": "0x394d14d78850e516fa5eb88f843ef43196e136b0",
+  "generated_at": "2026-02-24T22:09:48Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function is DIGauImplementationV2.transfer(address,uint256), which is responsible for transferring tokens between addresses.",
+          "2. The first permission check at Node E1 ensures that the contract is not paused, allowing transfers to proceed.",
+          "3. At Node D0, several checks are performed:",
+          "- Line 229 checks that the recipient address (_to) is not the zero address.",
+          "- Line 230 checks that neither the sender (msg.sender) nor the recipient (_to) is frozen, which could prevent transfers.",
+          "- Line 231 checks that the sender has sufficient balance to cover the transfer amount (_value).",
+          "4. The asset changes occur at Lines 233 and 234:",
+          "- Line 233 decreases the balance of the sender (msg.sender) by _value: balances[msg.sender] = balances[msg.sender].sub(_value).",
+          "- Line 234 increases the balance of the recipient (_to) by _value: balances[_to] = balances[_to].add(_value).",
+          "5. The balance change for the sender is a decrease, and for the recipient, it is an increase. Therefore, there is no evidence of minting (no increase in total supply or balance without a corresponding decrease elsewhere).",
+          "6. The checks in place ensure that only valid transfers occur, and there are no mechanisms that allow for limiting transfers or leaking tokens to unauthorized addresses.",
+          "7. Since the transfer logic does not allow for any unauthorized balance manipulation or minting, the category is determined to be empty."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "DIGauImplementationV2.transfer(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[PERM] -> F1",
+        "summary": "Entry DIGauImplementationV2.transfer(address,uint256); PermNode: E1, D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, there is asset change code:L270: balances[_from] = balances[_from].sub(_value) and L271: balances[_to] = balances[_to].add(_value).",
+          "2. here, _from and _to is a function parameter, may be an arbitrary address, rather thanis the caller itself, thereforeThe privileged user can call transferFrom function, specify arbitrary account balance is deduction.",
+          "3. because _value is specified by the caller, The privileged user can arbitrary _from address, causingthe addressbalance decreases, while _to addressbalance increasesamount _value, and no compensation, This matches the definition of token leaking.",
+          "4. because exists allow The privileged user specify arbitrary account performdeduction, and no limit the account conditions, Therefore this path matches the LEAK characteristic."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "DIGauImplementationV2.transferFrom(address,address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[PERM] -> F1",
+        "summary": "Entry DIGauImplementationV2.transferFrom(address,address,uint256); PermNode: E1, D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, there is a permission check require(! frozen[_spender] && ! frozen[msg.sender], address frozen), This meansonly _spender and msg.sender nois, execute approve operation.",
+          "2. because the functionexecuteThe privileged user ( contract owner) control frozen, The privileged user can through set frozen[_spender] is true to address transfer, thereby limit ordinary user transaction ability.",
+          "3. This pathno asset increase or decrease, while is through control frozen to limit transaction, Therefore matches the LIMIT definition."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "DIGauImplementationV2.approve(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[PERM] -> F1",
+        "summary": "Entry DIGauImplementationV2.approve(address,uint256); PermNode: E1, D0"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. At node D0, the following code was executed:",
+          "- L357:_balance = balances [this]//Read the balance of the contract itself",
+          "- L358: balances [this] = 0//Zero the balance of the contract itself",
+          "- L359: balances [owner] = balances [owner].add (_balance)//Transfer contract balance to owner",
+          "2. here owner is initial is address(0), thereforefrom contract transferred balance will address(0), is burn .",
+          "3. Balance change analysis:assuming contract Initial balance is 100,",
+          "- L357 read contract balance is 100,_balance = 100",
+          "- L358 Reset contract balance, balances [this] = 0",
+          "- L359 transfer 100 to owner, balances [owner] = 0 + 100 = 100",
+          "4. is contract balance from 100 is 0, owner balance from 0 is 100, contract asset is transfer address (address(0)) , This matches the definition of token leaking.",
+          "5. privilege caller (owner) can throughthis function arbitrary contract balance will its transfer address(0), directly leak ."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "DIGauImplementationV2.reclaimDIGG()",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> F1",
+        "summary": "Entry DIGauImplementationV2.reclaimDIGG(); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_4",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function is DIGauImplementationV2.wipeFrozenAddress(address), which has a permission check at Node E1 requiring msg.sender to be assetProtectionRole.",
+          "2. At Node D0, there is a check to ensure that the address provided is frozen: require(frozen[_addr], 'address is not frozen'). If this condition is met, the balance of the specified address is read: _balance = balances[_addr].",
+          "3. The balance of the specified address is then set to zero: balances[_addr] = 0. This indicates that the balance of the address is being cleared, which is a decrease.",
+          "4. The address being affected (_addr) is provided as a parameter to the function, meaning the caller can specify any address, not just their own. This aligns with the definition of a leak, as the caller can reduce the balance of any frozen address without their consent.",
+          "5. The simulation shows that if the initial balance of the specified address is 100, after executing balances[_addr] = 0, the balance becomes 0, indicating a clear decrease."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_4",
+        "function_signature": "DIGauImplementationV2.wipeFrozenAddress(address)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> F1",
+        "summary": "Entry DIGauImplementationV2.wipeFrozenAddress(address); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_5",
+      "path_type": "DIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function is DIGauImplementationV2.increaseSupply(uint256), which has a permission check at Node E1 that requires msg.sender to be supplyController.",
+          "2. At Node D0, the code modifies the balances of supplyController: balances[supplyController] = balances[supplyController].add(_value). Here, supplyController is initialized to address(0).",
+          "3. The balance change formula indicates that the balance of supplyController will increase by _value, which is a parameter passed to the function.",
+          "4. Since supplyController is address(0), this means that the balance of address(0) will increase, effectively minting new tokens into the system without any checks on the total supply or the balance of address(0).",
+          "5. The ability to increase the balance of a specific address (in this case, address(0)) without any restrictions or checks on the current balance or total supply confirms that this a hidden minting behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_5",
+        "function_signature": "DIGauImplementationV2.increaseSupply(uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> F1",
+        "summary": "Entry DIGauImplementationV2.increaseSupply(uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_6",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is DIGauImplementationV2.decreaseSupply(uint256), which has a permission check at Node E1 that restricts access to the supplyController.",
+          "2. At Node D0, the balance of the supplyController is checked to ensure it is sufficient to decrease by the specified value (_value). The line of code is: 'require(bool,string)(_value <= balances[supplyController],not enough supply)'. Since supplyController is initialized to address(0), this means that the balance being checked is balances[address(0)].",
+          "3. The next line in Node D0 is: 'balances[supplyController] = balances[supplyController].sub(_value)', which decreases the balance of address(0) by _value. This indicates that tokens are being removed from the balance of address(0).",
+          "4. Since the supplyController is address(0), the function can effectively reduce the balance of the zero address, which is a leak of tokens as it removes tokens from circulation without any compensation.",
+          "5. The balance of address(0) is decreased, which is a clear indication of a leak. The initial balance is assumed to be 100, and after the operation, it will be 100 - _value, which is less than 100.",
+          "6. The function does not allow the caller to specify the account from which the balance is decreased; it is always address(0), which is a fixed address."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_6",
+        "function_signature": "DIGauImplementationV2.decreaseSupply(uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> F1",
+        "summary": "Entry DIGauImplementationV2.decreaseSupply(uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_7",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path starts with the function DIGauImplementationV2.betaDelegatedTransfer, which has permission checks (Node E1, D0) to ensure only whitelisted delegates can execute it.",
+          "2. In Node D0, several permission checks are performed, including ensuring the transaction is not paused and that the sender is whitelisted.",
+          "3. In Node D1, the balance of msg.sender is increased by the fee amount: balances[msg.sender] = balances[msg.sender].add(fee). This indicates that the caller can receive additional tokens based on the fee parameter, which is controlled by the caller.",
+          "4. In Node D2, the balance of the 'to' address is increased by the value amount: balances[to] = balances[to].add(value). This indicates that the tokens are transferred to the specified 'to' address.",
+          "5. The critical point is that the fee can be set to any value by the caller, and the balance of msg.sender can increase without any limit, which can lead to a situation where the caller can extract value from the system without a corresponding decrease in their own balance.",
+          "6. The fee is not necessarily tied to the value being transferred, allowing for potential exploitation where the caller can set a high fee and extract tokens from the system.",
+          "7. The ability to specify the 'to' address means that the caller can direct the tokens to any address they control, further indicating a leak of tokens from the system."
+        ],
+        "key_nodes": [
+          "D1",
+          "D2"
+        ]
+      },
+      "overview": {
+        "path_id": "path_7",
+        "function_signature": "DIGauImplementationV2.betaDelegatedTransfer(bytes,address,uint256,uint256,uint256,uint256)",
+        "trace": "E1 -> D0 -> E1[PERM] -> M1 -> D0[PERM] -> IF0 -> D1[ASSET] -> D2[ASSET] -> F1 -> F1",
+        "summary": "Entry DIGauImplementationV2.betaDelegatedTransfer(bytes,address,uint256,uint256,uint256,uint256); PermNode: E1, D0; AssetNode: D1, D2"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The control source is the function DIGauImplementationV2.initialize(), which can set the frozen variable.",
+          "2. The frozen variable is likely used to control whether transfers can occur, as indicated by its connection to the transferFrom function.",
+          "3. If the frozen variable is set to true, it would prevent any transfers from occurring, effectively limiting the ability of users to transfer tokens.",
+          "4. The ability to modify the frozen state is not available to all users, indicating that a privileged account can control the transfer state.",
+          "5. Therefore, this path allows a privileged entity to restrict transfers, classifying it as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.initialize()",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path starts with the function DIGauImplementationV2.initialize(), which can modify the frozen variable.",
+          "The frozen variable is likely used to control whether transfers can occur, as it is linked to the approve function.",
+          "The approve function allows the setting of allowances for addresses, but if the frozen variable is set to true, it can prevent users from approving transfers, effectively limiting their ability to transact.",
+          "Since the frozen variable can be controlled by a privileged account, this indicates that the privileged account can restrict normal users' ability to approve transfers, thus implementing a limiting behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.initialize()",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2.approve(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_2",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function DIGauImplementationV2.initialize() can control the frozen variable, which is used in the DIGauImplementationV2._betaDelegatedTransfer function.",
+          "If frozen is set to true, it can prevent transfers from occurring, effectively limiting the ability of users to trade their tokens.",
+          "This control is exercised by a privileged entity (the owner or designated controller), which can manipulate the frozen state at will.",
+          "Thus, the ability to freeze transfers directly impacts the trading capabilities of regular users, classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.initialize()",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2._betaDelegatedTransfer(bytes32,bytes32,uint8,address,uint256,uint256,uint256,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_3",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The control source is the function DIGauImplementationV2.initialize(), which can modify the frozen variable.",
+          "The frozen variable is likely used in the transfer function DIGauImplementationV2.transfer(address,uint256) to determine if transfers are allowed.",
+          "If the frozen variable is set to true, it can prevent all transfers, effectively limiting the ability of users to transact.",
+          "This means that the owner or privileged account can control the state of transfers, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.initialize()",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_4",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The control source is the function DIGauImplementationV2.initialize(), which can set the frozen variable.",
+          "2. The function DIGauImplementationV2.wipeFrozenAddress(address) modifies the balances and totalSupply_ of the contract.",
+          "3. The function wipeFrozenAddress can be called with an arbitrary address as a parameter, allowing the owner to reduce the balance of any address that is frozen.",
+          "4. This means that the owner can effectively drain tokens from any frozen address without any compensation, which fits the definition of a leak.",
+          "5. The ability to wipe frozen addresses gives the owner control over the balances of others, leading to potential exploitation."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.initialize()",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2.wipeFrozenAddress(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_10",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DIGauImplementationV2.reclaimDIGG() modifies the balances state, which indicates a potential asset manipulation.",
+          "The control source DIGauImplementationV2.initialize() there is no modifiers that restrict access, meaning the owner can call reclaimDIGG() without any checks.",
+          "If the reclaimDIGG() function allows the owner to specify an arbitrary address to reclaim funds from, this would constitute a leak, as the owner can reduce the balance of any user without their consent.",
+          "The lack of restrictions on who can be affected by the reclaimDIGG() function indicates that the owner can directly manipulate balances of other users, which aligns with the definition of a leak."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.initialize()",
+        "control_variable": "owner",
+        "targets": [
+          "DIGauImplementationV2.reclaimDIGG()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_21",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The control source is the function DIGauImplementationV2.initialize(), which can set the betaDelegateWhitelister address.",
+          "2. The function DIGauImplementationV2.unwhitelistBetaDelegate(address) modifies the betaDelegateWhitelist variable, which is a control variable for the transfer process.",
+          "3. The affected target function DIGauImplementationV2._betaDelegatedTransfer(bytes32,bytes32,uint8,address,uint256,uint256,uint256,uint256) modifies balances and nextSeqs, indicating asset changes.",
+          "4. The ability to modify betaDelegateWhitelist means that the owner can control which addresses are allowed to perform delegated transfers, effectively limiting the ability of ordinary users to transact freely.",
+          "5. Since the control over the betaDelegateWhitelist directly impacts the transfer capabilities of users, this fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.initialize()",
+        "control_variable": "betaDelegateWhitelist",
+        "targets": [
+          "DIGauImplementationV2._betaDelegatedTransfer(bytes32,bytes32,uint8,address,uint256,uint256,uint256,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_23",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function DIGauImplementationV2.proposeOwner(address) is controlled by onlyOwner, allowing the current owner to propose a new owner.",
+          "2. The function DIGauImplementationV2.reclaimDIGG() modifies balances, which indicates that it can affect the token distribution.",
+          "3. Since the owner can propose any address as the new owner, this means the new owner can call reclaimDIGG() and potentially reduce balances of arbitrary users, which fits the definition of a leak.",
+          "4. The ability to change ownership and subsequently call a function that modifies balances implies that the new owner can drain funds from users, thus classifying this as a leak."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.proposeOwner(address)",
+        "control_variable": "owner",
+        "targets": [
+          "DIGauImplementationV2.reclaimDIGG()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_24",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DIGauImplementationV2.proposeOwner(address) is controlled by the onlyOwner modifier, which means only the owner can propose a new owner.",
+          "This function can indirectly affect the frozen state through DIGauImplementationV2.freeze(address), which can be called by the owner.",
+          "If the frozen state is set to true, it can prevent transfers by affecting the transferFrom function, which modifies the allowed and balances variables.",
+          "Thus, the owner has the ability to freeze transfers, limiting the ability of normal users to transact freely."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.proposeOwner(address)",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_25",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function DIGauImplementationV2.proposeOwner(address) is controlled by onlyOwner, which means only the owner can propose a new owner.",
+          "The control chain shows that the owner can set the frozen state through DIGauImplementationV2.freeze(address).",
+          "If the frozen state is set to true, it can prevent users from executing the approve function, which modifies the allowed state.",
+          "This means that the owner has the ability to limit the ability of users to approve transfers, effectively controlling the trading state."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.proposeOwner(address)",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2.approve(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_26",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DIGauImplementationV2.proposeOwner(address) is controlled by the onlyOwner modifier, indicating that only the owner can propose a new owner.",
+          "This control chain leads to the ability to freeze an address, which directly affects the frozen variable.",
+          "The function DIGauImplementationV2._betaDelegatedTransfer(bytes32,bytes32,uint8,address,uint256,uint256,uint256,uint256) modifies balances and nextSeqs, but its execution can be influenced by the frozen state.",
+          "If the owner sets the frozen variable to true, it could prevent transfers from occurring, effectively limiting the ability of users to transact freely.",
+          "Thus, the owner has the power to control whether transfers can happen or not, which fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.proposeOwner(address)",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2._betaDelegatedTransfer(bytes32,bytes32,uint8,address,uint256,uint256,uint256,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_27",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DIGauImplementationV2.proposeOwner(address) is controlled by onlyOwner, which means only the owner can propose a new owner.",
+          "The control chain shows that the owner can set the asset protection role and freeze accounts, which directly affects the ability to transfer tokens.",
+          "The freeze function can prevent transfers by modifying the frozen state, which means the owner can limit the ability of users to transfer their tokens.",
+          "Since the owner can control the frozen state, this creates a scenario where normal users may be unable to execute transfers, thus classifying this as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.proposeOwner(address)",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_28",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function DIGauImplementationV2.wipeFrozenAddress(address) modifies the balances and totalSupply_ variables, which indicates a potential asset manipulation.",
+          "2. The control source DIGauImplementationV2.proposeOwner(address) is restricted to onlyOwner, meaning only the owner can propose an address to be wiped.",
+          "3. The function wipeFrozenAddress allows the owner to specify an arbitrary address to wipe, which means the owner can reduce the balance of any address, not just their own. This fits the definition of a direct leak.",
+          "4. The path involves a control chain where the owner can freeze an address and subsequently wipe it, allowing for the potential to drain funds from any user's balance without their consent.",
+          "5. Therefore, this path is classified as LEAK due to the ability of the owner to manipulate balances of arbitrary addresses."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.proposeOwner(address)",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2.wipeFrozenAddress(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_34",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DIGauImplementationV2.proposeOwner(address) is controlled by the onlyOwner modifier, which means only the owner can propose a new owner.",
+          "The control chain shows that the owner can modify the betaDelegateWhitelist variable through the setBetaDelegateWhitelister and unwhitelistBetaDelegate functions.",
+          "By modifying betaDelegateWhitelist, the owner can control which addresses are allowed to perform beta delegated transfers, effectively limiting the ability of other users to transfer tokens.",
+          "Since the ability to transfer tokens can be restricted by the owner, this path fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.proposeOwner(address)",
+        "control_variable": "betaDelegateWhitelist",
+        "targets": [
+          "DIGauImplementationV2._betaDelegatedTransfer(bytes32,bytes32,uint8,address,uint256,uint256,uint256,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_36",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function DIGauImplementationV2.disregardProposeOwner() allows the current owner to disregard a proposed owner, which means the current owner can maintain control over the contract.",
+          "2. The function DIGauImplementationV2.reclaimDIGG() modifies the balances, indicating that it can affect the token distribution.",
+          "3. Since the owner can call reclaimDIGG() and potentially modify balances of other users (not just themselves), this indicates a risk of leaking tokens from other users' balances.",
+          "4. The ability to modify balances without restrictions on the 'from' address (which can be any user) aligns with the definition of a leak, as the owner can reduce or transfer balances from arbitrary users."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.disregardProposeOwner()",
+        "control_variable": "owner",
+        "targets": [
+          "DIGauImplementationV2.reclaimDIGG()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_37",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DIGauImplementationV2.disregardProposeOwner() can be called publicly, allowing the owner to modify the frozen state.",
+          "The frozen variable directly affects the transferFrom function, which is responsible for transferring tokens between addresses.",
+          "If the frozen state is set to true, it can prevent transfers from occurring, effectively limiting the ability of users to trade their tokens.",
+          "This control over the frozen state by the owner indicates that they can restrict trading for all users, which aligns with the LIMIT rugpull behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.disregardProposeOwner()",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_38",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function DIGauImplementationV2.disregardProposeOwner() can be called publicly, allowing the caller to potentially manipulate the frozen state.",
+          "The frozen variable is linked to the approval process in DIGauImplementationV2.approve(address,uint256), which means that if the frozen state is set to true, it can prevent users from approving transfers.",
+          "This creates a scenario where the owner or privileged user can control whether or not transfers can occur, effectively limiting the ability of regular users to transact.",
+          "The control chain shows that the owner can influence the frozen state, which directly impacts the approval process, thus fitting the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.disregardProposeOwner()",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2.approve(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_39",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function `DIGauImplementationV2.disregardProposeOwner()` can be called publicly, which allows the owner to manipulate the `frozen` variable.",
+          "2. The `frozen` variable directly affects the `_betaDelegatedTransfer` function, which modifies balances and nextSeqs.",
+          "3. If the `frozen` variable is set to true, it can prevent transfers from occurring, effectively limiting the ability of users to transact.",
+          "4. The control chain shows that the owner can set the `frozen` state, which directly impacts the transfer functionality for all users.",
+          "5. This aligns with the definition of LIMIT, as the owner can control whether transfers are allowed or not."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.disregardProposeOwner()",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2._betaDelegatedTransfer(bytes32,bytes32,uint8,address,uint256,uint256,uint256,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_40",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function DIGauImplementationV2.disregardProposeOwner() can be called publicly, which allows the owner to manipulate the frozen state.",
+          "2. The frozen variable directly affects the transfer function DIGauImplementationV2.transfer(address,uint256), which modifies balances.",
+          "3. If the owner sets frozen to true, it can prevent all transfers, effectively limiting the ability of users to transact.",
+          "4. This control over the frozen state by the owner means that they can restrict or allow transfers at will, which aligns with the LIMIT rugpull behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.disregardProposeOwner()",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_41",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function 'DIGauImplementationV2.wipeFrozenAddress(address)' modifies the balances and totalSupply_ of the token, which indicates a potential asset manipulation.",
+          "2. The control source 'DIGauImplementationV2.disregardProposeOwner()' allows the owner to disregard proposals, which can lead to the freezing of addresses.",
+          "3. The function 'DIGauImplementationV2.freeze(address)' can be called by the owner to freeze an address, and subsequently, the owner can call 'wipeFrozenAddress(address)' to modify the balances of that frozen address.",
+          "4. Since the address being wiped is not necessarily the caller's address, this constitutes a direct leak of tokens from the frozen address to the owner's balance.",
+          "5. The ability to wipe balances from arbitrary addresses (frozen ones) without their consent or compensation is a clear indication of a leak."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.disregardProposeOwner()",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2.wipeFrozenAddress(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_47",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function DIGauImplementationV2.disregardProposeOwner() can be called publicly, allowing anyone to trigger it.",
+          "2. This function modifies the betaDelegateWhitelist variable by calling DIGauImplementationV2.unwhitelistBetaDelegate(address), which can restrict or allow certain addresses to perform delegated transfers.",
+          "3. The affected target function DIGauImplementationV2._betaDelegatedTransfer() relies on the betaDelegateWhitelist variable to determine if a transfer can proceed.",
+          "4. If the betaDelegateWhitelist is modified by the owner or any address that can call disregardProposeOwner(), it can effectively limit the ability of users to transfer tokens, thus classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.disregardProposeOwner()",
+        "control_variable": "betaDelegateWhitelist",
+        "targets": [
+          "DIGauImplementationV2._betaDelegatedTransfer(bytes32,bytes32,uint8,address,uint256,uint256,uint256,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_49",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DIGauImplementationV2.reclaimDIGG() modifies the balances, which indicates a potential asset manipulation.",
+          "The control source DIGauImplementationV2.claimOwnership() allows the owner to claim ownership, which implies that the owner has special privileges.",
+          "If the owner can call reclaimDIGG() and modify balances of arbitrary users, this constitutes a leak since the owner can reduce or transfer balances of others without their consent.",
+          "The path does not indicate any restrictions on the target addresses for the balance modifications, suggesting that the owner can specify any address, leading to a direct leak of tokens."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.claimOwnership()",
+        "control_variable": "owner",
+        "targets": [
+          "DIGauImplementationV2.reclaimDIGG()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_50",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function DIGauImplementationV2.claimOwnership() which can change the state of the frozen variable through DIGauImplementationV2.freeze(address).",
+          "The frozen variable directly affects the transferFrom function, which is responsible for transferring tokens between addresses.",
+          "If the frozen variable is set to true, it can prevent transfers from occurring, effectively limiting the ability of users to trade their tokens.",
+          "This control is in the hands of the owner or a privileged role, which aligns with the definition of LIMIT as it restricts normal users' ability to transact."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.claimOwnership()",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_51",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "1. The path starts with the function DIGauImplementationV2.claimOwnership() which allows a user to claim ownership, potentially giving them control over the contract.",
+          "2. The control chain indicates that the ownership can lead to the modification of the frozen variable through DIGauImplementationV2.freeze(address).",
+          "3. The frozen variable likely acts as a flag to enable or disable certain functionalities, including the ability to approve transfers in DIGauImplementationV2.approve(address,uint256).",
+          "4. If the frozen variable is set to true, it can prevent users from executing the approve function, thereby limiting their ability to trade or transfer tokens.",
+          "5. Since the ability to freeze transfers is controlled by the owner, this constitutes a Limiting Sell behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.claimOwnership()",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2.approve(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_52",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DIGauImplementationV2.claimOwnership() allows the caller to claim ownership, which can lead to the modification of the frozen state variable.",
+          "The frozen variable is then used in the function DIGauImplementationV2._betaDelegatedTransfer, which affects the balances and nextSeqs.",
+          "If the frozen variable is set to true by the owner, it can prevent normal users from executing transfers, effectively limiting their ability to trade.",
+          "This indicates that the owner has control over the transfer process, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.claimOwnership()",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2._betaDelegatedTransfer(bytes32,bytes32,uint8,address,uint256,uint256,uint256,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_53",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DIGauImplementationV2.claimOwnership() allows a user to claim ownership, which can subsequently lead to the modification of the frozen variable through DIGauImplementationV2.freeze(address).",
+          "The frozen variable directly affects the transfer function DIGauImplementationV2.transfer(address,uint256), which modifies balances.",
+          "If the frozen variable is set to true, it can prevent transfers from occurring, effectively limiting the ability of ordinary users to transact.",
+          "This control over the frozen state by a privileged user indicates that they can restrict or enable transfers at will, thus classifying this path as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.claimOwnership()",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_54",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function DIGauImplementationV2.claimOwnership() allows a user to claim ownership, which can lead to the ability to modify the frozen state.",
+          "2. The frozen variable can be manipulated by the assetProtectionRole, which is set by the function DIGauImplementationV2.setAssetProtectionRole(address).",
+          "3. The function DIGauImplementationV2.wipeFrozenAddress(address) modifies balances and totalSupply_ based on the frozen state.",
+          "4. If the frozen state is set to true, the owner can call wipeFrozenAddress with any address, allowing them to decrease the balance of that address without their consent, which constitutes a leak.",
+          "5. The ability to wipe an arbitrary address's balance indicates that the owner can directly reduce or transfer tokens from any user's balance, fitting the definition of a leak."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.claimOwnership()",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2.wipeFrozenAddress(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_60",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function DIGauImplementationV2.claimOwnership() allows the caller to claim ownership, which can lead to changes in the betaDelegateWhitelist variable.",
+          "2. The function DIGauImplementationV2.unwhitelistBetaDelegate(address) modifies the betaDelegateWhitelist, which can restrict or allow certain addresses to perform delegated transfers.",
+          "3. The affected target function DIGauImplementationV2._betaDelegatedTransfer() modifies balances and nextSeqs, but its execution is contingent on the state of betaDelegateWhitelist.",
+          "4. Since the ownership can be claimed and the whitelist can be modified by the owner, this creates a scenario where the owner can effectively limit or control who can perform transfers, thus restricting normal users' ability to trade."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.claimOwnership()",
+        "control_variable": "betaDelegateWhitelist",
+        "targets": [
+          "DIGauImplementationV2._betaDelegatedTransfer(bytes32,bytes32,uint8,address,uint256,uint256,uint256,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_62",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DIGauImplementationV2.setAssetProtectionRole(address) allows a privileged user to set the frozen state, which directly affects the transferFrom function.",
+          "When the frozen variable is set to true, it can prevent transfers from occurring, thus limiting the ability of normal users to execute transactions.",
+          "The control chain shows that the frozen state can be manipulated by a privileged role, which can effectively block transfers for all users, indicating a limiting behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.setAssetProtectionRole(address)",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_63",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DIGauImplementationV2.setAssetProtectionRole(address) allows a privileged user to set the frozen state, which directly affects the ability to approve transfers in DIGauImplementationV2.approve(address,uint256).",
+          "The frozen variable can be manipulated by a privileged role, effectively allowing them to control whether approvals can occur or not.",
+          "This means that once the frozen state is set to true, normal users will be unable to approve any transfers, thus limiting their ability to transact freely."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.setAssetProtectionRole(address)",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2.approve(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_64",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DIGauImplementationV2.setAssetProtectionRole(address) allows a privileged user to set the 'frozen' variable, which can control whether transfers are allowed or not.",
+          "The affected target function DIGauImplementationV2._betaDelegatedTransfer(bytes32,bytes32,uint8,address,uint256,uint256,uint256,uint256) modifies balances and nextSeqs, which indicates that it is involved in asset transfers.",
+          "Since the 'frozen' variable can be modified by a privileged user, this directly impacts the ability of regular users to execute transfers, effectively limiting their ability to trade.",
+          "Thus, the ability to freeze transfers by a privileged role constitutes a Limiting Sell behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.setAssetProtectionRole(address)",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2._betaDelegatedTransfer(bytes32,bytes32,uint8,address,uint256,uint256,uint256,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_65",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DIGauImplementationV2.setAssetProtectionRole(address) allows a privileged user to set the frozen state, which directly affects the transfer function DIGauImplementationV2.transfer(address,uint256).",
+          "If the frozen variable is set to true, it can prevent all transfers from occurring, effectively limiting the ability of normal users to trade their tokens.",
+          "This control mechanism indicates that the privileged user can manipulate the trading state, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.setAssetProtectionRole(address)",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_66",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DIGauImplementationV2.setAssetProtectionRole(address) allows a privileged user to set the 'frozen' state, which can directly affect the ability to transfer assets.",
+          "The control variable 'frozen' is linked to the function DIGauImplementationV2.freeze(address), which indicates that the privileged user can freeze specific addresses.",
+          "The affected target function DIGauImplementationV2.wipeFrozenAddress(address) modifies balances and totalSupply_, which implies that the privileged user can manipulate the state of these assets based on the frozen status.",
+          "Since the privileged user can control whether an address is frozen or not, they can effectively limit the ability of normal users to transfer their assets, thus fitting the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.setAssetProtectionRole(address)",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2.wipeFrozenAddress(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_72",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DIGauImplementationV2.freeze(address) is controlled by the onlyAssetProtectionRole modifier, which indicates that only a privileged role can call this function.",
+          "This function modifies the frozen state, which can affect the transferFrom function's ability to execute transfers.",
+          "If the frozen state is set to true, it can prevent users from executing transfers, effectively limiting their ability to trade.",
+          "Since the control over the frozen state is in the hands of a privileged role, this constitutes a Limiting Sell behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.freeze(address)",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_73",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DIGauImplementationV2.freeze(address) is controlled by the modifier onlyAssetProtectionRole, which indicates that only a privileged role can call this function.",
+          "This function modifies the frozen state, which can affect the approval process in DIGauImplementationV2.approve(address,uint256).",
+          "If the frozen state is set to true, it can prevent users from approving transfers, effectively limiting their ability to transact.",
+          "Thus, the privileged role can control whether users can approve transfers, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.freeze(address)",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2.approve(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_74",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function DIGauImplementationV2.freeze(address) is controlled by the onlyAssetProtectionRole modifier, which indicates that only a privileged role can call this function.",
+          "This function modifies the frozen state, which likely affects the ability of users to perform transfers or other actions within the contract.",
+          "The affected target function DIGauImplementationV2._betaDelegatedTransfer(bytes32,bytes32,uint8,address,uint256,uint256,uint256,uint256) writes to balances and nextSeqs, which suggests that it is involved in transferring tokens.",
+          "If the frozen state is set to true, it can prevent normal users from executing transfers, effectively limiting their ability to trade.",
+          "Thus, the privileged role can control the transfer process by freezing accounts, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.freeze(address)",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2._betaDelegatedTransfer(bytes32,bytes32,uint8,address,uint256,uint256,uint256,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_75",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DIGauImplementationV2.freeze(address) is controlled by the onlyAssetProtectionRole modifier, which indicates that only a privileged role can call this function.",
+          "This function modifies the frozen state, which directly affects the ability to execute transfers in the DIGauImplementationV2.transfer(address,uint256) function.",
+          "If the frozen state is set to true, it can prevent all users from executing transfers, thereby limiting their ability to sell or transfer tokens.",
+          "Since the control over the frozen state is in the hands of a privileged role, this constitutes a Limiting Sell behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.freeze(address)",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_76",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DIGauImplementationV2.freeze(address) is controlled by the onlyAssetProtectionRole modifier, which indicates that only a privileged role can call this function.",
+          "When this function is called, it can set the frozen state for an address, which is likely used in conjunction with the DIGauImplementationV2.wipeFrozenAddress(address) function.",
+          "The wipeFrozenAddress function modifies the balances and totalSupply_ variables, which directly affects the ability of users to transfer tokens.",
+          "Since the privileged role can freeze addresses and subsequently wipe their balances, this creates a scenario where normal users cannot freely transact if their addresses are frozen, thus limiting their ability to sell or transfer tokens."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.freeze(address)",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2.wipeFrozenAddress(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_77",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function DIGauImplementationV2.unfreeze(address) is controlled by the modifier onlyAssetProtectionRole, which indicates that only a privileged role can call this function.",
+          "This function likely modifies the frozen state of an account, which directly impacts the ability of that account to perform transfers.",
+          "The affected function DIGauImplementationV2.transferFrom(address,address,uint256) writes to the allowed and balances variables, which means that if the frozen state is set to true, it can prevent transfers from occurring.",
+          "Since the privileged role can control the frozen state, they can effectively limit the ability of ordinary users to transfer tokens, thus classifying this path as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.unfreeze(address)",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_78",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function DIGauImplementationV2.unfreeze(address) is controlled by the modifier onlyAssetProtectionRole, which means only a privileged role can call this function.",
+          "This function potentially modifies the frozen state, which could affect the ability of users to execute the DIGauImplementationV2.approve(address,uint256) function.",
+          "If the frozen state is set to true, it could prevent users from approving transfers, effectively limiting their ability to interact with the token.",
+          "Thus, the privileged role can control whether users can approve transfers, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.unfreeze(address)",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2.approve(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_79",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DIGauImplementationV2.unfreeze(address) is controlled by the modifier onlyAssetProtectionRole, which means only a privileged role can call this function.",
+          "This function modifies the frozen state, which likely affects whether transfers can occur or not.",
+          "The affected target function DIGauImplementationV2._betaDelegatedTransfer(bytes32,bytes32,uint8,address,uint256,uint256,uint256,uint256) writes to balances and nextSeqs, indicating that it can change the state of user balances.",
+          "If the frozen state is set to true, it can prevent users from executing transfers, effectively limiting their ability to sell or transfer tokens.",
+          "Thus, the privileged role can control the transfer state, leading to a Limiting Sell scenario."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.unfreeze(address)",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2._betaDelegatedTransfer(bytes32,bytes32,uint8,address,uint256,uint256,uint256,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_80",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DIGauImplementationV2.unfreeze(address) is controlled by the modifier onlyAssetProtectionRole, which indicates that only a privileged role can call this function.",
+          "This function likely changes the state of the frozen variable, which is used in the DIGauImplementationV2.transfer(address,uint256) function.",
+          "If the frozen variable is set to true, it can prevent transfers from occurring, effectively limiting the ability of normal users to execute transfers.",
+          "Since the ability to change the frozen state is restricted to a privileged role, this creates a scenario where the privileged role can control whether or not transfers can happen, thus classifying it as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.unfreeze(address)",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_81",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DIGauImplementationV2.unfreeze(address) is controlled by the onlyAssetProtectionRole modifier, allowing only privileged users to call it.",
+          "Once unfreezing occurs, the function DIGauImplementationV2.wipeFrozenAddress(address) is invoked, which modifies the balances and totalSupply_.",
+          "The wipeFrozenAddress function can deduct balances from any address specified as a parameter, which is not limited to the caller's own balance. This allows the privileged user to reduce the balance of arbitrary addresses, thus leaking tokens.",
+          "Since the source of the deduction can be any address provided as an argument, this meets the criteria for a Leak as defined in the rugpull behaviors."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.unfreeze(address)",
+        "control_variable": "frozen",
+        "targets": [
+          "DIGauImplementationV2.wipeFrozenAddress(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_82",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function DIGauImplementationV2.setBetaDelegateWhitelister(address) allows a privileged user to modify the betaDelegateWhitelist variable, which controls whether certain addresses can participate in the beta delegated transfer process.",
+          "The affected target function DIGauImplementationV2._betaDelegatedTransfer(bytes32,bytes32,uint8,address,uint256,uint256,uint256,uint256) relies on the betaDelegateWhitelist to determine if a transfer can occur.",
+          "If the privileged user sets the whitelist to exclude certain addresses, those addresses will be unable to execute transfers, effectively limiting their ability to trade.",
+          "This control over the whitelist directly impacts the ability of ordinary users to engage in transactions, thus categorizing this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.setBetaDelegateWhitelister(address)",
+        "control_variable": "betaDelegateWhitelist",
+        "targets": [
+          "DIGauImplementationV2._betaDelegatedTransfer(bytes32,bytes32,uint8,address,uint256,uint256,uint256,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_84",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function DIGauImplementationV2.whitelistBetaDelegate(address) is controlled by the modifier onlyBetaDelegateWhitelister, which indicates that only a privileged address can call this function.",
+          "This function modifies the betaDelegateWhitelist variable, which is likely used to control whether certain transfers can occur or not.",
+          "The affected target function DIGauImplementationV2._betaDelegatedTransfer(bytes32,bytes32,uint8,address,uint256,uint256,uint256,uint256) writes to balances and nextSeqs, which suggests that it performs state modifications based on the whitelist status.",
+          "If the whitelist is modified by a privileged user, it can effectively limit or enable transfers for users based on their whitelist status, thus controlling the ability of ordinary users to transact freely."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.whitelistBetaDelegate(address)",
+        "control_variable": "betaDelegateWhitelist",
+        "targets": [
+          "DIGauImplementationV2._betaDelegatedTransfer(bytes32,bytes32,uint8,address,uint256,uint256,uint256,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_85",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'DIGauImplementationV2.unwhitelistBetaDelegate(address)' is controlled by the modifier 'onlyBetaDelegateWhitelister', which indicates that only a privileged address can call this function.",
+          "This function modifies the 'betaDelegateWhitelist' variable, which can affect the ability of users to perform transfers through the '_betaDelegatedTransfer' function.",
+          "Since the '_betaDelegatedTransfer' function is responsible for state modifications including 'balances', the ability to unwhitelist a beta delegate effectively allows the privileged user to control who can execute transfers, thus limiting the ability of regular users to trade.",
+          "The control over the 'betaDelegateWhitelist' directly impacts the transfer process, making it a clear case of limiting user transactions."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DIGauImplementationV2.unwhitelistBetaDelegate(address)",
+        "control_variable": "betaDelegateWhitelist",
+        "targets": [
+          "DIGauImplementationV2._betaDelegatedTransfer(bytes32,bytes32,uint8,address,uint256,uint256,uint256,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 1,
+    "LIMIT": 38,
+    "LEAK": 14,
+    "EMPTY": 1,
+    "ERROR": 0
+  }
+}

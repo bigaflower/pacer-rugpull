@@ -1,0 +1,116 @@
+{
+  "contract_name": "0x381beac50b9a5ea06a320a72592f7460c49a2b48",
+  "generated_at": "2025-12-10T03:38:15Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. At node D0, check: L81 msg.sender balance _value, ensures caller balance perform transfer, This meansnoThe privileged user can minting or deduction balance .",
+          "2. to, L83 ensures recipient balance transfer amountnot will, also is check, ensures transfer .",
+          "3. at L85 and L87 in, msg.sender balance decreases by _value, while _to balance increases byamount, This indicatesis transfer operation, there is no asset changeor not behavior .",
+          "4. because all asset changes are at caller and recipient perform, there is noThe privileged user can other account balance, therefore no leak or minting risk .",
+          "5. In summary, This pathno rugpull behavior, belongs to transfer ."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "SCCToken.transfer(address,uint256)",
+        "trace": "E1 -> M1 -> M2 -> D0[PERM] -> F1",
+        "summary": "Entry SCCToken.transfer(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function SCCToken.transferFrom is called, which involves transferring tokens from one address to another.",
+          "2. At Node D0, the following asset changes occur: balanceOf[_to] is increased by _value (L105) and balanceOf[_from] is decreased by _value (L107).",
+          "3. The balance change for _from is a decrease: balanceOf[_from] -= _value. If we assume an initial balance of 100, after this operation, balanceOf[_from] would be 100 - _value.",
+          "4. The balance change for _to is an increase: balanceOf[_to] += _value. After this operation, balanceOf[_to] would be 100 + _value.",
+          "5. The allowance is also decreased by _value (L109), which is a standard operation in transferFrom functions.",
+          "6. The key point is that the _from address is not necessarily the caller; it can be any address specified by the caller, which means the caller can reduce the balance of any account they specify, leading to a potential leak of tokens.",
+          "7. Since the transfer can occur from any address specified by the caller, this constitutes a leak of tokens from the _from address to the _to address, where the _from address can be any arbitrary address, not limited to the caller."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "SCCToken.transferFrom(address,address,uint256)",
+        "trace": "E1 -> M1 -> M2 -> D0[PERM] -> F1",
+        "summary": "Entry SCCToken.transferFrom(address,address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is SCCToken.approve(address,uint256), which is designed to set an allowance for a spender to withdraw from the caller's account multiple times, up to the value amount.",
+          "2. At Node D0, there is a permission check: require(_value == 0 || allowance[msg.sender][_spender] == 0). This means that the caller can only set a new allowance if the current allowance is zero or if they are setting it to zero. This gives the owner control over the allowance mechanism.",
+          "3. The line allowance[msg.sender][_spender] = _value modifies the allowance mapping, which directly affects the ability of the spender to transfer tokens on behalf of the caller. If the owner sets the allowance to zero, it effectively limits the spender's ability to transfer tokens.",
+          "4. The ability to control the allowance means that the owner can prevent users from spending their tokens, which aligns with the definition of LIMIT behavior.",
+          "5. The path does not involve any increase in balances or any direct leakage of tokens, hence it does not fall under MINT or LEAK categories."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "SCCToken.approve(address,uint256)",
+        "trace": "E1 -> M1 -> M2 -> D0[PERM] -> F1",
+        "summary": "Entry SCCToken.approve(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "At node D0, the following asset operations were executed:",
+          "1. `balanceOf[msg.sender] -= _value` code indicates from caller deducted from the balance of _value, Assuming initial balance is 100, After execution, balance becomes 100 - _value.",
+          "2. `balanceOf[0x0] += _value` code indicates will _value increased toaddress 0x0 balance in, assuming 0x0 Initial balance is 0, After execution, balance becomes 0 + _value.",
+          "because caller balance decreases, while 0x0 addressbalance increases, and 0x0 address is address, This meanstokenis burn, is use .",
+          "privilege caller (msg.sender) can arbitrarily specify _value value, thereforecan through burn functionto decrease balance will tokentransfer 0x0 address, This matches the definition of token leaking."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "SCCToken.burn(uint256)",
+        "trace": "E1 -> D0[PERM] -> F1",
+        "summary": "Entry SCCToken.burn(uint256); PermNode: D0"
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 1,
+    "LEAK": 2,
+    "EMPTY": 1,
+    "ERROR": 0
+  }
+}

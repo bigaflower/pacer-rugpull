@@ -1,0 +1,299 @@
+{
+  "contract_name": "0xa9049425b938c46ac3e312d4cdaeccb26282aeb2",
+  "generated_at": "2026-02-25T20:16:04Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is WICKEDBET.transferFrom(address,address,uint256), which involves transferring tokens from one address to another.",
+          "2. The permission check at Node IF0 ensures that the allowance for the sender is not the maximum value, allowing the function to proceed.",
+          "3. At Node D0, the allowance is decreased by the amount specified: _allowances[sender][msg.sender] = _allowances[sender][msg.sender] - amount. This indicates that the allowance for the sender is reduced by the specified amount.",
+          "4. The asset change is a decrease in the allowance, which does not directly affect the balances of the sender or the recipient in this context. However, if the allowance is reduced to zero or below, it could prevent future transfers, which indirectly limits the sender's ability to transfer tokens.",
+          "5. The key point is that the allowance is being manipulated, and if the sender's allowance is reduced to a point where they cannot transfer tokens, it effectively limits their ability to transact, which aligns with the LEAK category as it can lead to a situation where the sender cannot access their funds.",
+          "6. The permission node indicates that only the owner can control the allowance, which means they can dictate how much can be transferred, thus creating a potential for leakage of control over the funds."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "WICKEDBET.transferFrom(address,address,uint256)",
+        "trace": "E1 -> IF0[PERM] -> D0[ASSET] -> D1 -> F1",
+        "summary": "Entry WICKEDBET.transferFrom(address,address,uint256); PermNode: IF0; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function WICKEDBET.launchSequence() is controlled by onlyOwner, which means only the owner can call this function to modify the state of tradingOpen.",
+          "The affected function WICKEDBET.takeFee(address,address,uint256) checks the condition tradingOpen before executing its logic. If tradingOpen is set to false by the owner, it will prevent normal users from executing trades.",
+          "This creates a scenario where the owner can effectively limit the ability of regular users to trade by toggling the tradingOpen variable, thus classifying this path as a LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "WICKEDBET.launchSequence()",
+        "control_variable": "tradingOpen",
+        "targets": [
+          "WICKEDBET.takeFee(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function WICKEDBET.launchSequence() is controlled by onlyOwner, which means only the owner can call this function to change the state of tradingOpen.",
+          "The _transfer function checks the condition require(tradingOpen, 'Trading not active'), meaning that if tradingOpen is false, transfers will be blocked.",
+          "Since the owner can toggle tradingOpen, they can effectively limit or enable trading for all users, preventing them from executing transfers when they choose.",
+          "This aligns with the definition of LIMIT, as the owner has the ability to control whether normal users can trade or not."
+        ],
+        "key_nodes": [
+          "E1",
+          "D1"
+        ]
+      },
+      "overview": {
+        "source": "WICKEDBET.launchSequence()",
+        "control_variable": "tradingOpen",
+        "targets": [
+          "WICKEDBET._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_2",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function WICKEDBET.swapBack() is marked as internal and can be controlled by the contract owner or privileged accounts. This function modifies the state of the variable inSwapAndLiquify.",
+          "The affected target WICKEDBET.takeFee(address,address,uint256) has a conditional check that depends on the state of inSwapAndLiquify. If inSwapAndLiquify is true, the function will not execute the fee-taking logic, effectively limiting the ability of users to trade.",
+          "Since the owner can control the inSwapAndLiquify variable, they can prevent trades by setting this variable to true, thus restricting normal users from executing transactions.",
+          "This behavior aligns with the definition of LIMIT, as the privileged account can control the trading state and restrict normal users from trading."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "WICKEDBET.swapBack()",
+        "control_variable": "inSwapAndLiquify",
+        "targets": [
+          "WICKEDBET.takeFee(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_3",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function WICKEDBET.swapBack() is marked with the modifier lockTheSwap, which indicates that it can control the state of inSwapAndLiquify.",
+          "The variable inSwapAndLiquify is used as a conditional check in the WICKEDBET._transfer function, which means that if inSwapAndLiquify is true, it can affect whether transfers can occur.",
+          "Since the control over inSwapAndLiquify is likely restricted to a privileged account (as indicated by the internal visibility of swapBack), this allows the privileged account to effectively limit or disable transfers for all users.",
+          "Thus, the ability to toggle inSwapAndLiquify directly impacts the ability of ordinary users to execute transfers, classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "WICKEDBET.swapBack()",
+        "control_variable": "inSwapAndLiquify",
+        "targets": [
+          "WICKEDBET._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_4",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function WICKEDBET.changeIsFeeExempt(address,bool) is controlled by onlyOwner, allowing the owner to modify the isFeeExempt mapping.",
+          "The affected function WICKEDBET.takeFee(address,address,uint256) checks if the recipient is exempt from fees based on the isFeeExempt mapping.",
+          "If the owner sets isFeeExempt[recipient] to false, it directly impacts whether the recipient has to pay fees, thus controlling the ability of users to trade freely.",
+          "This means the owner can effectively limit the trading capabilities of any recipient by changing their fee exemption status."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "WICKEDBET.changeIsFeeExempt(address,bool)",
+        "control_variable": "isFeeExempt",
+        "targets": [
+          "WICKEDBET.takeFee(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_5",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function WICKEDBET.changeIsFeeExempt(address,bool) is controlled by onlyOwner, which means only the owner can change the fee exemption status for any address.",
+          "This directly affects the _transfer function, where the condition '!isFeeExempt[sender] && !isFeeExempt[recipient]' determines whether a transfer can occur.",
+          "If the owner sets an address as fee exempt, that address can transfer tokens without incurring fees, while others cannot, effectively limiting the ability of non-exempt addresses to trade freely.",
+          "Thus, the owner has the power to control who can trade and who cannot, which fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "WICKEDBET.changeIsFeeExempt(address,bool)",
+        "control_variable": "isFeeExempt",
+        "targets": [
+          "WICKEDBET._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_6",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function WICKEDBET.changeIsFeeExempt(address,bool) is controlled by onlyOwner, which means only the owner can change the fee exemption status.",
+          "This directly affects the isFeeExempt mapping, which is checked in the _burnTransfer function with the condition '!isFeeExempt[sender]'.",
+          "If the owner sets an address as fee exempt, that address can avoid fees during transfers, while others cannot, effectively limiting the ability of non-exempt users to trade freely.",
+          "Thus, the owner has the power to control whether users can incur fees or not, which restricts their ability to transact."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "WICKEDBET.changeIsFeeExempt(address,bool)",
+        "control_variable": "isFeeExempt",
+        "targets": [
+          "WICKEDBET._burnTransfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_7",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function WICKEDBET.setWickedWallet(address) is controlled by onlyOwner, allowing the owner to set the isFeeExempt status for any address.",
+          "The affected function WICKEDBET.takeFee(address,address,uint256) checks if the recipient is exempt from fees based on the isFeeExempt mapping.",
+          "If the owner sets isFeeExempt for a specific address to false, they can effectively control whether that address has to pay fees on transactions, thus limiting their ability to trade freely.",
+          "This control over the fee exemption status directly impacts the ability of ordinary users to transact without incurring fees, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "WICKEDBET.setWickedWallet(address)",
+        "control_variable": "isFeeExempt",
+        "targets": [
+          "WICKEDBET.takeFee(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_8",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function WICKEDBET.setWickedWallet(address) is controlled by onlyOwner, allowing the owner to set the isFeeExempt status for any address.",
+          "The _transfer function checks the isFeeExempt status of both the sender and recipient. If the owner sets an address as exempt, it can bypass fees, effectively controlling the transfer conditions.",
+          "This means the owner can prevent normal users from transferring tokens by modifying the isFeeExempt mapping, which directly impacts the ability of users to trade freely."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "WICKEDBET.setWickedWallet(address)",
+        "control_variable": "isFeeExempt",
+        "targets": [
+          "WICKEDBET._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_9",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function WICKEDBET.setWickedWallet(address) is controlled by onlyOwner, allowing the owner to set the isFeeExempt variable.",
+          "The _burnTransfer function checks the condition '! isFeeExempt[sender]', which means if the sender is not exempt from fees, they may be subjected to additional fees or restrictions.",
+          "By changing the isFeeExempt status, the owner can effectively control whether certain users can transfer tokens freely or are subjected to fees, thus limiting their ability to trade.",
+          "This control over the isFeeExempt variable directly impacts the transfer process for users, making it a clear case of limiting their ability to sell or transfer tokens."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "WICKEDBET.setWickedWallet(address)",
+        "control_variable": "isFeeExempt",
+        "targets": [
+          "WICKEDBET._burnTransfer(address,address,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 10,
+    "LEAK": 1,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

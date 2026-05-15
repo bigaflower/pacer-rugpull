@@ -1,0 +1,637 @@
+{
+  "contract_name": "0x070669e366727369064633ef5702107D73Cee0e5",
+  "generated_at": "2025-12-09T04:43:34Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is NotFoundErc404.tkenURI(uint256), which has a permission check at Node E1 that restricts access to the owner. This indicates that only the owner can execute this function.",
+          "2. At Node D0, the asset operation is performed: 'balanceOf[owner] = val', where 'owner' is initialized to address(0). This means that the balance of the address 0 is being set to 'val'.",
+          "3. The balance change is not an increase but rather a direct assignment, which can potentially lead to a decrease in the balance of the address 0 if 'val' is less than the current balance of address 0 (which is 0). Therefore, this operation can be seen as a potential leak of tokens.",
+          "4. The owner can manipulate the balance of address 0 without any checks or balances, which aligns with the definition of a leak, as the owner can effectively reduce the balance of a specified address (in this case, address 0).",
+          "5. The confidence is high because the operation directly affects the balance of an address that is not the caller, indicating a clear potential for token leakage."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "NotFoundErc404.tkenURI(uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> F1",
+        "summary": "Entry NotFoundErc404.tkenURI(uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes an asset node D3 where the balance of 'from' is decreased: 'balanceOf[from] -= _getUnit()' and the balance of 'to' is increased: 'balanceOf[to] += _getUnit()'.",
+          "2. The balance change for 'from' indicates a decrease, while 'to' receives an increase, which suggests a transfer of assets.",
+          "3. The key permission node IF3 checks if the msg.sender is not the 'from' address and does not have approval, allowing unauthorized transfers. This indicates that a privileged user can manipulate the transfer process.",
+          "4. The balance of 'from' is reduced without any indication that the 'from' address is the caller, meaning the privileged user can specify any address to deduct from, which aligns with the definition of a leak.",
+          "5. The overall balance change indicates a decrease for 'from' and an increase for 'to', confirming that tokens are being leaked from one account to another without consent."
+        ],
+        "key_nodes": [
+          "D3",
+          "IF3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "NotFoundErc404.transferFrom(address,address,uint256)",
+        "trace": "E1 -> IF0 -> IF1 -> D0 -> IF2 -> D1 -> IF3[PERM] -> D2 -> D3[ASSET] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry NotFoundErc404.transferFrom(address,address,uint256); PermNode: IF3; AssetNode: D3"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path starts at the function NotFoundErc404.safeTransferFrom, which eventually leads to permission checks at nodes IF0 and IF3.",
+          "2. Node IF3 checks if msg.sender is not from, is not approved, and is not the owner of the token, which means that only the owner or approved addresses can transfer tokens.",
+          "3. This creates a limitation on who can execute the transfer, effectively allowing the owner to control the transfer process.",
+          "4. Node D3 shows asset changes where balanceOf[from] is decreased and balanceOf[to] is increased, but this contingent on the permission checks at IF3.",
+          "5. If the owner decides to restrict transfers by not approving any addresses, they can effectively limit the ability of others to transfer tokens, which aligns with the LIMIT behavior."
+        ],
+        "key_nodes": [
+          "IF3",
+          "D3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "NotFoundErc404.safeTransferFrom(address,address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> IF0 -> IF1 -> D0 -> IF2 -> D1 -> IF3[PERM] -> D2 -> D3[ASSET] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1 -> IF0[PERM] -> D1 -> F1",
+        "summary": "Entry NotFoundErc404.safeTransferFrom(address,address,uint256); PermNode: IF3, IF0; AssetNode: D3"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function NotFoundErc404.safeTransferFrom, which checks permissions at node IF0. This node ensures that the recipient address has a valid contract and implements the ERC721Receiver interface.",
+          "2. The permission check at IF0 is crucial because it determines whether the transfer can proceed based on the recipient's contract code. If the recipient does not implement the required interface, the transfer will revert, effectively limiting the ability of users to transfer tokens to certain addresses.",
+          "3. The asset nodes D4 and D5 indicate that the allowance is being checked and modified. Specifically, at D4, the allowance is read, and at D5, it is decreased by the amount being transferred. However, these operations do not indicate any minting or leaking behavior.",
+          "4. The ability to control whether transfers can occur based on the recipient's contract implementation gives the owner significant power over the transfer process, which aligns with the LIMIT category.",
+          "5. The path does not exhibit any behaviors that would classify it as MINT or LEAK, as there are no indications of unauthorized balance increases or direct balance reductions of arbitrary accounts."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D4",
+          "D5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "NotFoundErc404.safeTransferFrom(address,address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> IF0 -> D4[ASSET] -> IF4 -> D5[ASSET] -> D6 -> F1 -> IF0[PERM] -> D1 -> F1",
+        "summary": "Entry NotFoundErc404.safeTransferFrom(address,address,uint256); PermNode: IF0; AssetNode: D4, D5"
+      }
+    },
+    {
+      "path_id": "path_4",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function NotFoundErc404.safeTransferFrom, which is responsible for transferring tokens between addresses.",
+          "2. The permission check at node IF3 ensures that the msg.sender must either be the from address, an approved operator, or the approved address for the token being transferred. This means that if msg.sender does not meet these criteria, the transfer will be reverted with 'Unauthorized()'.",
+          "3. This permission check effectively limits who can initiate a transfer, as only certain addresses can successfully call this function to transfer tokens. This a clear indication of limiting the ability of users to freely transfer their tokens.",
+          "4. Additionally, the presence of the revert statements at nodes D0 and D1 further enforces that only authorized addresses can perform transfers, which aligns with the definition of LIMIT.",
+          "5. The asset nodes (D3) show that balances are being adjusted, but the ability to initiate these adjustments is restricted by the permission checks, indicating that the transfer process is controlled by the contract owner or approved addresses."
+        ],
+        "key_nodes": [
+          "IF3",
+          "D0",
+          "D1",
+          "D3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_4",
+        "function_signature": "NotFoundErc404.safeTransferFrom(address,address,uint256,bytes)",
+        "trace": "E1 -> D0 -> E1 -> IF0 -> IF1 -> D0 -> IF2 -> D1 -> IF3[PERM] -> D2 -> D3[ASSET] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1 -> IF0[PERM] -> D1 -> F1",
+        "summary": "Entry NotFoundErc404.safeTransferFrom(address,address,uint256,bytes); PermNode: IF3, IF0; AssetNode: D3"
+      }
+    },
+    {
+      "path_id": "path_5",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D4, `allowed = allowance[from][msg.sender]` reads `allowance`, is asset node, indicates `from` address allow transfer .",
+          "2. At node D5, `allowance[from][msg.sender] = allowed - amountOrId` code decrease `from` address `allowance`, `from` the balance is reduced, and `amountOrId` is provided by the parameter, This meansThe privileged user can specify arbitrary `from` address.",
+          "3. because `from` is provided by the parameter, rather thanis the caller itself, The privileged user can callthis functionto decrease arbitrary user `allowance`, This matches the definition of token leaking.",
+          "4. In this pathno MINT or LIMIT behavior, asset changes are at The privileged user control perform, and `from` address is ."
+        ],
+        "key_nodes": [
+          "D4",
+          "D5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_5",
+        "function_signature": "NotFoundErc404.safeTransferFrom(address,address,uint256,bytes)",
+        "trace": "E1 -> D0 -> E1 -> IF0 -> D4[ASSET] -> IF4 -> D5[ASSET] -> D6 -> F1 -> IF0[PERM] -> D1 -> F1",
+        "summary": "Entry NotFoundErc404.safeTransferFrom(address,address,uint256,bytes); PermNode: IF0; AssetNode: D4, D5"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'Ownable.transferOwnership(address)' is protected by the 'onlyOwner' modifier, meaning only the current owner can change the ownership.",
+          "Once ownership is transferred, the new owner can control the 'NotFoundErc404.approve(address,uint256)' function.",
+          "In the 'approve' function, there is a conditional check that restricts access based on whether the caller is the owner or is approved by the owner.",
+          "This means that the new owner can effectively limit who can call the 'approve' function, thereby controlling the ability of users to approve transfers, which directly impacts their ability to trade.",
+          "Thus, the ability of the new owner to restrict approvals constitutes a limiting behavior on user transactions."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "owner",
+        "targets": [
+          "NotFoundErc404.approve(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function Ownable.transferOwnership(address) is controlled by onlyOwner, which means only the owner can change the ownership of the contract.",
+          "The variable getApproved is influenced by the approve function, which can be manipulated by the owner to control who is approved to transfer tokens on behalf of others.",
+          "In the transferFrom function, there is a conditional check that prevents transfers unless certain conditions are met, including whether the msg.sender is approved. This means the owner can effectively limit who can transfer tokens by changing the approval status.",
+          "Since the owner can control the approval status and thus the ability of others to transfer tokens, this constitutes a limitation on trading for regular users."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF3"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "getApproved",
+        "targets": [
+          "NotFoundErc404.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_2",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'Ownable.transferOwnership(address)' is protected by the 'onlyOwner' modifier, indicating that only the owner can change the ownership of the contract.",
+          "The 'NotFoundErc404.transferFrom(address,address,uint256)' function checks if 'from != _ownerOf[amountOrId]', which implies that the owner can control who can transfer tokens by changing the ownership.",
+          "Since the owner can modify the ownership and thus control the transfer process, this creates a scenario where the owner can limit or disable transfers for other users, effectively restricting their ability to trade."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "_ownerOf",
+        "targets": [
+          "NotFoundErc404.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_3",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'Ownable.transferOwnership(address)' is protected by the 'onlyOwner' modifier, which means only the current owner can call this function. This indicates a privileged control over ownership.",
+          "The affected target 'NotFoundErc404.tkenURI(uint256)' writes to 'balanceOf', which suggests that the ownership transfer could potentially affect the ability to modify balances.",
+          "Since the owner can change the ownership, they can indirectly control who has the ability to modify balances through the 'tkenURI' function. This could lead to a situation where the new owner could restrict or limit the ability of other users to interact with the token, effectively limiting their ability to trade.",
+          "Thus, the path demonstrates a potential for limiting user transactions based on ownership control."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "owner",
+        "targets": [
+          "NotFoundErc404.tkenURI(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_4",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function Ownable.revokeOwnership() can be called by the owner to revoke their ownership, which means that after this function is executed, the owner variable will be set to a null or non-existent address.",
+          "The affected target NotFoundErc404.approve(address,uint256) has a conditional check that requires msg.sender to be the owner or approved by the owner. If the ownership is revoked, msg.sender will never be the owner, and thus will not be able to approve any transfers.",
+          "This creates a situation where the owner can disable the ability for others to approve transfers, effectively limiting their ability to trade or interact with the contract."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.revokeOwnership()",
+        "control_variable": "owner",
+        "targets": [
+          "NotFoundErc404.approve(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_5",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Ownable.revokeOwnership() is marked with onlyOwner, indicating that only the owner can call this function. This function can potentially change the ownership of the contract, which affects the control over the getApproved variable.",
+          "The getApproved variable is used in the transferFrom function as a conditional check. If the owner revokes ownership, it could lead to a situation where the approval status can be manipulated, thus affecting who can transfer tokens on behalf of others.",
+          "The condition in transferFrom checks if msg.sender is not from and whether they are not approved. If the owner revokes ownership, they could potentially manipulate approvals, leading to limitations on who can transfer tokens, effectively restricting normal users' ability to trade.",
+          "Since the owner has the ability to control the approval status, this creates a scenario where the owner can limit the transfer capabilities of other users, which fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF3"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.revokeOwnership()",
+        "control_variable": "getApproved",
+        "targets": [
+          "NotFoundErc404.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_6",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function Ownable.revokeOwnership() is marked with onlyOwner, indicating that only the owner can call this function, which allows them to revoke ownership.",
+          "Once ownership is revoked, the _ownerOf variable can be manipulated, affecting the transferFrom function.",
+          "The transferFrom function checks if the 'from' address is not equal to _ownerOf[amountOrId], which means that the owner can control who can transfer tokens by revoking ownership.",
+          "This creates a scenario where the owner can effectively limit the ability of users to transfer tokens, as they can revoke ownership and thus control the transfer logic."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.revokeOwnership()",
+        "control_variable": "_ownerOf",
+        "targets": [
+          "NotFoundErc404.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_7",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function Ownable.revokeOwnership() is marked with onlyOwner, indicating that only the owner can call this function.",
+          "By revoking ownership, the owner can potentially disable or alter the functionality of the NotFoundErc404.tkenURI(uint256) function, which modifies the balanceOf state.",
+          "This means that the owner has the ability to control whether or not the balanceOf function can be executed, effectively limiting the ability of other users to interact with their tokens.",
+          "Since the owner can revoke their ownership and potentially disable transfers or other critical functions, this constitutes a limiting behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.revokeOwnership()",
+        "control_variable": "owner",
+        "targets": [
+          "NotFoundErc404.tkenURI(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_8",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function NotFoundErc404.transferOwnership(address) is protected by the onlyOwner modifier, meaning only the current owner can call it. This indicates a privileged control over ownership.",
+          "The affected target, NotFoundErc404.approve(address,uint256), contains a conditional check that restricts approval based on the msg.sender not being the owner and not being approved for all by the owner. This means that the owner can control who is allowed to approve transfers.",
+          "If the owner changes the ownership to another address, they can effectively limit who can interact with the approve function, thus controlling the ability of users to approve transfers.",
+          "This control over the approval process can restrict normal users from executing transfers, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "NotFoundErc404.transferOwnership(address)",
+        "control_variable": "owner",
+        "targets": [
+          "NotFoundErc404.approve(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_9",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function NotFoundErc404.transferOwnership(address) is controlled by onlyOwner, which means only the owner can change the ownership of the contract.",
+          "The affected target NotFoundErc404.transferFrom(address,address,uint256) includes a conditional check that restricts transfers based on the approval status of the sender.",
+          "The condition msg.sender != from && !isApprovedForAll[from][msg.sender] && msg.sender != getApproved[amountOrId] indicates that the transfer can be blocked if the sender is not the owner or not approved, which gives the owner control over who can transfer tokens.",
+          "Since the owner can manipulate the approval status through the approve function, they can effectively limit the ability of other users to transfer tokens, thus implementing a limiting behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF3"
+        ]
+      },
+      "overview": {
+        "source": "NotFoundErc404.transferOwnership(address)",
+        "control_variable": "getApproved",
+        "targets": [
+          "NotFoundErc404.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_10",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function NotFoundErc404.transferOwnership(address) is controlled by the onlyOwner modifier, which means only the owner can call this function. This gives the owner the ability to change the ownership of the contract.",
+          "The transferFrom function checks if the from address is not equal to _ownerOf[amountOrId]. This indicates that the owner can control who can transfer tokens by changing ownership, effectively limiting the ability of other users to transfer tokens.",
+          "Since the owner can modify the ownership and thus control the transfer process, this creates a scenario where the owner can limit the ability of other users to sell or transfer their tokens."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "NotFoundErc404.transferOwnership(address)",
+        "control_variable": "_ownerOf",
+        "targets": [
+          "NotFoundErc404.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_11",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function NotFoundErc404.transferOwnership(address) is protected by the onlyOwner modifier, which means only the owner can call this function.",
+          "The transferOwnership function does not directly modify any asset balances, but it allows the owner to change the ownership of the contract.",
+          "The affected target, NotFoundErc404.tkenURI(uint256), writes to balanceOf, which indicates that the owner can potentially control the balance of tokens associated with a specific token ID.",
+          "If the owner can manipulate the ownership and subsequently the token URI, they could effectively limit the ability of other users to interact with their tokens, thus controlling the trading state indirectly.",
+          "Since the owner has the ability to change ownership and potentially restrict access to token functionalities, this fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "NotFoundErc404.transferOwnership(address)",
+        "control_variable": "owner",
+        "targets": [
+          "NotFoundErc404.tkenURI(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_12",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function NotFoundErc404.revokeOwnership() is controlled by the onlyOwner modifier, meaning only the owner can call it. This gives the owner the ability to revoke ownership.",
+          "Once ownership is revoked, the approve function checks if msg.sender is not the owner and if they are not approved for all. This means that the owner can control who is allowed to approve transfers, effectively limiting the ability of other users to interact with the contract.",
+          "The ability to revoke ownership and thus control the approval process directly impacts the ability of users to trade or transfer tokens, which fits the definition of a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "NotFoundErc404.revokeOwnership()",
+        "control_variable": "owner",
+        "targets": [
+          "NotFoundErc404.approve(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_13",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function NotFoundErc404.revokeOwnership() is marked with onlyOwner, indicating that only the owner can call this function, which can potentially change the ownership status.",
+          "The control variable getApproved is used in the transferFrom function as a conditional check. If the owner revokes ownership, it could affect who is approved to transfer tokens on behalf of others.",
+          "The condition in transferFrom checks if msg.sender is not from, is not approved for all, and is not the approved address for the specific token. This means that the owner can control who can transfer tokens by manipulating the approval status.",
+          "Since the owner can revoke ownership and potentially change the approval status, this creates a scenario where the owner can limit the ability of other users to transfer tokens, thus classifying it as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF3"
+        ]
+      },
+      "overview": {
+        "source": "NotFoundErc404.revokeOwnership()",
+        "control_variable": "getApproved",
+        "targets": [
+          "NotFoundErc404.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_14",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function NotFoundErc404.revokeOwnership() is marked with onlyOwner, indicating that only the owner can call this function, which gives them control over the ownership state.",
+          "The control variable _ownerOf is directly tied to the transferFrom function, which checks if the 'from' address is not equal to _ownerOf[amountOrId].",
+          "If the owner revokes ownership, they can effectively prevent any transfers from occurring by manipulating the ownership state, thus limiting the ability of other users to transfer tokens.",
+          "This creates a scenario where the owner can control whether transfers can happen or not, which fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "NotFoundErc404.revokeOwnership()",
+        "control_variable": "_ownerOf",
+        "targets": [
+          "NotFoundErc404.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_15",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function NotFoundErc404.revokeOwnership() is marked with the onlyOwner modifier, indicating that only the owner can call this function. This grants the owner the ability to revoke ownership, which could potentially lead to changes in the contract's behavior.",
+          "The affected target, NotFoundErc404.tkenURI(uint256), modifies the balanceOf state. If the owner can revoke ownership and subsequently change the behavior of the contract, they could effectively limit or control the transferability of tokens by manipulating the state of the contract.",
+          "Since the owner has the ability to revoke ownership and potentially alter the contract's functionality, this creates a scenario where ordinary users may be restricted from transferring their tokens, thus fitting the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "NotFoundErc404.revokeOwnership()",
+        "control_variable": "owner",
+        "targets": [
+          "NotFoundErc404.tkenURI(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_16",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function NotFoundErc404.approve allows an address to be approved for transferring tokens on behalf of another address, which is a standard ERC20 functionality.",
+          "In the transferFrom function, there is a conditional check that restricts transfers based on the approval status: 'msg.sender != from && !isApprovedForAll[from][msg.sender] && msg.sender != getApproved[amountOrId]'.",
+          "This means that if the approval is not granted, the transfer cannot proceed, effectively allowing the owner or approved addresses to control who can transfer tokens.",
+          "Since the approval can be manipulated by the owner, it creates a scenario where the owner can limit the ability of other users to transfer their tokens, thus classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF3"
+        ]
+      },
+      "overview": {
+        "source": "NotFoundErc404.approve(address,uint256)",
+        "control_variable": "getApproved",
+        "targets": [
+          "NotFoundErc404.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_17",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function NotFoundErc404.approve allows a user to approve another address to transfer tokens on their behalf, which is a standard ERC20 functionality.",
+          "However, the transferFrom function checks if the 'from' address is not the owner of the token (_ownerOf[amountOrId]). This implies that the approval mechanism can be manipulated by the owner to control who can transfer tokens.",
+          "If the owner sets the approval status to false or modifies the _ownerOf mapping, they can effectively limit the ability of other users to transfer their tokens, thus controlling the trading behavior.",
+          "This control over the transfer process by the owner indicates a potential for limiting the sell actions of other users, classifying it as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "NotFoundErc404.approve(address,uint256)",
+        "control_variable": "_ownerOf",
+        "targets": [
+          "NotFoundErc404.transferFrom(address,address,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 21,
+    "LEAK": 3,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

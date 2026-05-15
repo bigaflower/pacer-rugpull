@@ -1,0 +1,297 @@
+{
+  "contract_name": "0x6c3be406174349cfa4501654313d97e6a31072e1",
+  "generated_at": "2026-02-25T08:32:31Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The path starts with the function TokenERC20.transfer(address,uint256) which is a standard transfer function.",
+          "2. The first asset node D0 checks if the sender has enough balance to perform the transfer with the line 'require(bool)(balanceOf[_from] >= _value)'. This ensures that the transfer can only occur if the sender has sufficient funds.",
+          "3. The balance changes are as follows: 'balanceOf[_from] -= _value' (decrease) and 'balanceOf[_to] += _value' (increase).",
+          "4. The balance of the sender decreases by the value being transferred, while the balance of the recipient increases by the same amount. There are no hidden increases in balance or unauthorized deductions.",
+          "5. Since the transfer is between two addresses and both balances are adjusted accordingly without any additional fees or unauthorized deductions, this does not fit into any of the rugpull categories.",
+          "6. The checks in place ensure that the transfer is valid and that the balances are adjusted correctly, indicating a standard transfer operation."
+        ],
+        "key_nodes": [
+          "D0",
+          "E1",
+          "F1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "TokenERC20.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0[PERM] -> F1 -> F1",
+        "summary": "Entry TokenERC20.transfer(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 0.0,
+        "reasoning": [
+          "1. The path begins with the function TokenERC20.transferFrom, which checks the allowance of the sender against the value being transferred. This a standard ERC20 function and does not indicate any rugpull behavior.",
+          "2. The first asset node D0 checks if the allowance is sufficient (L105) and then decreases the allowance (L106). This a normal operation and does not increase any balances, hence it does not indicate MINT.",
+          "3. The next asset node E1 calls the _transfer function, which checks if the recipient address is valid (L66), if the sender has enough balance (L68), and ensures that the balance of the recipient will not overflow (L70). All these checks are standard and do not indicate any rugpull behavior.",
+          "4. The balance of the sender is decreased (L74) and the balance of the recipient is increased (L76). The balance change is from the sender to the recipient, which is a normal transfer operation and does not indicate LEAK since the sender is not an arbitrary address but the one specified in the parameters.",
+          "5. The final assertion (L79) ensures that the total balances remain consistent, which is a standard check in ERC20 implementations.",
+          "6. There are no indications of any hidden minting, limiting of sales, or leaking of tokens in this path."
+        ],
+        "key_nodes": [
+          "D0",
+          "E1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "TokenERC20.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0[PERM] -> F1 -> F1",
+        "summary": "Entry TokenERC20.transferFrom(address,address,uint256); PermNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "At node D0, execute `balanceOf[msg.sender] -= _value`, This indicates caller balance decreases by _value. according to path definition, msg.sender is the functionaddress, thereforethis addressbalance will decrease.",
+          "at this, The privileged user ( msg.sender) can through burn functionto decrease balance, but there is no limit can specify other user addressto decrease balance . This means msg.sender is privilege account, can through burn functionto decrease arbitrary user balance, rather thanis balance .",
+          "Therefore, behavior matches the leak token definition, because The privileged user can decrease other user balance rather than compensation ."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "TokenERC20.burn(uint256)",
+        "trace": "E1 -> D0[PERM] -> F1",
+        "summary": "Entry TokenERC20.burn(uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "At node D0, execute `balanceOf[_from] -= _value` (L171) , This means from `_from` address balance deducted `_value`.",
+          "also, `allowance[_from][msg.sender] -= _value` (L172) also decrease `_from` address caller, This indicates caller can `_from` balance .",
+          "because `_from` is function parameter, The privileged user can arbitrarily specifythis address, thereforecan from arbitrary user balance deductedtoken, rather than limited to the caller themselves, This matches the definition of token leaking.",
+          "at, The privileged user can call `burnFrom` function, directly decrease arbitrary user balance, while no compensation, matchesdirectly leak characteristic."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "TokenERC20.burnFrom(address,uint256)",
+        "trace": "E1 -> D0[PERM] -> F1",
+        "summary": "Entry TokenERC20.burnFrom(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_4",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 0.0,
+        "reasoning": [
+          "1. The entry function is CNNS.transfer(address,uint256), which leads to the _transfer function.",
+          "2. In Node D0, several permission checks are performed before any asset changes occur. These checks ensure that the sender has enough balance and that neither the sender nor the recipient is frozen.",
+          "3. The asset changes occur in lines L203 and L204: 'balanceOf[_from] -= _value' and 'balanceOf[_to] += _value'. Here, _from is the msg.sender and _to is the parameter provided to the function.",
+          "4. The balance change for the sender (_from) is a decrease, while the recipient (_to) sees an increase. This indicates a standard transfer operation without any hidden minting or leaking.",
+          "5. The checks in L199 and L200 ensure that the transfer cannot occur if the sender does not have enough balance or if the recipient's balance would overflow, which prevents any unexpected behavior.",
+          "6. Since the transfer is between the sender and the recipient without any additional fees or unauthorized deductions, it does not fit the definitions of MINT, LIMIT, or LEAK."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_4",
+        "function_signature": "CNNS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0[PERM] -> F1 -> F1",
+        "summary": "Entry CNNS.transfer(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_5",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path starts with the function CNNS.transferFrom, which involves transferring tokens from one address to another.",
+          "2. In Node D0, the allowance is checked and decremented: allowance[_from][msg.sender] -= _value. This indicates that the caller can spend tokens on behalf of the _from address, which is a standard allowance mechanism.",
+          "3. In Node D0, the _transfer function is called, which includes several permission checks and balance updates.",
+          "4. The balance of the _from address is decreased: balanceOf[_from] -= _value, and the balance of the _to address is increased: balanceOf[_to] += _value. This a normal transfer operation.",
+          "5. However, the key point is that the _from address is not necessarily the caller; it can be any address specified by the caller. This means that the caller can specify an arbitrary address to deduct tokens from, which constitutes a leak.",
+          "6. The ability to deduct from any address (not just the caller's own balance) without their consent is a clear indication of a leak, as it allows the caller to transfer tokens from others without their permission."
+        ],
+        "key_nodes": [
+          "D0",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_5",
+        "function_signature": "CNNS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0[PERM] -> F1 -> F1",
+        "summary": "Entry CNNS.transferFrom(address,address,uint256); PermNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_6",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "At node D0, execute `balanceOf[msg.sender] -= _value`, This means caller balance will decrease. according to path, `msg.sender` is `CNNS.burn(uint256)` function user, therefore does not is directly leak behavior, because balance decrease is caller itself .",
+          "however, `require(bool)(balanceOf[msg.sender] >= _value)` ensures caller balance performoperation, This meansonly at caller balance, will execute balance decrease . this, althoughno directly leak other user balance, but existsother control situation, The privileged userwill throughother user balance .",
+          "because noThe privileged user can arbitrarilydeductionother user balance, and all asset changes are caller itself, therefore path not matches the LEAK definition. judgeis risk ."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_6",
+        "function_signature": "CNNS.burn(uint256)",
+        "trace": "E1 -> D0[PERM] -> F1",
+        "summary": "Entry CNNS.burn(uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_7",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, execute `balanceOf[_from] -= _value` (L171), This indicates from `_from` addressdeducted from the balance of `_value`.",
+          "2. `_from` is a function parameter, caller can specify arbitraryaddress, thereforeThe privileged user can call `burnFrom` functionto decrease arbitrary user balance, rather than limited to the caller themselves.",
+          "3. because `_from` the balance is reduced, while there is no compensation, This matches the definition of token leaking.",
+          "4. furthermore, `allowance[_from][msg.sender]` also is decrease (L172), further indicatesThe privileged user can control .",
+          "5. In summary, This path matches the LEAK definition, because The privileged user can arbitrarily specify affected accounts decrease its balance ."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_7",
+        "function_signature": "CNNS.burnFrom(address,uint256)",
+        "trace": "E1 -> D0[PERM] -> F1",
+        "summary": "Entry CNNS.burnFrom(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'owned.transferOwnership(address)' is controlled by 'onlyOwner', which means only the owner can change the ownership of the contract.",
+          "Once ownership is transferred, the new owner can call 'CNNS.freezeAccount(address,bool)', which modifies the 'frozenAccount' variable.",
+          "The 'frozenAccount' variable directly affects the '_transfer' function in 'CNNS._transfer(address,address,uint256)', which is responsible for transferring tokens.",
+          "If an account is frozen, the owner can prevent transfers from that account, effectively limiting the ability of normal users to trade their tokens.",
+          "Thus, the owner has the ability to control whether or not transfers can occur, which fits the definition of a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "owned.transferOwnership(address)",
+        "control_variable": "frozenAccount",
+        "targets": [
+          "CNNS._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function CNNS.transferOwnership(address) is controlled by the onlyOwner modifier, which means only the owner can call this function.",
+          "This function can modify the frozenAccount variable, which is likely used to restrict certain accounts from transferring tokens.",
+          "The affected transfer function CNNS._transfer(address,address,uint256) relies on the frozenAccount state, meaning if an account is frozen, it cannot transfer tokens.",
+          "Thus, the owner has the ability to control which accounts can or cannot transfer tokens, effectively limiting the trading capabilities of those accounts."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "CNNS.transferOwnership(address)",
+        "control_variable": "frozenAccount",
+        "targets": [
+          "CNNS._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_2",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function CNNS.freezeAccount(address,bool) is controlled by onlyOwner, which means only the owner can call this function to modify the frozenAccount state.",
+          "When the frozenAccount variable is set to true for a specific address, it prevents that address from being able to execute transfers through the CNNS._transfer function.",
+          "This effectively limits the ability of users to transfer tokens, as the owner can arbitrarily freeze accounts, thus controlling who can and cannot trade.",
+          "Since the ability to freeze accounts directly impacts the transfer functionality, this path clearly demonstrates a limiting behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "CNNS.freezeAccount(address,bool)",
+        "control_variable": "frozenAccount",
+        "targets": [
+          "CNNS._transfer(address,address,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 3,
+    "LEAK": 5,
+    "EMPTY": 3,
+    "ERROR": 0
+  }
+}

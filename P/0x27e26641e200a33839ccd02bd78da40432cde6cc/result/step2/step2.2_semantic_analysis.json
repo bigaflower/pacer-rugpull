@@ -1,0 +1,537 @@
+{
+  "contract_name": "0x27e26641e200a33839ccd02bd78da40432cde6cc",
+  "generated_at": "2025-12-09T13:02:33Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The control source 'Owned.transferOwnership(address)' has a modifier 'onlyOwner', indicating that only the contract owner can change ownership.",
+          "2. This ownership transfer influences the variable 'owner', which is later used by 'GokuToken.transfernewun(address)', implying that the new owner (controller) can influence the transfer operations.",
+          "3. The affected target 'GokuToken.transfer(address,uint256)' modifies the 'balances', which means that the owner has the capability to control balance transfers.",
+          "4. Since ownership can be changed and directly affects the transfer logic, the new owner can effectively limit transfer capabilities by controlling the outcomes of 'transfer' calls. Therefore, this constitutes a limiting sell scenario."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Owned.transferOwnership(address)",
+        "control_variable": "newun",
+        "targets": [
+          "GokuToken.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.8,
+        "reasoning": [
+          "1. The path begins with the function Owned.transferOwnership(address), which has the modifier onlyOwner. This indicates that only the owner can change the ownership, thereby controlling who can execute certain functions.",
+          "2. The function TokenBEP20.acceptOwnership() iterates the ownership, meaning the previous owner can transfer control over the contract to a new owner specified by the address.",
+          "3. In the control chain, we see GokuToken.transfernewun(address) which modifies the variable newun. As this function is called by the new owner, they can specify any address (not limited to themselves) when invoking transfer.",
+          "4. The affected target TokenBEP20.transfer(address,uint256) indicates that balances are modified, and within this function, it can decrease the balance of any address specified by newun, which can be an arbitrary address chosen by the owner. This represents an uncontrolled ability to withdraw or leak tokens from the specified account.",
+          "5. This falls under the LEAK category since the owner could potentially transfer tokens from any user's balance without their consent."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Owned.transferOwnership(address)",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_2",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'Owned.transferOwnership(address)' is only accessible to the owner due to the modifier 'onlyOwner'. This gives the owner the ability to change the ownership to any address, which indirectly impacts the 'newun' variable, as seen in the variable assignment in 'GokuToken.transfernewun(address)'.",
+          "'TokenBEP20.transferFrom(address,address,uint256)' is conditioned on 'from != address(0) && newun == address(0)'. The owner could set 'newun' to an address of their choice, controlling the flow of tokens when transferring tokens out of the contract.",
+          "Since the owner can control whether or not transferring can occur by setting 'newun', this implies that they can effectively limit or enable transfers for other users, which aligns with the LIMIT rugpull behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Owned.transferOwnership(address)",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_3",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function 'Owned.transferOwnership(address)' is controlled by 'onlyOwner', granting the owner the ability to change ownership. This allows the owner to potentially change which address has control over the token.",
+          "2. The 'newun' variable, which is dependent on the ownership transfer, is checked in the 'GokuToken.transferFrom(address,address,uint256)' function. This function contains the condition 'newun == address(0)'.",
+          "3. If 'newun' is set to an address other than address(0) by the owner, this could effectively limit user transactions depending on the implementation of 'transferFrom'.",
+          "4. Since the owner's ability to modify 'newun' directly influences whether or not transfers can occur, this control represents a limitation on transferring capabilities for non-owner users.",
+          "5. Therefore, the presence of the 'onlyOwner' modifier and the conditional check involving the 'newun' variable indicates a potential for limiting trades."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Owned.transferOwnership(address)",
+        "control_variable": "newun",
+        "targets": [
+          "GokuToken.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_40",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The path includes calls to `Owned.acceptOwnership()` which allows the owner to take control of the contract, hence acting as an entry point to control transfer functions.",
+          "Subsequent to gaining ownership, the `newun` variable is set, which is then passed to the `GokuToken.transfer(address, uint256)` function. The ability to manipulate the `newun` variable suggests that the owner can determine the recipient address for the transfer.",
+          "Since the `GokuToken.transfer` function ultimately modifies `balances` based on the specified address in `newun`, this indicates that the owner can control transactions for arbitrary addresses, effectively allowing them to limit who can trade or transfer tokens.",
+          "Thus, by preventing or manipulating transfers through control of `newun`, this meets the criteria for LIMIT as the owner can disable or restrict access for other users."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Owned.acceptOwnership()",
+        "control_variable": "newun",
+        "targets": [
+          "GokuToken.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_41",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.8,
+        "reasoning": [
+          "1. The function 'Owned.acceptOwnership()' allows ownership transfer, which can lead to control over critical functions by a potentially malicious owner.",
+          "2. The function 'GokuToken.transfernewun(address)' is modifying the 'newun' variable, which is later used in 'TokenBEP20.transfer(address,uint256)'.",
+          "3. In 'TokenBEP20.transfer', balances are modified, meaning that it can decrease the balance of one address (from) and increase the balance of another address (to).",
+          "4. If 'newun' can be set to any arbitrary address, a malicious actor (upon accepting ownership) could direct funds from any user to themselves or another address, meeting the criteria for leaking tokens.",
+          "5. There's no evidence in the current analysis that would limit transfer behavior (LIMIT) or indicate a hidden minting capability (MINT) where balances are arbitrarily increased."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Owned.acceptOwnership()",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_42",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "Node E1 allows the execution of 'acceptOwnership()' which is public and can be called, potentially changing the ownership of the contract.",
+          "The condition in Node IF0 checks the status of 'newun', which can only be set by the 'GokuToken.transfernewun(address)' method under certain ownership conditions.",
+          "If 'newun' is modified by the owner, it can affect transfer operations since the transferFrom operation checks if 'newun' is equal to address(0). If the owner sets 'newun' to a non zero address, it can potentially block transfers for users due to the conditional check.",
+          "Thus, the authority of the owner over the 'newun' variable gives them the ability to limit transactions based on changes they can make."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Owned.acceptOwnership()",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_43",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.85,
+        "reasoning": [
+          "1. The function `Owned.acceptOwnership()` allows the owner to claim ownership, affecting the `newun` control variable which is checked in the `GokuToken.transferFrom(address,address,uint256)` function.",
+          "2. The conditional check in `transferFrom` involves the `newun` variable being equal to `address(0)`. If the owner unsets `newun` to an address other than `0`, it may restrict transfers for anyone not on an allowed list or if the function is controlled by the owner.",
+          "3. Since the `require` checks if `newun` is `address(0)` before allowing transfers to proceed, the owner has direct control over whether users can transfer tokens or not, effectively limiting their transaction capabilities.",
+          "4. This behavior fits the category of limiting sell since the owner's actions can directly prevent normal users from executing token transfers based on the value of `newun`."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Owned.acceptOwnership()",
+        "control_variable": "newun",
+        "targets": [
+          "GokuToken.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_48",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function `TokenBEP20.transferOwnership(address)` can be called by the owner to change the ownership of the token, allowing a new address (newun) to take control as per its visibility and modifiers.",
+          "2. The owner can then invoke `GokuToken.transfernewun(address)`, which allows the new owner (newun) to make transfers using `GokuToken.transfer(address,uint256)`.",
+          "3. The `GokuToken.transfer(address,uint256)` function modifies balances and decreases the balance of the `from` account while increasing the `to` account's balance. If the `from` address is provided as a parameter (not the caller), it can lead to unauthorized token transfers.",
+          "4. Since `newun` is set by the previous owner, and transferring can occur from arbitrary accounts (not limited to the caller), this behavior aligns with the criteria for leaking tokens.",
+          "5. There is no evidence of minting (MINT) or limiting (LIMIT) the token regarding ownership change and transfer. The primary issue arises from the potential of the new owner to direct transactions resulting in unauthorized balance reductions from users other than the caller."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.transferOwnership(address)",
+        "control_variable": "newun",
+        "targets": [
+          "GokuToken.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_49",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The `TokenBEP20.transferOwnership(address)` function has a modifier `onlyOwner`, which indicates that only the owner can change the ownership of the contract, potentially affecting who can perform transfers.",
+          "The `TokenBEP20.acceptOwnership()` function sets the `owner` state variable upon acceptance, meaning that the new owner now has control over the contract's operations.",
+          "The control variable `newun` can be assigned to an arbitrary address by the owner through the `GokuToken.transfernewun(address)` function, enabling the owner to direct transfers to this address.",
+          "Since the `owner` can dictate the ownership via `transferOwnership`, and thus control the `transfer()` function behavior, the functionality of regular users can be limited by changing ownership or transfer parameters, categorizing this as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.transferOwnership(address)",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_50",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "1. The function 'TokenBEP20.transferOwnership(address)' can be executed only by the current owner due to the 'onlyOwner' modifier, allowing a privileged user to change the ownership.",
+          "2. Changing ownership affects the 'newun' variable which is tied to the transfer functionality.",
+          "3. The condition in 'TokenBEP20.transferFrom(address,address,uint256)' checks 'newun == address(0)'. If 'newun' is manipulated by the owner, it could disable transfers for anyone else where 'newun' is not zero, thus preventing normal users from transferring their tokens.",
+          "4. Since the control over 'newun' by the owner can impact the transfer capabilities, it demonstrates Limiting Sell where the privileged user could restrict transfer conditions."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.transferOwnership(address)",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_51",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The `TokenBEP20.transferOwnership(address)` function is a public function restricted to only the owner with the modifier `onlyOwner`.",
+          "2. The `GokuToken.transferFrom(address,address,uint256)` function has a condition that checks `newun == address(0)` which can potentially control who is allowed to transfer tokens based on the value of `newun`.",
+          "3. The ability for the owner to call `transferOwnership` and subsequently set `newun`, which is referenced in a conditional check during `transferFrom`, allows the owner to effectively block or allow transfers based on what address `newun` is set to.",
+          "4. If the owner sets `newun` to an address and subsequently calls the function, they can limit which transfers are allowed, demonstrating a clear limiting behavior on user transactions."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.transferOwnership(address)",
+        "control_variable": "newun",
+        "targets": [
+          "GokuToken.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_88",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.85,
+        "reasoning": [
+          "1. The function 'TokenBEP20.acceptOwnership()' allows for ownership control, which can manipulate the 'newun' variable used in the 'GokuToken.transfernewun(address)' function. This indicates that an address can be set for transfer by a privileged user.",
+          "2. The 'GokuToken.transfer(address,uint256)' function modifies 'balances', which are involved in asset transfer, indicating a direct impact on the balance of accounts.",
+          "3. As the ownership can be transferred and the state variables—including the control for transfer—can be modified by the owner, it permits the owner to prevent other users from transferring tokens. This effectively allows the owner to limit or block functions for ordinary users by changing the owned state variable that governs token transfers.",
+          "4. The ability to manipulate transfer conditions through ownership gives a clear path to control and limit transactions for regular users, representing a limiting behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.acceptOwnership()",
+        "control_variable": "newun",
+        "targets": [
+          "GokuToken.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_89",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.8,
+        "reasoning": [
+          "1. Path ID: indirect_89 indicates that the control source is from the `TokenBEP20.acceptOwnership()` function, which is public and can be called by anyone, potentially allowing for ownership to be assumed.",
+          "2. The `GokuToken.transfernewun(address)` function uses `newun` as a variable that might be influenced by the input parameters, allowing anyone to set this value to any address.",
+          "3. The affected target `TokenBEP20.transfer(address,uint256)` indicates the `balances` state modification, allowing the `newun` variable's address to be reduced or transferred from.",
+          "4. Since the source of the transfer could be controlled by parameters via `newun`, this results in the special control over another user's balance, classifying it as a leak. The control chain shows the ability to leak tokens from any address specified by the `newun` variable instead of the caller's own balance. Therefore, this path supports leakage of tokens rather than minting or limiting transactions."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.acceptOwnership()",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_90",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The control flow begins in `TokenBEP20.acceptOwnership()`, which allows ownership to be accepted by a caller without strict access control on subsequent operations.",
+          "The conditional check in `TokenBEP20.transferFrom(address,address,uint256)` has the condition `newun == address(0)` which indicates a specific state control that can only be manipulated by the owner through the `acceptOwnership` function.",
+          "If the owner sets `newun` to an address, they can disable transfers by manipulating this conditional check, effectively allowing them to restrict or enable the transfer functionality at will, thereby impacting ordinary users who rely on this function for trading.",
+          "Thus, the owner can limit user transactions by toggling the state of `newun`, fulfilling the criteria for a limit red flag."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.acceptOwnership()",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_91",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "1. The control source is `TokenBEP20.acceptOwnership()` which does not have any modifiers and is public, allowing a privileged address to accept ownership and manage the contract.",
+          "2. The control chain reveals that the variable `newun` is controlled by the `GokuToken.transfernewun(address)` function, indicating that a privileged address can set this variable freely.",
+          "3. In the affected target `GokuToken.transferFrom(address,address,uint256)`, the conditional check depends on `newun == address(0)`. If `newun` is not zero, this can block the transfer because the condition could prevent trade execution.",
+          "4. The ability to change `newun` by a privileged address effectively creates a scenario where that address can restrict or allow transfers, providing loss of access (Limiting Sell) for regular users."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.acceptOwnership()",
+        "control_variable": "newun",
+        "targets": [
+          "GokuToken.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_96",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function TokenBEP20.transfernewun(address) is marked with onlyOwner, meaning only the owner can invoke it, which is a privilege that can lead to asset manipulation.",
+          "Within this function, the affected function GokuToken.transfer(address,uint256) can modify balances, suggesting a potential impact on token supply or distribution.",
+          "Since the from/payer in the asset modification can be set to an arbitrary address (newun), controlled by the owner, it allows the owner to deduct tokens from any account's balance specified by the input address.",
+          "This meets the criteria for LEAK because the owner can decrease balances of any user's account without their permission or without a reciprocal benefit."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.transfernewun(address)",
+        "control_variable": "newun",
+        "targets": [
+          "GokuToken.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_97",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The control function 'TokenBEP20.transfernewun(address)' is restricted by the 'onlyOwner' modifier, indicating that only the owner can execute it.",
+          "This function has the potential to call the transfer method, which modifies balances.",
+          "By modifying the transfer control parameters, the owner can restrict transfers to certain addresses or stop them altogether, interfering with normal user operations.",
+          "The lack of information regarding the dynamics of how 'newun' is controlled raises concerns, suggesting the owner could exploit this to limit trade execution for other users."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.transfernewun(address)",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_98",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'TokenBEP20.transfernewun' is only accessible by the owner due to the 'onlyOwner' modifier, which represents a permission control in this contract.",
+          "This function affects the usage of 'TokenBEP20.transferFrom' through the conditional check that involves 'newun'. If 'newun' is the zero address (address(0)), then it can allow transfers from that address, which may imply that the owner can modify the transfer behavior based on this address.",
+          "Since the owner can control 'newun' and possibly manage the transaction state indirectly, this implies potential manipulation of the contract's transfer functionality, leading to preventing normal users from performing transfers.",
+          "Therefore, the owner has a limiting power over the transfer process by controlling the 'newun' address."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.transfernewun(address)",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_99",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.85,
+        "reasoning": [
+          "The function `TokenBEP20.transfernewun(address)` is restricted by `onlyOwner`, which means that only the owner can invoke it.",
+          "The affected function `GokuToken.transferFrom(address,address,uint256)` includes a conditional check requiring that `newun` must be equal to `address(0)` for the transfer to occur, hence limiting the transfer based on a specific state controlled by the owner.",
+          "Since the owner can control whether newun is `address(0)` or not, they can effectively disable transfers for all users by changing the status of `newun`.",
+          "This means the owner has the ability to restrict or limit transfer capabilities, which fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.transfernewun(address)",
+        "control_variable": "newun",
+        "targets": [
+          "GokuToken.transferFrom(address,address,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 15,
+    "LEAK": 5,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

@@ -1,0 +1,143 @@
+{
+  "contract_name": "0x80a88dc663fa256e34ecb5a47314702313b162a5",
+  "generated_at": "2026-02-25T13:06:39Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D2, execute L1098: _balances[owner()] = _balances[owner()] + amountToCharge, indicatesThe privileged userbalance increases. here amountToCharge is by transaction produce fee, and The privileged user can control this fee size.",
+          "2. At node D3, execute L1103: _balances[sender] = senderBalance - amount, indicates sender balance decreases. here sender is by msg.sender determined, and amount is provided by the parameter, means The privileged user can specify arbitrary user balance is deduction.",
+          "3. because sender balance decreaseswhile owner balance increases, matches the leak token definition. The privileged user can adjust amountToCharge to control from user account deducted fromamount, will its transfer The privileged user account in.",
+          "4. because exists from arbitrary user (sender) deduction balance transfer The privileged user (owner) situation, thereforecan is leak tokenbehavior."
+        ],
+        "key_nodes": [
+          "D2",
+          "D3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "CyPepe.transfer(address,uint256)",
+        "trace": "E1 -> M1 -> D0 -> E1 -> D0 -> IF0[PERM] -> IF1[PERM] -> D1 -> IF2 -> D2[ASSET] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> D3[ASSET] -> F1 -> F1",
+        "summary": "Entry CyPepe.transfer(address,uint256); PermNode: IF0, IF1; AssetNode: D2, D3"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D2, execute L1098: _balances[owner()] = _balances[owner()] + amountToCharge, This meansThe privileged user (owner) can increase balance . here amountToCharge is by transaction, and no limit, causing owner balance increases.",
+          "2. At node D3, execute L1103: _balances[sender] = senderBalance - amount, This means sender balance will decrease, while recipient balance will increase amountToTransfer. here sender is provided by the parameter, may be an arbitrary address, rather thanis the caller itself, Therefore this constitutes a leak.",
+          "3. because The privileged user can adjust transaction ( such _buyTax) to amountToCharge, thereby owner balance, and sender balance can is arbitraryspecifiedaddressdeduction, therefore this matches the definition of token leaking.",
+          "4. node IF0 and IF1, The privileged user can modify _excludedList and _buyTax to control transaction conditions, further asset ability."
+        ],
+        "key_nodes": [
+          "D2",
+          "D3",
+          "IF0",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "CyPepe.transferFrom(address,address,uint256)",
+        "trace": "E1 -> M1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> IF1[PERM] -> D1 -> IF2 -> D2[ASSET] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> D3[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry CyPepe.transferFrom(address,address,uint256); PermNode: IF0, IF1; AssetNode: D0, D2, D3, D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `CyPepe.setBuyTax(uint256)` is controlled by `onlyOwner`, which means only the owner can modify the `_buyTax` variable.",
+          "The `_transfer` function checks if the `sender` is equal to `_pair` and if `_buyTax` is greater than 0. This indicates that the owner can set a tax rate that directly affects the transfer process.",
+          "If the owner sets `_buyTax` to a high value, it could effectively limit the ability of users to transfer tokens, as they would incur high fees or be unable to transfer at all if the tax is set to an extreme value.",
+          "Thus, the owner has the ability to control the transaction flow by adjusting the `_buyTax`, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "CyPepe.setBuyTax(uint256)",
+        "control_variable": "_buyTax",
+        "targets": [
+          "CyPepe._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `CyPepe.setSellTax(uint256)` is controlled by `onlyOwner`, meaning only the owner can modify the `_sellTax` variable.",
+          "The `_transfer` function checks if the recipient is `_pair` and if `_sellTax > 0`. If the owner sets `_sellTax` to a high value, it effectively limits the ability of users to sell their tokens, as they will incur a high tax on transfers to the `_pair` address.",
+          "This control over the sell tax directly impacts the ability of ordinary users to trade their tokens freely, thus classifying it as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF3"
+        ]
+      },
+      "overview": {
+        "source": "CyPepe.setSellTax(uint256)",
+        "control_variable": "_sellTax",
+        "targets": [
+          "CyPepe._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_2",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function CyPepe.updateExclusion(address,bool) is controlled by onlyOwner, allowing the owner to modify the _excludedList.",
+          "The _excludedList is checked in the _transfer function, which determines whether transfers can occur based on the sender and recipient's status in the list.",
+          "If the owner sets an address to be excluded, that address will not be able to transfer tokens, effectively limiting their ability to trade.",
+          "This control over the _excludedList directly impacts the ability of normal users to execute transfers, thus classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "CyPepe.updateExclusion(address,bool)",
+        "control_variable": "_excludedList",
+        "targets": [
+          "CyPepe._transfer(address,address,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 3,
+    "LEAK": 2,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

@@ -1,0 +1,352 @@
+{
+  "contract_name": "0x05d3606d5c81eb9b7b18530995ec9b29da05faba",
+  "generated_at": "2026-02-24T12:14:34Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function is ERC20.transfer(address,uint256), which calls the internal function ERC20._transfer(address,address,uint256).",
+          "2. In Node D0, there are two [ASSET] operations: L269 and L270. L269 decreases the balance of 'from' (msg.sender) by 'value', and L270 increases the balance of 'to' (param:to) by 'value'.",
+          "3. The balance change for 'from' is calculated as follows: _balances[from] = _balances[from].sub(value). Assuming an initial balance of 100, if value is 50, then _balances[from] becomes 50. This indicates a decrease.",
+          "4. The balance change for 'to' is calculated as follows: _balances[to] = _balances[to].add(value). Assuming an initial balance of 100 for 'to', if value is 50, then _balances[to] becomes 150. This indicates an increase.",
+          "5. The permissions in Node D0 ensure that the transfer can only occur if the 'from' address has enough balance (value <= _balances[from]), which prevents unauthorized minting.",
+          "6. There are no indications of any hidden minting, limiting of transactions, or leaking of tokens since the transfer logic adheres to standard ERC20 behavior without any malicious alterations.",
+          "7. The path does not allow for any unauthorized balance increases or decreases outside of the normal transfer process."
+        ],
+        "key_nodes": [
+          "D0",
+          "E1",
+          "F1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "ERC20.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0[PERM] -> F1 -> F1",
+        "summary": "Entry ERC20.transfer(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, execute `require(bool)(value <= _allowed[from][msg.sender])`, This indicatesonly at allow situation, transfer will is execute, therefore here control .",
+          "2. at node D0 asset operationin, `_allowed[from][msg.sender] = _allowed[from][msg.sender].sub(value)` indicates from `from` address allow deductedion `value`, will `from` balance, but not directly `to` balance .",
+          "3. At node E1, `_transfer` function, node D0, execute `require(bool)(value <= _balances[from])`, This indicates `from` balance, perform transfer, and `from` is provided by the parameter, may be an arbitrary address, rather thanis the caller itself .",
+          "4. at node D0 asset operationin, `_balances[from] = _balances[from].sub(value)` indicates `from` balance decreases, while `to` balance through ` _balances[to] = _balances[to].add(value)` increase . here `from` is provided by the parameter, The privileged user can specify arbitrary account performdeduction, Therefore it matches the definition of token leaking.",
+          "5. because `from` can is arbitraryaddress, The privileged user can call `transferFrom` function, arbitrarydeduction balance, rather than compensation, This matches the leak tokenbehavior."
+        ],
+        "key_nodes": [
+          "D0",
+          "E1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "ERC20.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0[PERM] -> F1 -> F1",
+        "summary": "Entry ERC20.transferFrom(address,address,uint256); PermNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function is TomoE.transfer(address,uint256), which leads to the _transfer function.",
+          "2. In Node D0, there are two [ASSET] operations: L269 and L270.",
+          "3. L269: _balances[from] = _balances[from].sub(value) modifies the balance of 'from' (msg.sender) by subtracting 'value'.",
+          "4. L270: _balances[to] = _balances[to].add(value) modifies the balance of 'to' by adding 'value'.",
+          "5. The balance change for 'from' is a decrease, while for 'to' it is an increase.",
+          "6. Since 'from' is msg.sender, the caller is reducing their own balance, which does not constitute a leak.",
+          "7. There are no conditions that allow for minting new tokens or restricting transfers; the transfer is a standard operation.",
+          "8. Therefore, there are no rugpull behaviors present in this path."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "TomoE.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0[PERM] -> F1 -> F1",
+        "summary": "Entry TomoE.transfer(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, execute _allowed[from][msg.sender] = _allowed[from][msg.sender].sub(value), This means msg.sender can decrease from address allowance, not directlycausing asset, but is transfer provide .",
+          "2. at node D0 _transfer functionin, check from address balance is (L266: require(bool)(value <= _balances[from])) , execute _balances[from] = _balances[from].sub(value) (L269) , will causing from addressbalance decreases.",
+          "3. also, _balances[to] = _balances[to].add(value) (L270) will causing to addressbalance increases. here keyis, from address is provided by the parameter, rather thanis the caller itself, thereforecan is leak .",
+          "4. because from addressbalance decreaseswhile to addressbalance increases, and from address is arbitraryspecified, This matches the definition of token leaking."
+        ],
+        "key_nodes": [
+          "D0",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "TomoE.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0[PERM] -> F1 -> F1",
+        "summary": "Entry TomoE.transferFrom(address,address,uint256); PermNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_4",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, execute `_balances[account] = _balances[account].sub(value)`, This indicates a deduction from the caller's balance `value`, `param:value` value. because `account` is `msg.sender`, This means caller balance will decrease.",
+          "2. At node D1, execute `_balances[account] = _balances[account].add(value)`, here `value` is `WITHDRAW_FEE`, This indicatesThe privileged user (issuer) can increase balance . because `WITHDRAW_FEE` is contract set value, The privileged user can callthis functionto increase balance .",
+          "3. because `WITHDRAW_FEE` is fee, The privileged user can through set this fee to control from ordinary user deductamount, will its transfer account in, This matches the definition of token leaking.",
+          "4. because `account` is `msg.sender`, while `issuer` is contract The privileged user, The privileged user can through set `WITHDRAW_FEE` to ordinary user balance, causing asset is transfer The privileged user account in, Therefore this path matches the LEAK definition."
+        ],
+        "key_nodes": [
+          "D0",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_4",
+        "function_signature": "TomoE.burn(uint256,bytes)",
+        "trace": "E1 -> D0 -> E1 -> D0[PERM] -> F1 -> IF0 -> D1 -> E1 -> D0[ASSET] -> F1 -> D2 -> F1",
+        "summary": "Entry TomoE.burn(uint256,bytes); PermNode: D0; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "indirect_4",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function TomoE.addOwner(address) is public and can be called by anyone, but it has several modifiers including onlyWallet and ownerDoesNotExist, which restricts its usage to certain conditions.",
+          "Once an address is added as an owner, it can call TomoE.executeTransaction(uint256), which modifies the transactions variable.",
+          "The transactions variable likely controls whether transactions can be executed or not, thus allowing the new owner to limit or enable transactions at will.",
+          "This means that the new owner can effectively control the ability of other users to execute transactions, which fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D1"
+        ]
+      },
+      "overview": {
+        "source": "TomoE.addOwner(address)",
+        "control_variable": "transactions",
+        "targets": [
+          "TomoE.executeTransaction(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_7",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function TomoE.removeOwner(address) is controlled by the modifiers onlyWallet and ownerExists, indicating that only a specific owner can call this function.",
+          "This function can modify the control variable 'transactions' by allowing the owner to remove themselves as an owner, which could potentially affect the ability to execute transactions.",
+          "The function TomoE.executeTransaction(uint256) writes to the 'transactions' variable, which is directly influenced by the owner's ability to control whether transactions can occur or not.",
+          "Since the owner can disable or enable the execution of transactions, this creates a scenario where normal users may be limited in their ability to execute transactions based on the owner's actions."
+        ],
+        "key_nodes": [
+          "E1",
+          "D1"
+        ]
+      },
+      "overview": {
+        "source": "TomoE.removeOwner(address)",
+        "control_variable": "transactions",
+        "targets": [
+          "TomoE.executeTransaction(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_16",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function TomoE.changeRequirement(uint256) is controlled by the modifier onlyWallet, which indicates that only a specific wallet can call this function.",
+          "This function modifies the transactions variable, which is used in TomoE.executeTransaction(uint256).",
+          "By changing the transactions variable, the owner can effectively control whether transactions can be executed or not, thus limiting the ability of regular users to perform transactions.",
+          "Since the ability to change the transaction requirement is restricted to a privileged address (the owner), this constitutes a Limiting Sell behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D1"
+        ]
+      },
+      "overview": {
+        "source": "TomoE.changeRequirement(uint256)",
+        "control_variable": "transactions",
+        "targets": [
+          "TomoE.executeTransaction(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_18",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function TomoE.confirmTransaction(uint256) is public and has modifiers that check for owner existence, transaction existence, and confirmation status, indicating that only the owner can confirm transactions.",
+          "The control chain leads to TomoE.executeTransaction(uint256), which modifies the transactions state. Since the owner can control whether a transaction is confirmed, they can effectively limit the ability of other users to execute transactions.",
+          "This means that the owner can prevent normal users from executing transactions by simply not confirming them, thus limiting their ability to trade or interact with the contract."
+        ],
+        "key_nodes": [
+          "E1",
+          "D1"
+        ]
+      },
+      "overview": {
+        "source": "TomoE.confirmTransaction(uint256)",
+        "control_variable": "transactions",
+        "targets": [
+          "TomoE.executeTransaction(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_19",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function TomoE.revokeConfirmation(uint256) is controlled by modifiers that include 'ownerExists', 'confirmed', and 'notExecuted', indicating that only the owner can revoke confirmations.",
+          "This function affects the state of transactions, which is used in TomoE.executeTransaction(uint256).",
+          "By revoking confirmations, the owner can prevent the execution of transactions, effectively controlling whether or not transactions can proceed.",
+          "This ability to control the execution of transactions directly impacts the ability of ordinary users to trade or execute their transactions, thus classifying it as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D1"
+        ]
+      },
+      "overview": {
+        "source": "TomoE.revokeConfirmation(uint256)",
+        "control_variable": "transactions",
+        "targets": [
+          "TomoE.executeTransaction(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_20",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function TomoE.addTransaction allows for the addition of transactions, which can be controlled by the internal visibility modifier. This means that only certain privileged accounts can call this function.",
+          "The affected target, TomoE.executeTransaction, modifies the state of the transactions variable. If the transactions variable is manipulated by a privileged account, it can effectively control whether transactions can be executed or not.",
+          "Since the ability to add transactions and subsequently execute them is controlled by a privileged account, this creates a scenario where the privileged account can limit the ability of regular users to execute transactions, thus falling under the LIMIT category."
+        ],
+        "key_nodes": [
+          "E1",
+          "D1"
+        ]
+      },
+      "overview": {
+        "source": "TomoE.addTransaction(address,uint256,bytes)",
+        "control_variable": "transactions",
+        "targets": [
+          "TomoE.executeTransaction(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_21",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function TomoE.transferIssuer(address) is controlled by the modifier onlyIssuer, which means only a privileged account can call this function.",
+          "This function allows the privileged account to set the WITHDRAW_FEE variable through TomoE.setWithdrawFee(uint256).",
+          "The burn function checks if the value is greater than WITHDRAW_FEE before proceeding, meaning that if the WITHDRAW_FEE is set to a high value, it can effectively limit the ability of users to burn tokens.",
+          "Since the WITHDRAW_FEE can be manipulated by a privileged account, it directly affects the ability of ordinary users to perform transactions, thus classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TomoE.transferIssuer(address)",
+        "control_variable": "WITHDRAW_FEE",
+        "targets": [
+          "TomoE.burn(uint256,bytes)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_22",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function TomoE.setWithdrawFee(uint256) is controlled by onlyIssuer, which means only a privileged entity can change the WITHDRAW_FEE variable.",
+          "The burn function requires that the value being burned must be greater than the WITHDRAW_FEE. If the WITHDRAW_FEE is set to a high value by the privileged entity, it can effectively limit the ability of users to burn tokens, as they may not be able to meet the requirement.",
+          "This control over the WITHDRAW_FEE directly impacts the ability of ordinary users to perform transactions involving burning tokens, thus classifying it as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TomoE.setWithdrawFee(uint256)",
+        "control_variable": "WITHDRAW_FEE",
+        "targets": [
+          "TomoE.burn(uint256,bytes)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 8,
+    "LEAK": 3,
+    "EMPTY": 2,
+    "ERROR": 0
+  }
+}

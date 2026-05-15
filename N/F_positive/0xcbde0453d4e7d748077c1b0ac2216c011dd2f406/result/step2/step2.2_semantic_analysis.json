@@ -1,0 +1,2160 @@
+{
+  "contract_name": "0xcbde0453d4e7d748077c1b0ac2216c011dd2f406",
+  "generated_at": "2026-02-27T06:59:11Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. at node D14, The code is `_balances[address(this)] = _balances[address(this)].add(taxAmount)`, here `address(this)` is the contract address, balance increases. this node is asset node, indicates contract can increase its itself balance .",
+          "2. at node D15, The code is `_balances[from] = _balances[from].sub(amount)` and `_balances[to] = _balances[to].add(amount.sub(taxAmount))`, here `from` is the caller (msg.sender) , while `to` is a parameterspecified recipient . `amount` is transfer amount, `taxAmount` is by contract calculated tax, is 0. this nodeindicates caller balance decreases, while recipient balance increases, but because `taxAmount` exists, actual transfer amount less than `amount`, thereforeexists leak .",
+          "3. The privileged user can adjust `_finalBuyTax` and `_finalSellTax` to tax rate, causingordinary user at transfer fee, while make contract addresstoken, This matches the leak definition.",
+          "4. because `from` is specified by the caller, and contract can adjust tax rate, causingordinary user transfer amount decrease, contract addresstoken, Therefore this path matches the LEAK definition."
+        ],
+        "key_nodes": [
+          "D14",
+          "D15"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path contains multiple [ASSET] nodes that indicate changes in balances. Specifically, Node D14 modifies the balance of the contract itself by adding taxAmount: '_balances[address(this)] = _balances[address(this)].add(taxAmount)'. This indicates an increase in the contract's balance, which is controlled by the tax mechanism.",
+          "2. Node D15 shows a decrease in the sender's balance: '_balances[from] = _balances[from].sub(amount)'. Here, 'from' is determined by the msg.sender, which is the caller of the transfer function. The recipient's balance is increased by the amount minus the tax: '_balances[to] = _balances[to].add(amount.sub(taxAmount))'. This means that the sender's balance decreases while the recipient's balance increases, but the taxAmount is directed to the contract itself.",
+          "3. The taxAmount is calculated based on the amount being transferred and the final tax rate, which can be controlled by the owner. Since the taxAmount can be set to a high value, this allows the owner to effectively siphon off funds from users during transfers, leading to a potential leak of tokens.",
+          "4. The presence of permission checks (e.g., Node D1, D4, D5) indicates that only certain addresses can execute these transfers, which reinforces the idea that the owner can manipulate the tax rates and thus the amount of tokens that are effectively leaked from users.",
+          "5. The overall balance change indicates that while the contract's balance increases, the user's balance decreases, which aligns with the definition of a leak."
+        ],
+        "key_nodes": [
+          "D14",
+          "D15",
+          "D1",
+          "D4",
+          "D5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple permission nodes (IF0, D1, IF4, D5, IF7, IF9, IF10, D11) that control the transfer process, indicating that certain conditions must be met for transfers to occur.",
+          "2. Specifically, nodes like IF0 and D1 check if the 'from' and 'to' addresses are not the owner or a tax wallet, and node D5 checks if the amount exceeds a maximum transaction limit, which can restrict user transactions.",
+          "3. The presence of conditions such as '_buyCount <= 45' (D4) and 'sellCount < 3' (D11) further indicates that the contract imposes limits on how many transactions can occur under certain conditions, effectively controlling user behavior.",
+          "4. The ability of the owner to modify transaction parameters (like tax rates and limits) through the contract's logic means that they can restrict or enable transfers at will, which aligns with the definition of LIMIT.",
+          "5. There are no indications of minting or leaking tokens in the asset nodes, as the balances are adjusted based on the transfer logic without any unauthorized increases or decreases."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4",
+          "D5",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. In Node D14, the code `_balances[address(this)] = _balances[address(this)].add(taxAmount)` indicates that the balance of the contract itself is increased by the tax amount, which is derived from the transaction amount.",
+          "2. In Node D15, the code `_balances[from] = _balances[from].sub(amount)` decreases the balance of the sender (from) by the amount being transferred, and `_balances[to] = _balances[to].add(amount.sub(taxAmount))` increases the recipient's balance by the amount minus the tax amount.",
+          "3. The tax amount is calculated as `taxAmount = amount.mul(_finalBuyTax).div(100)`, where `_finalBuyTax` is initialized to 0, meaning no tax is applied in this scenario. However, the structure allows for the potential of a tax to be applied in other scenarios, which could lead to a situation where the sender's balance is reduced without equivalent compensation.",
+          "4. The presence of permission checks (e.g., `require(bool)(! bots[from] && ! bots[to])` in Node D1) indicates that certain addresses can be restricted from transferring tokens, which can be manipulated by the owner to limit who can trade.",
+          "5. The ability to set `_finalBuyTax` to a non-zero value in the future could allow the owner to redirect funds from users to themselves, thus leaking tokens.",
+          "6. The combination of these factors indicates that the contract has the potential to leak tokens from users to the owner or the contract itself, especially if the tax is manipulated."
+        ],
+        "key_nodes": [
+          "D14",
+          "D15",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_4",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple permission nodes (IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11) that control the transfer process based on various conditions.",
+          "2. Specifically, nodes like IF0 and D1 check if the 'from' and 'to' addresses are not the owner or a tax wallet, which restricts who can transfer tokens.",
+          "3. Node D4 imposes a limit on the number of buys in the first block, indicating that the owner can control the trading behavior during this period.",
+          "4. Node D5 checks if the amount being transferred exceeds a maximum transaction amount, which is another form of limiting user transactions.",
+          "5. The presence of conditions that can be manipulated by the owner (like _buyCount and _maxTxAmount) indicates that the owner can effectively limit trading activities for regular users."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4",
+          "D5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_4",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_5",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves several permission checks that restrict the transfer of tokens based on conditions controlled by the owner or specific addresses.",
+          "2. Nodes IF0, D1, IF4, D5, IF7, IF9, and IF10 are all permission nodes that impose restrictions on who can transfer tokens and under what conditions.",
+          "3. For example, IF0 checks that 'from' and 'to' addresses are not the owner or a tax wallet, and D1 checks that the addresses are not blacklisted (bots).",
+          "4. Additionally, D4 imposes a limit on the number of buys allowed in the first block, and D5 checks that the transfer amount does not exceed a maximum transaction amount.",
+          "5. These restrictions can prevent normal users from executing transfers freely, thus classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4",
+          "D5",
+          "IF9"
+        ]
+      },
+      "overview": {
+        "path_id": "path_5",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_6",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple permission nodes (IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11) that control the transfer process.",
+          "2. The conditions in these permission nodes restrict who can transfer tokens, such as requiring that 'from' is not the owner and 'to' is not the owner or a tax wallet (IF0), and checking for bots (D1).",
+          "3. The path also includes limits on the number of buys in the first block (D4) and limits on the maximum transaction amount (D5).",
+          "4. These restrictions can prevent normal users from executing transfers freely, indicating that the contract has mechanisms to limit trading.",
+          "5. The presence of conditions that can be controlled by a privileged account (like the owner) further supports the classification as LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4",
+          "D5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_6",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_7",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D14, execute `_balances[address(this)] = _balances[address(this)].add(taxAmount)`, This means the contract address balance increases taxAmount. this taxAmount is by transaction amount calculated, and At node D15, execute `_balances[from] = _balances[from].sub(amount)` and `_balances[to] = _balances[to].add(amount.sub(taxAmount))`, This means from balance decreases by amount, while to balance increases by amount subtract taxAmount.",
+          "2. here from is msg.sender, to is param:recipient, therefore from balance decreasesis specified by the caller, while to balance increasesis specified by the caller. because taxAmount is from transaction deducted from, causing from balance decreaseswhile to balance increasesalso, The contract address balance increases, This matches the definition of token leaking.",
+          "3. The privileged user can adjust the tax rate (e.g., _finalBuyTax and _initialSellTax) to control taxAmount size, thereby from user account deducted fromamount, further leak .",
+          "4. because The privileged user can arbitrarily specify affected accounts (from is msg.sender, to is param:recipient) , This matches the definition of token leaking."
+        ],
+        "key_nodes": [
+          "D14",
+          "D15"
+        ]
+      },
+      "overview": {
+        "path_id": "path_7",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_8",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple permission nodes (IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11) that control the transfer process.",
+          "2. The conditions in these permission nodes restrict who can transfer tokens, such as checking if 'from' or 'to' is the owner or a bot, and limiting the number of buys and sells per block.",
+          "3. Specifically, IF4 and D4 enforce a limit on the number of buys allowed in the first block, which directly restricts user transactions.",
+          "4. Additionally, IF5 checks if the transfer is from the uniswapV2Pair and imposes conditions on the recipient, further limiting who can participate in transfers.",
+          "5. The presence of these conditions indicates that the contract owner or privileged accounts can control the flow of transactions, effectively limiting the ability of regular users to trade freely."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF4",
+          "D4",
+          "IF5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_8",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_9",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple permission nodes (IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11) that control the transfer process, indicating that certain conditions must be met for transfers to occur.",
+          "2. Specifically, nodes like IF0 and D1 check if the 'from' and 'to' addresses are not the owner or a designated tax wallet, which restricts who can participate in transfers.",
+          "3. The presence of conditions like '_buyCount <= 45' (D4) and 'amount <= _maxTxAmount' (D5) further limits the ability of users to execute transfers, especially during the first block and based on the number of buys.",
+          "4. The checks for whether the 'from' address is the uniswapV2Pair and whether the recipient is excluded from fees (IF5) also indicate that the contract can restrict transfers based on specific addresses and conditions.",
+          "5. Overall, these permission checks create a scenario where the owner can control the flow of transactions, effectively limiting the ability of regular users to freely trade."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4",
+          "D5",
+          "IF9"
+        ]
+      },
+      "overview": {
+        "path_id": "path_9",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_10",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path includes several permission nodes that control the transfer process, specifically IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, and D11. These nodes impose restrictions on who can transfer tokens and under what conditions.",
+          "For example, IF0 checks that 'from' is not the owner and 'to' is not the owner or the tax wallet, which limits who can receive tokens. D1 further restricts transfers by checking if either 'from' or 'to' is a bot, effectively blacklisting certain addresses.",
+          "Additionally, IF4 and D4 impose limits on the number of buys that can occur in the first block, which directly affects the ability of users to trade. IF5 checks conditions related to the uniswapV2Pair and whether the recipient is excluded from fees, which can limit trading for certain users.",
+          "The presence of these permission checks indicates that the contract has the ability to restrict trading based on the state of various parameters, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF4",
+          "D4",
+          "IF5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_10",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_11",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the transfer function, which checks several conditions before allowing a transfer to proceed.",
+          "2. Nodes IF0, D1, IF4, D5, IF7, IF9, and IF10 are all permission nodes that impose restrictions on who can transfer tokens and under what conditions.",
+          "3. Specifically, IF0 checks that the sender and recipient are not the owner or a designated tax wallet, while D1 checks that neither party is a bot.",
+          "4. IF4 limits the number of buys in the first block, and D4 enforces a maximum buy count, which restricts trading behavior.",
+          "5. IF5 and D5 impose limits on transaction amounts and wallet sizes, which further restricts user transactions.",
+          "6. The presence of these permission checks indicates that the contract owner has significant control over the transfer process, which can limit users' ability to trade freely.",
+          "7. Since the contract owner can modify these parameters, it can effectively limit or prevent trades, thus classifying this path as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF4",
+          "D5",
+          "IF9"
+        ]
+      },
+      "overview": {
+        "path_id": "path_11",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_12",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple [ASSET] nodes where balances are modified, specifically D14 and D15.",
+          "2. At D14, the line '_balances[address(this)] = _balances[address(this)].add(taxAmount)' indicates that the contract's balance increases by the tax amount, which is controlled by the contract logic and can be influenced by the owner.",
+          "3. At D15, the line '_balances[from] = _balances[from].sub(amount)' indicates that the sender's balance is decreased by the amount transferred, and '_balances[to] = _balances[to].add(amount.sub(taxAmount))' shows that the recipient's balance increases by the amount minus the tax, which means the tax is effectively being taken from the sender's balance and sent to the contract.",
+          "4. The tax amount can be manipulated by the owner through the _initialBuyTax and _finalBuyTax variables, which can lead to significant losses for users if set to high values.",
+          "5. The presence of permission checks (e.g., IF0, D1, IF4, etc.) indicates that only certain addresses can trigger these balance changes, which aligns with the definition of a leak where the owner can dictate how much is taken from users' balances.",
+          "6. The path does not exhibit any minting behavior as there are no instances of increasing balances without a corresponding decrease elsewhere."
+        ],
+        "key_nodes": [
+          "D14",
+          "D15"
+        ]
+      },
+      "overview": {
+        "path_id": "path_12",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_13",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D14, execute L259: _balances[address(this)] = _balances[address(this)].add(taxAmount), This means the contract address balance increases taxAmount. here taxAmount is calculated from the transaction amount, The privileged user can control this value by adjusting the tax rate.",
+          "2. At node D15, execute L262: _balances[from] = _balances[from].sub(amount) and L263: _balances[to] = _balances[to].add(amount.sub(taxAmount). here, from is msg.sender(caller), while to is param:recipient (can is arbitraryaddress) . This meansThe privileged user can through set tax rate to decrease caller balance, alsowill amounttransfer arbitraryaddress.",
+          "3. because taxAmount is controlled by the privileged user (through _initialBuyTax and _finalBuyTax) , make The privileged userat transaction infee, thereby causingordinary user balance decreaseswhile The privileged userbalance increases.",
+          "4. because exists from caller balance deductedwill its transfer contract addresssituation, This matches the definition of token leaking."
+        ],
+        "key_nodes": [
+          "D14",
+          "D15"
+        ]
+      },
+      "overview": {
+        "path_id": "path_13",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_14",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple [ASSET] nodes where balances are modified: D14 and D15.",
+          "2. At D14, the code is '_balances[address(this)] = _balances[address(this)].add(taxAmount)', which increases the balance of the contract itself by the tax amount. This a transfer of value to the contract from the users.",
+          "3. At D15, the code is '_balances[from] = _balances[from].sub(amount)' and '_balances[to] = _balances[to].add(amount.sub(taxAmount))'. Here, the 'from' address is the user (msg.sender), and the 'to' address is the recipient. The amount transferred to the recipient is less than the amount sent by the user due to the tax deduction, which means the user loses tokens without receiving equivalent value.",
+          "4. The taxAmount is determined by the initial buy tax, which is controlled by the contract owner. This means the owner can manipulate the tax rate, leading to potential excessive deductions from users' balances.",
+          "5. The presence of permission checks (e.g., IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11) indicates that only privileged addresses can influence these transactions, allowing for the potential to leak tokens from users to the contract or to the owner's address.",
+          "6. The overall effect is that users can lose tokens through the tax mechanism, which is controlled by the owner, thus categorizing this behavior as a leak."
+        ],
+        "key_nodes": [
+          "D14",
+          "D15",
+          "D1",
+          "IF5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_14",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_15",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple [ASSET] nodes where balances are modified: D14 and D15.",
+          "2. At D14, the line of code is '_balances[address(this)] = _balances[address(this)].add(taxAmount)', which increases the balance of the contract itself by the tax amount. This a transfer of value to the contract from the users, which can be seen as a leak since the tax amount is taken from the users' transfers.",
+          "3. At D15, the lines '_balances[from] = _balances[from].sub(amount)' and '_balances[to] = _balances[to].add(amount.sub(taxAmount))' indicate that the sender's balance is decreased by 'amount', while the recipient's balance is increased by 'amount - taxAmount'. This means that the taxAmount is effectively taken from the sender's balance and added to the contract's balance, which is a clear case of leaking tokens from users to the contract.",
+          "4. The taxAmount is determined by the initial buy tax, which is set to 20% in this case. This means that for every transaction, 20% of the amount is taken as tax, which is a significant amount that could be considered a leak.",
+          "5. The permissions in the contract allow the owner to set the tax rates and control the transfer process, which further supports the classification of this behavior as a leak."
+        ],
+        "key_nodes": [
+          "D14",
+          "D15"
+        ]
+      },
+      "overview": {
+        "path_id": "path_15",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_16",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple [ASSET] nodes that indicate changes to balances. Specifically, Node D14 shows that the contract's balance is increased by taxAmount: '_balances[address(this)] = _balances[address(this)].add(taxAmount)'. This indicates that the contract can accumulate tokens, which is a typical behavior for a tax mechanism.",
+          "2. Node D15 shows a transfer from 'from' to 'to' where the amount is reduced by taxAmount: '_balances[from] = _balances[from].sub(amount)' and '_balances[to] = _balances[to].add(amount.sub(taxAmount))'. This indicates that the sender's balance is decreased while the recipient's balance is increased by a lesser amount, which is a clear sign of token leakage.",
+          "3. The taxAmount is calculated based on the transaction amount and can be controlled by the contract's owner through the _initialBuyTax and _finalSellTax variables. Since these tax rates can be manipulated, it allows the owner to effectively redirect funds from users to themselves or the contract.",
+          "4. The presence of multiple permission checks (e.g., IF0, D1, IF4, D5) indicates that only certain addresses can execute transfers, which can be exploited to limit who can trade or to impose high fees on certain transactions, further supporting the leak classification.",
+          "5. The path does not exhibit any behavior that would classify it as MINT or LIMIT, as there are no indications of arbitrary minting of tokens or direct control over trading permissions that would prevent users from trading."
+        ],
+        "key_nodes": [
+          "D14",
+          "D15",
+          "D1",
+          "IF5",
+          "IF9"
+        ]
+      },
+      "overview": {
+        "path_id": "path_16",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_17",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple permission nodes (IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11) that control various aspects of the transfer process.",
+          "2. Specifically, nodes like IF0 and D1 check conditions related to the sender and recipient addresses, ensuring they are not the owner or a bot, which limits who can participate in transfers.",
+          "3. The presence of conditions such as _buyCount <= 45 (D4) and checks against _maxTxAmount and _maxWalletSize (D5) further restricts the ability of users to transfer tokens freely, especially during the first block.",
+          "4. The checks on the number of buys and sells (e.g., sellCount < 3 in D11) also impose limits on how many transactions can occur, which is a clear indication of limiting user actions.",
+          "5. Overall, the combination of these permission checks and limits on transaction counts and amounts indicates that the contract has mechanisms in place to restrict user transactions, classifying it as LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4",
+          "D5",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_17",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_18",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple permission nodes (IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11) that control the transfer process.",
+          "2. The conditions in these permission nodes restrict who can transfer tokens and under what circumstances, such as checking if 'from' or 'to' is the owner or a tax wallet, and limiting the number of buys and sells per block.",
+          "3. Specifically, the checks in D4 and D5 enforce limits on the number of transactions and the maximum transaction amount, which can prevent normal users from executing transfers if they exceed these limits.",
+          "4. The presence of these checks indicates that the contract owner or privileged addresses can control the flow of transactions, effectively limiting the ability of regular users to trade freely.",
+          "5. Therefore, the path demonstrates behaviors consistent with limiting user transactions."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4",
+          "D5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_18",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_19",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple permission checks that restrict the ability to transfer tokens based on various conditions, such as the sender and recipient not being in a blacklist (Node D1) and the number of buys in a block (Node D4).",
+          "2. The presence of conditions like 'from != owner() && to != owner() && to != _taxWallet' (Node IF0) and 'amount <= _maxTxAmount' (Node D5) indicates that the contract has mechanisms to limit who can transfer tokens and how much can be transferred.",
+          "3. The checks for '_buyCount' and '_maxTxAmount' (Node D4) and the ability to control these parameters through the owner or privileged roles suggest that the contract can effectively limit trading activities for regular users.",
+          "4. The ability to modify trading conditions (like tax rates and transaction limits) based on the state of the contract (Node IF5, D5) further supports the classification as LIMIT, as it directly affects the ability of users to trade freely."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4",
+          "D5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_19",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_20",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D14, execute L259: _balances[address(this)] = _balances[address(this)].add(taxAmount), This means the contract address balance increases taxAmount. here taxAmount is calculated from the transaction amount, The privileged user can control this value by adjusting the tax rate.",
+          "2. At node D15, execute L262: _balances[from] = _balances[from].sub(amount) and L263: _balances[to] = _balances[to].add(amount.sub(taxAmount). This indicates from sender balance deducted amount, while to balance increases by amount subtract taxAmount. here from is by msg.sender provided, while to is specified by the parameter recipient, thereforeThe privileged user can arbitraryaddress is to.",
+          "3. because taxAmount is controlled by the privileged user (through _initialBuyTax and _finalBuyTax) , This meansThe privileged user can through set tax rate to decrease user balance will its transfer contract address, thereby causing user assets to be leaked.",
+          "4. because exists from arbitrary user addressdeduction balance will its transfer contract addresssituation, This matches the definition of token leaking."
+        ],
+        "key_nodes": [
+          "D14",
+          "D15"
+        ]
+      },
+      "overview": {
+        "path_id": "path_20",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_21",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D14, execute code `_balances[address(this)] = _balances[address(this)].add(taxAmount)`, This means the contract address balance increases `taxAmount`, while `taxAmount` is calculated from the transfer amount, is `taxAmount = amount.mul(_initialBuyTax).div(100)`, among which `_initialBuyTax` is 20%.",
+          "2. At node D15, execute code `_balances[from] = _balances[from].sub(amount)` and `_balances[to] = _balances[to].add(amount.sub(taxAmount))`, This means `from` balance decreases by `amount`, while `to` balance increases by `amount - taxAmount`, causing `from` balance decreases, and `taxAmount` is transferred to the contract address, form asset leak .",
+          "3. The privileged user can adjust `_initialBuyTax` valueto control `taxAmount`, thereby `from` actual transfer amount, causingordinary user at transfer asset, This matches the definition of token leaking.",
+          "4. because `from` is specified by the calleraddress, rather thanis contract itself, thereforebelongs todirectly leak situation."
+        ],
+        "key_nodes": [
+          "D14",
+          "D15"
+        ]
+      },
+      "overview": {
+        "path_id": "path_21",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_22",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple asset nodes where balances are modified, specifically D14 and D15.",
+          "2. In D14, the line '_balances[address(this)] = _balances[address(this)].add(taxAmount)' indicates that the contract's balance increases by the tax amount, which is derived from the transaction amount.",
+          "3. In D15, the lines '_balances[from] = _balances[from].sub(amount)' and '_balances[to] = _balances[to].add(amount.sub(taxAmount))' show that the sender's balance is decreased by the total amount, while the recipient's balance is increased by the amount minus the tax. This means that the tax amount is effectively taken from the sender's balance and added to the contract's balance, which is a clear indication of a leak.",
+          "4. The tax amount is controlled by the contract and can be set to a significant value, allowing the contract owner to siphon off funds from users without their consent.",
+          "5. The permissions in the path indicate that only the owner or specific addresses can manipulate these balances, which aligns with the definition of a leak."
+        ],
+        "key_nodes": [
+          "D14",
+          "D15"
+        ]
+      },
+      "overview": {
+        "path_id": "path_22",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_23",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple asset nodes where balances are modified, specifically D14 and D15.",
+          "2. At D14, the line '_balances[address(this)] = _balances[address(this)].add(taxAmount)' indicates that the contract's balance increases by the tax amount, which is controlled by the contract logic and can be manipulated by the owner.",
+          "3. At D15, the line '_balances[from] = _balances[from].sub(amount)' decreases the balance of the 'from' address, which is determined by the caller (msg.sender) and can be any address, not just the owner. This indicates that the owner can specify any address to deduct from, which qualifies as a direct leak.",
+          "4. The tax amount is calculated based on the transaction amount and can be set to a high value, allowing the owner to siphon off funds from users without their consent.",
+          "5. The presence of multiple permission checks (e.g., IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11) indicates that the owner has significant control over the transaction flow and can manipulate the tax rates and conditions under which transfers occur."
+        ],
+        "key_nodes": [
+          "D14",
+          "D15",
+          "D1",
+          "IF5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_23",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_24",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple permission checks (e.g., IF0, D1, IF4, D5, IF7, IF9, IF10) that restrict the transfer of tokens based on various conditions.",
+          "2. The presence of conditions like 'from != owner() && to != owner() && to != _taxWallet' (IF0) and 'bots[from] || bots[to]' (D1) indicates that certain addresses are blacklisted from transferring tokens, which limits the ability of ordinary users to trade freely.",
+          "3. The checks on '_buyCount' and '_maxTxAmount' (D4, D5) further restrict the number of transactions and the amount that can be transferred, which can be manipulated by the owner to control trading behavior.",
+          "4. The ability to set conditions that affect whether transfers can occur (e.g., 'block.number == firstBlock' in IF4) indicates that the owner can limit trading based on arbitrary conditions.",
+          "5. Overall, the combination of these permission checks and conditions creates a scenario where the owner can effectively limit the ability of users to trade, thus categorizing this path as LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF4",
+          "D5",
+          "IF7"
+        ]
+      },
+      "overview": {
+        "path_id": "path_24",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_25",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D14, execute L259: _balances[address(this)] = _balances[address(this)].add(taxAmount), This means the contract address balance increases taxAmount. here taxAmount is calculated from the transaction amount, The privileged user can control this value by adjusting the tax rate.",
+          "2. At node D15, execute L262: _balances[from] = _balances[from].sub(amount) and L263: _balances[to] = _balances[to].add(amount.sub(taxAmount)). here, from is msg.sender(caller), while to is param:recipient (can is arbitraryaddress) . This meansThe privileged user can through set tax rate to decrease arbitrary user balance, rather thanis the caller balance .",
+          "3. because taxAmount is calculated based on the transaction amount, The privileged user can adjust tax rate to control from user balance deducted fromamount, causing user asset is transferred to the contract addressor otheraddress, matches the leak token definition.",
+          "4. because The privileged user can arbitrarily specify to address, and from user balance deducted fromamountnot transfer amount, causing user asset decrease while contract address asset increase, Therefore this path matches the LEAK definition."
+        ],
+        "key_nodes": [
+          "D14",
+          "D15"
+        ]
+      },
+      "overview": {
+        "path_id": "path_25",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_26",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple permission nodes (IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11) that control the transfer process.",
+          "2. The conditions in these permission nodes restrict who can transfer tokens, such as checking if 'from' or 'to' is the owner or a tax wallet, and if the sender is not a bot.",
+          "3. Specifically, IF4 checks if 'block.number == firstBlock', which limits transfers to a specific block, and D4 checks if '_buyCount <= 45', limiting the number of buys in the first block.",
+          "4. The presence of these checks indicates that the contract owner can control the ability of users to transfer tokens, effectively limiting their ability to sell or trade.",
+          "5. Since the contract owner can manipulate these conditions, it leads to a scenario where normal users cannot freely transact, thus categorizing this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF4",
+          "D4",
+          "IF5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_26",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_27",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves several permission checks that restrict the transfer of tokens based on various conditions, such as the sender and recipient not being the owner or a bot, and limits on the number of buys and sells per block.",
+          "2. Specifically, nodes IF0, D1, IF4, D5, IF7, IF9, and IF10 impose restrictions that can prevent normal users from executing transfers, effectively limiting their ability to trade.",
+          "3. For example, node D5 requires that the amount being transferred does not exceed _maxTxAmount and that the recipient's balance after the transfer does not exceed _maxWalletSize, which are conditions that can be controlled by the owner.",
+          "4. Additionally, the checks on the number of buys and sells per block (nodes D4 and D11) further restrict trading activities, indicating that the owner can control the trading environment significantly.",
+          "5. Since these permission checks can be manipulated by the owner, it leads to the conclusion that the contract can limit user transactions, thus categorizing this path as LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4",
+          "D5",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_27",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_28",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the transfer function, which has multiple permission checks (IF0, D1, IF4, D5, IF7, IF9, IF10, D11) that restrict who can perform transfers based on various conditions.",
+          "2. The checks include conditions like whether the sender or recipient is the owner or a tax wallet, whether the sender or recipient is a bot, and limits on the number of buys and sells per block.",
+          "3. Specifically, the checks at nodes IF4 and D4 enforce a limit on the number of buys allowed in the first block, which directly restricts user transactions.",
+          "4. The checks at nodes IF5 and D5 enforce limits on transaction amounts and wallet sizes, which also restrict user transactions.",
+          "5. The presence of these permission checks that can be controlled by a privileged account (owner) indicates that the contract can limit user transactions, thus categorizing this path as LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF4",
+          "D5",
+          "IF7"
+        ]
+      },
+      "overview": {
+        "path_id": "path_28",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_29",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D14, execute `_balances[address(this)] = _balances[address(this)].add(taxAmount)`, This means the contract address balance increases, taxAmount is calculated from the transaction amount, The privileged user can control this value by adjusting the tax rate.",
+          "2. At node D15, execute `_balances[from] = _balances[from].sub(amount)` and `_balances[to] = _balances[to].add(amount.sub(taxAmount))`, here 'from' is msg.sender, 'to' is a parameter recipient. because 'from' is the caller, 'to' is arbitraryaddress, This meansThe privileged user can adjust tax rate to decrease arbitrary user balance, while decrease is transferred to the contract addressor privilege address.",
+          "3. because The privileged user can adjust tax rate to influence taxAmount, thereby causing user balance decreaseswhile The contract address balance increases, This matches the Leak definition.",
+          "4. Key nodes include D14 and D15, D14 The contract address balance increases, D15 user balance decrease ."
+        ],
+        "key_nodes": [
+          "D14",
+          "D15"
+        ]
+      },
+      "overview": {
+        "path_id": "path_29",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_30",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D14, The code is `_balances[address(this)] = _balances[address(this)].add(taxAmount)`, here `address(this)` is the contract address, indicates contract balance increases by `taxAmount`.",
+          "2. At node D15, The code is `_balances[from] = _balances[from].sub(amount)` and `_balances[to] = _balances[to].add(amount.sub(taxAmount))`, here `from` is the calleraddress, `to` is the recipient's address. `amount` is transfer, `taxAmount` is from deducted from tax fee. because `taxAmount` is by contract `_initialBuyTax`, The privileged user can adjust tax rate to control actual transfer `to` amount, causing `from` balance decreaseswhile `to` balance increasesamount less than `amount`, is contract address, form leak .",
+          "3. The privileged user can adjust `_initialBuyTax` to `taxAmount` size, thereby control transfer inactual `to` amount, causing user asset is transferred to the contract address, matches the leak token definition.",
+          "4. because `from` is by caller providedaddress, while `to` can is arbitraryaddress, The privileged user can through set tax rate to influence transfer, Therefore this path matches the leak tokencharacteristic."
+        ],
+        "key_nodes": [
+          "D14",
+          "D15"
+        ]
+      },
+      "overview": {
+        "path_id": "path_30",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_31",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple permission checks that restrict the transfer of tokens based on various conditions, such as IF0, D1, IF4, D5, IF7, IF9, and IF10, which are all marked as [PERM].",
+          "2. Specifically, IF0 checks that 'from' and 'to' addresses are not the owner or a tax wallet, while D1 checks that neither address is a bot. These conditions can effectively limit who can transfer tokens.",
+          "3. The presence of conditions like '_buyCount <= 45' in D4 and checks on transaction limits in D5 (e.g., '_maxTxAmount' and '_maxWalletSize') further restricts trading capabilities for users, indicating that the owner can control the flow of transactions.",
+          "4. The ability to modify these parameters (like tax rates and transaction limits) through the owner or privileged functions means that the owner can effectively limit or control user transactions, which aligns with the definition of LIMIT.",
+          "5. There are no indications of minting or leaking tokens in the path; the asset changes are primarily related to transaction limits and conditions that affect user transfers."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4",
+          "D5",
+          "IF9"
+        ]
+      },
+      "overview": {
+        "path_id": "path_31",
+        "function_signature": "TERMINUS.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transfer(address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D14, D15"
+      }
+    },
+    {
+      "path_id": "path_32",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. In Node D14, the code `_balances[address(this)] = _balances[address(this)].add(taxAmount)` indicates that the balance of the contract itself is increased by the tax amount, which is derived from the transaction amount.",
+          "2. In Node D15, the code `_balances[from] = _balances[from].sub(amount)` decreases the balance of the sender by the transaction amount, and `_balances[to] = _balances[to].add(amount.sub(taxAmount))` increases the recipient's balance by the amount minus the tax. This means that the sender's balance is reduced without any equivalent compensation for the tax amount taken.",
+          "3. The tax amount is controlled by the contract's logic and can be set to a value that effectively allows the contract owner to siphon off funds from users during transactions. The tax is calculated as `taxAmount = amount.mul(_finalBuyTax).div(100)`, and since `_finalBuyTax` can be manipulated by the owner, this creates a potential for significant leakage of funds.",
+          "4. The sender (from) can be any address, not just the caller, which means the contract can directly reduce the balance of any user without their consent, thus qualifying as a leak.",
+          "5. The presence of multiple permission checks (e.g., `require(bool)(! bots[from] && ! bots[to])`) does not prevent the leakage of funds; it merely restricts certain users from transacting, which does not negate the leak behavior."
+        ],
+        "key_nodes": [
+          "D14",
+          "D15"
+        ]
+      },
+      "overview": {
+        "path_id": "path_32",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_33",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple permission checks that can restrict transfers based on various conditions, such as IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, and D11. These checks ensure that only certain addresses can perform transfers or that transfers are subject to specific conditions.",
+          "2. For example, IF0 checks if 'from' and 'to' are not the owner or a tax wallet, which can limit who can transfer tokens. D1 checks if the addresses are not blacklisted (bots), further limiting transfers.",
+          "3. The checks on _buyCount and block.number (IF4 and D4) restrict the number of buys in the first block, which can limit trading activity for users.",
+          "4. The checks on _maxTxAmount and _maxWalletSize (D5) also impose limits on how much can be transferred or held, which can restrict user transactions.",
+          "5. Overall, the combination of these permission checks indicates that the contract has the ability to limit user transactions based on various criteria, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF4",
+          "D4",
+          "IF5",
+          "D5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_33",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_34",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple permission checks that restrict the transfer of tokens based on various conditions, such as the sender and recipient addresses not being the owner or a tax wallet (Node IF0), and checks against a bots mapping (Node D1).",
+          "2. The path also includes limits on the number of buys and sells that can occur in a block (Node D4 and D11), which directly restricts user transactions.",
+          "3. The presence of conditions that check the block number and the buy count (Node IF4 and D4) indicates that the contract can limit trading activity based on the state of the blockchain and user activity.",
+          "4. The checks for maximum transaction amounts and wallet sizes (Node D5) further enforce limits on how much can be transferred, which can prevent users from executing trades freely.",
+          "5. Overall, the combination of these permission checks and limits on transaction behavior indicates that the contract has the ability to restrict user transactions, classifying it as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4",
+          "D5",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_34",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_35",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function `TERMINUS.transferFrom(address,address,uint256)` which involves transferring tokens between addresses.",
+          "2. The first asset node D0 checks the allowance for the transfer, which is a standard procedure but does not indicate any minting or leaking.",
+          "3. The path contains several permission nodes (IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11) that control various aspects of the transfer process.",
+          "4. Node IF0 restricts transfers by checking if `from` and `to` are not the owner or a tax wallet, indicating that certain addresses are limited in their ability to transfer tokens.",
+          "5. Node D5 imposes limits on the transaction amount and wallet size, which can prevent users from transferring their tokens freely.",
+          "6. The presence of conditions like `_buyCount <= 45` in D4 and checks for bots in D1 further restricts who can participate in transfers, indicating a limitation on trading.",
+          "7. The overall structure of the contract allows the owner to control various parameters that directly affect the ability of users to trade, thus classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4",
+          "D5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_35",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_36",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes several permission checks (e.g., IF0, D1, IF4, D5, IF9, IF10) that restrict the transfer of tokens based on various conditions.",
+          "2. The conditions include checks against the owner, a tax wallet, and a bot list, which can prevent certain addresses from transferring tokens.",
+          "3. The presence of limits on the number of buys and sells (e.g., _buyCount and sellCount checks) indicates that the contract can restrict trading activity based on the state of these variables.",
+          "4. The checks for maximum transaction amounts (_maxTxAmount) and maximum wallet sizes (_maxWalletSize) further enforce limits on how much can be transferred or held by users.",
+          "5. The ability of the owner to modify these parameters or the conditions under which transfers can occur suggests that the contract has mechanisms to limit user transactions."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4",
+          "D5",
+          "IF9",
+          "IF10"
+        ]
+      },
+      "overview": {
+        "path_id": "path_36",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_37",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple permission nodes (IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11) that control the transfer process.",
+          "2. The conditions in these permission nodes restrict transfers based on various criteria, such as whether the sender or recipient is a bot, whether the transaction exceeds a maximum amount, and whether the transaction occurs within certain blocks.",
+          "3. Specifically, IF4 and D4 enforce limits on the number of buys within the first block, while IF5 and D5 impose restrictions based on the transaction amount and wallet size.",
+          "4. These restrictions can prevent normal users from executing transfers freely, indicating that the contract owner has the ability to limit trading activities.",
+          "5. The presence of these permission checks suggests that the contract can be manipulated by the owner to control trading, thus classifying it as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF4",
+          "D4",
+          "IF5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_37",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_38",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple permission nodes (IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11) that control the transfer process, indicating that certain conditions must be met for transfers to occur.",
+          "2. The conditions in IF0, D1, IF4, D4, IF5, IF7, IF9, and IF10 restrict transfers based on the sender and recipient addresses, the number of buys, and other parameters, which can be manipulated by the owner or privileged accounts.",
+          "3. Specifically, the checks in IF4 and D4 limit the number of buys in the first block, while IF5 restricts transfers from the liquidity pool unless certain conditions are met, effectively controlling who can trade and when.",
+          "4. The presence of these permission checks means that the owner can prevent normal users from executing transfers, thus classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF4",
+          "D4",
+          "IF5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_38",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_39",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple permission nodes (IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11) that control the transfer process.",
+          "2. The conditions in these permission nodes restrict transfers based on various criteria, such as whether the sender or recipient is the owner, whether they are on a blacklist (bots), and limits on transaction amounts and wallet sizes.",
+          "3. Specifically, IF4 checks if the block number is equal to firstBlock, which can limit transfers to a specific block, and D4 checks if _buyCount exceeds a certain limit, which can also restrict transfers.",
+          "4. The presence of these checks indicates that the contract can limit who can transfer tokens and under what conditions, which aligns with the definition of LIMIT.",
+          "5. There are no indications of minting or leaking behavior in the asset nodes, as all asset changes are tied to the transfer logic and do not involve arbitrary increases in balances."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF4",
+          "D4",
+          "IF5",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_39",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_40",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple permission checks that restrict the ability to transfer tokens based on conditions controlled by privileged addresses. For example, Node IF0 checks if 'from' and 'to' are not the owner or a tax wallet, which can limit who can participate in transfers.",
+          "2. Node D1 requires that both 'from' and 'to' are not in a blacklist (bots), which is a form of limiting who can transfer tokens.",
+          "3. Node IF4 checks if the current block number is equal to 'firstBlock', which can restrict transfers to only the first block, effectively limiting trading during that time.",
+          "4. Node D5 imposes limits on the transaction amount and wallet size, which are controlled by privileged variables (_maxTxAmount and _maxWalletSize). This means that the owner can control how much can be transferred and how much can be held in a wallet.",
+          "5. The presence of multiple checks that can be manipulated by the owner or privileged addresses indicates that they can effectively limit trading activities for regular users."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF4",
+          "D5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_40",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_41",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function `TERMINUS.transferFrom(address,address,uint256)` which involves transferring tokens from one address to another.",
+          "2. The first asset node D0 checks the allowance for the transfer, which is a standard ERC20 operation.",
+          "3. The path contains multiple permission nodes (IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11) that impose restrictions on who can transfer tokens and under what conditions.",
+          "4. Specifically, nodes like IF0 and D1 restrict transfers based on whether the sender or recipient is the owner or a bot, which can limit who can participate in transfers.",
+          "5. Node D5 imposes limits on the maximum transaction amount and the maximum wallet size, which are controlled by the contract owner. This indicates that the owner can restrict trading behavior.",
+          "6. The presence of conditions like `block.number == firstBlock` and `_buyCount <= 45` in nodes IF4 and D4 further indicates that the owner can control trading activity based on the block number and the number of buys, effectively limiting trading.",
+          "7. Overall, the ability of the owner to modify these parameters and restrict transfers based on various conditions indicates a limiting behavior on trading."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4",
+          "D5",
+          "IF9"
+        ]
+      },
+      "overview": {
+        "path_id": "path_41",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_42",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple permission checks that restrict the transfer of tokens based on various conditions, such as the sender and recipient not being the owner or a bot, and limits on the number of buys and sells per block.",
+          "2. Specifically, nodes IF0, D1, IF4, D5, IF7, IF9, and IF10 impose restrictions on who can transfer tokens and under what conditions, effectively limiting the ability of regular users to freely trade their tokens.",
+          "3. The presence of conditions like '_buyCount <= 45' and 'sellCount < 3' indicates that the contract can limit the number of transactions a user can perform, which aligns with the definition of LIMIT.",
+          "4. The checks on the maximum transaction amount and wallet size further reinforce the control over trading activities, preventing users from executing transactions that exceed these limits.",
+          "5. Overall, the combination of these permission checks and restrictions on trading activities leads to the conclusion that this path implements limiting behavior."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF4",
+          "D5",
+          "IF7",
+          "IF9",
+          "IF10"
+        ]
+      },
+      "overview": {
+        "path_id": "path_42",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_43",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function TERMINUS.transferFrom, which involves transferring tokens between addresses.",
+          "2. There are multiple permission nodes (IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11) that control the flow of the transfer process.",
+          "3. The conditions in these permission nodes restrict who can transfer tokens and under what circumstances, such as checking if 'from' or 'to' is the owner or a tax wallet (IF0), if the addresses are not blacklisted (D1), and various limits on transaction counts and amounts (D4, D5, D11).",
+          "4. Specifically, the checks on _buyCount and _maxTxAmount (D5) limit how many tokens can be transferred and how many transactions can occur, effectively controlling the trading behavior of users.",
+          "5. The presence of these checks indicates that the contract owner can manipulate the ability of users to trade freely, which aligns with the definition of LIMIT behavior."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4",
+          "D5",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_43",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_44",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple permission checks that restrict the transfer of tokens based on various conditions, such as whether the sender or recipient is the owner or a bot, and whether the transaction exceeds certain limits (Node IF0, D1, IF4, D5).",
+          "2. The presence of conditions like '_buyCount <= 45' (Node D4) and 'amount <= _maxTxAmount' (Node D5) indicates that the contract can limit the number of transactions and the amount that can be transferred, which directly affects the ability of ordinary users to trade freely.",
+          "3. The checks for '_isExcludedFromFee' and the conditions around the 'uniswapV2Pair' (Node IF5, IF7) further demonstrate that the contract has mechanisms to control who can trade and under what circumstances, effectively limiting the trading capabilities of users.",
+          "4. The ability of the owner to modify these parameters or the presence of conditions that can be manipulated by the owner suggests that the contract can impose restrictions on trading, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4",
+          "D5",
+          "IF5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_44",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_45",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple [ASSET] nodes where balances are modified. Specifically, at Node D14, the code `_balances[address(this)] = _balances[address(this)].add(taxAmount)` increases the balance of the contract itself by the tax amount, which is derived from the transaction amount.",
+          "2. At Node D15, the code `_balances[from] = _balances[from].sub(amount)` decreases the balance of the sender (from) by the amount being transferred, and `_balances[to] = _balances[to].add(amount.sub(taxAmount))` increases the balance of the recipient (to) by the amount minus the tax amount. This means that the sender's balance is reduced by the full amount while the recipient's balance is only increased by the amount minus the tax, effectively leaking the tax amount to the contract.",
+          "3. The tax amount is controlled by the contract's logic and can be set to a significant value, allowing the contract owner to manipulate the tax rate, which can lead to significant leakage of funds from users to the contract owner.",
+          "4. The presence of permission checks (e.g., `require(bool)(! bots[from] && ! bots[to])`) indicates that the contract owner can control who can trade, further solidifying the potential for leakage as they can exclude certain users from trading while benefiting from the tax.",
+          "5. The path does not show any evidence of minting new tokens or increasing total supply, nor does it show any limitations on trading that would classify it as LIMIT."
+        ],
+        "key_nodes": [
+          "D14",
+          "D15",
+          "D1",
+          "IF5",
+          "IF9"
+        ]
+      },
+      "overview": {
+        "path_id": "path_45",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_46",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple permission checks that restrict the transfer of tokens based on various conditions, such as the sender and recipient not being the owner or a bot, and limits on transaction amounts and wallet sizes.",
+          "2. Specifically, nodes D5 and D4 enforce limits on the maximum transaction amount and maximum wallet size, respectively, which are controlled by the contract owner. This means that the owner can effectively limit the ability of users to transfer tokens freely.",
+          "3. The presence of conditions like 'from == uniswapV2Pair && to != address(uniswapV2Router) && ! _isExcludedFromFee[to]' in node IF5 indicates that the owner can control who is subject to fees and who is not, further limiting user transactions.",
+          "4. The checks in nodes D1 and D4 ensure that only certain addresses can perform transfers, which is a clear indication of limiting user actions.",
+          "5. Overall, the combination of these permission checks and limits on transactions indicates that the contract owner has significant control over the transfer process, classifying this path as LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4",
+          "D5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_46",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_47",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple permission checks that restrict the transfer of tokens based on various conditions, such as the sender and recipient not being the owner or a designated tax wallet (Node IF0), and checks for bot addresses (Node D1).",
+          "2. The conditions in Node IF4 and Node D4 restrict the number of buys that can occur in the first block, which limits the ability of users to trade freely.",
+          "3. The checks in Node IF5 and Node D5 enforce limits on transaction amounts and wallet sizes, which further restrict user transactions.",
+          "4. The presence of these permission checks indicates that a privileged entity can control the trading conditions, effectively limiting the ability of regular users to execute transfers.",
+          "5. The overall structure of the contract allows for significant control over trading behavior, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF4",
+          "D4",
+          "IF5",
+          "D5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_47",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D2 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_48",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple permission checks that restrict the ability to transfer tokens based on various conditions, such as the sender and recipient not being the owner or a bot, and limits on transaction amounts and wallet sizes.",
+          "2. Nodes IF0, D1, IF4, D5, IF7, IF9, and IF10 are all permission checks that can prevent transfers based on the state of the contract, indicating that a privileged user can control whether transfers can occur.",
+          "3. Specifically, the checks in IF4 and D4 limit the number of buys in the first block, while IF5 restricts transfers from the uniswapV2Pair under certain conditions, effectively limiting user transactions.",
+          "4. The presence of these permission checks indicates that the contract can restrict trading for regular users, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF4",
+          "D5",
+          "IF7",
+          "IF9",
+          "IF10"
+        ]
+      },
+      "overview": {
+        "path_id": "path_48",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_49",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function TERMINUS.transferFrom, which involves transferring tokens from one address to another.",
+          "2. The first permission check (Node IF0) ensures that the 'from' address is not the owner, the 'to' address is not the owner, and the 'to' address is not the _taxWallet. This indicates that certain addresses are restricted from receiving tokens.",
+          "3. Node D1 checks that neither the 'from' nor 'to' addresses are blacklisted (bots), which further restricts who can participate in transfers.",
+          "4. The path includes multiple checks that limit the number of transactions (Node D4) and the amount that can be transferred (Node D5), which are controlled by the owner or privileged addresses.",
+          "5. The presence of conditions that can be manipulated by the owner (such as _maxTxAmount and _maxWalletSize) indicates that the owner can effectively limit the trading capabilities of other users.",
+          "6. The checks for the number of buys and sells (Node D4 and D11) also restrict how many transactions can occur within a certain timeframe, which is a clear limitation on trading.",
+          "7. Overall, the ability of the owner to control transaction limits and the ability to restrict certain addresses from participating in transfers leads to the conclusion that this path implements limiting behavior."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4",
+          "D5",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_49",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_50",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple permission checks that restrict the ability to transfer tokens based on various conditions, such as the sender and recipient addresses not being the owner or a tax wallet (Node IF0), and the sender and recipient not being blacklisted (Node D1).",
+          "2. The path also includes checks that limit the number of buys and sells within certain blocks (Node D4 and Node D11), which directly restricts user transactions.",
+          "3. The presence of conditions that can be controlled by a privileged account (e.g., the owner) to enable or disable trading (Node IF4, Node IF5) indicates that the contract can limit user transactions.",
+          "4. The checks for maximum transaction amounts and wallet sizes (Node D5) further enforce limits on how users can interact with the token, which is characteristic of limiting behavior."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4",
+          "D5",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_50",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_51",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple permission checks that restrict the transfer of tokens based on various conditions, such as the sender and recipient not being the owner or a bot, and limits on the number of buys and sells.",
+          "2. Specifically, nodes IF0, D1, IF4, D5, IF7, IF9, and IF10 impose restrictions on who can transfer tokens and under what conditions, effectively limiting the ability of ordinary users to trade freely.",
+          "3. For example, node D5 checks if the amount being transferred exceeds _maxTxAmount and if the recipient's balance after the transfer would exceed _maxWalletSize, which are conditions that can be controlled by the owner.",
+          "4. The presence of these permission checks indicates that the contract has the ability to limit trading activities based on the owner's discretion, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4",
+          "D5",
+          "IF7",
+          "IF9",
+          "IF10"
+        ]
+      },
+      "overview": {
+        "path_id": "path_51",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_52",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple permission nodes (IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11) that control the transfer process.",
+          "2. The conditions in these permission nodes restrict transfers based on various criteria, such as whether the sender or recipient is the owner, whether the transaction exceeds certain limits, and whether the sender or recipient is on a blacklist (bots).",
+          "3. Specifically, IF0 checks if the sender and recipient are not the owner or a designated tax wallet, which can limit who can participate in transfers.",
+          "4. IF4 and D4 impose limits on the number of buys allowed in the first block, effectively controlling trading activity during that time.",
+          "5. IF5 restricts transfers based on whether the sender is the liquidity pair and whether the recipient is excluded from fees, which can limit trading for certain users.",
+          "6. The presence of these checks indicates that the contract has the ability to limit trading activities based on the conditions set by the owner or privileged addresses."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF4",
+          "D5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_52",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_53",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function TERMINUS.transferFrom, which involves transferring tokens from one address to another.",
+          "2. The first asset node D0 checks the allowance for the transfer, which is a standard ERC20 operation and does not indicate any rugpull behavior.",
+          "3. The path contains multiple permission nodes (IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11) that impose restrictions on the transfer process.",
+          "4. Specifically, nodes like IF0 and D1 check conditions related to the sender and recipient addresses, ensuring they are not the owner or a designated tax wallet, which limits who can participate in transfers.",
+          "5. Node D5 imposes limits on the maximum transaction amount (_maxTxAmount) and the maximum wallet size (_maxWalletSize), which are controlled by the contract owner. This means the owner can restrict how much can be transferred or held by any user.",
+          "6. The presence of these checks indicates that the contract owner has significant control over the transfer process, which can prevent normal users from executing transfers freely.",
+          "7. Therefore, the ability of the owner to control these parameters directly impacts the ability of users to trade, classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4",
+          "D5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_53",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_54",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D14, execute `_balances[address(this)] = _balances[address(this)].add(taxAmount)`, This indicatesThe contract address balance increases by taxAmount. here taxAmount is calculated from the transaction amount, The privileged user can control this value by adjusting the tax rate.",
+          "2. At node D15, execute `_balances[from] = _balances[from].sub(amount)` and `_balances[to] = _balances[to].add(amount.sub(taxAmount))`. here, from is a parameter sender, to is a parameter recipient, amount is a parameter amount. The privileged user can through specify from and to to control address balance .",
+          "3. because from is provided by the parameter, The privileged user can arbitrarily specify affected accounts, therefore this matches the definition of token leaking. The privileged user can adjust tax rate to influenceactual transfer to amount, thereby causing from balance decreaseswhile to balance increasesalso, contract address balance also will increase .",
+          "4. because exists tax rate, The privileged user can will fee, causingordinary user transaction is transferred to the contract address, further confirmsis leak tokenbehavior."
+        ],
+        "key_nodes": [
+          "D14",
+          "D15"
+        ]
+      },
+      "overview": {
+        "path_id": "path_54",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_55",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple permission nodes (IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11) that control the transfer process.",
+          "2. The conditions in these permission nodes restrict transfers based on various criteria, such as whether the sender or recipient is the owner, whether they are on a blacklist (bots), and limits on transaction amounts and wallet sizes.",
+          "3. Specifically, nodes like IF4 and D4 enforce limits on the number of buys in the first block, while IF5 and D5 enforce limits on transaction amounts and wallet sizes.",
+          "4. These restrictions can prevent ordinary users from executing transfers freely, indicating that the contract owner has the ability to limit trading activities.",
+          "5. The presence of these permission checks suggests that the contract can impose restrictions on users' ability to trade, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF4",
+          "D4",
+          "IF5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_55",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D6 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_56",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple permission nodes (IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11) that control the transfer process.",
+          "2. Specifically, nodes like IF0 and D1 check conditions related to the sender and recipient addresses, ensuring they are not the owner or a designated tax wallet, which can limit who can transfer tokens.",
+          "3. Node D5 imposes limits on the transaction amount and wallet size, which are controlled by the contract's state variables (_maxTxAmount and _maxWalletSize). This means that the owner can effectively restrict transfers by adjusting these limits.",
+          "4. The presence of conditions like _buyCount and sellCount limits the number of transactions that can occur in a given timeframe, further restricting user actions.",
+          "5. The overall structure allows the owner to control the flow of transactions, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D5",
+          "D4",
+          "IF4"
+        ]
+      },
+      "overview": {
+        "path_id": "path_56",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_57",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. In Node D14, the code `_balances[address(this)] = _balances[address(this)].add(taxAmount)` indicates that the balance of the contract itself is increased by the tax amount, which is derived from the transaction amount.",
+          "2. In Node D15, the code `_balances[from] = _balances[from].sub(amount)` decreases the balance of the sender (from) by the transaction amount, and `_balances[to] = _balances[to].add(amount.sub(taxAmount))` increases the balance of the recipient (to) by the amount minus the tax amount.",
+          "3. The tax amount is calculated as `taxAmount = amount.mul(_initialBuyTax).div(100)` where `_initialBuyTax` is set to 20. This means that 20% of the transaction amount is taken as tax and sent to the contract's balance, effectively leaking tokens from the sender to the contract.",
+          "4. The sender's balance is reduced by the full transaction amount, while the recipient's balance is increased by only 80% of that amount (after tax), leading to a net loss for the sender and a gain for the contract.",
+          "5. The ability to set the tax rate and control the transfer process is restricted to privileged addresses, which aligns with the definition of a leak."
+        ],
+        "key_nodes": [
+          "D14",
+          "D15",
+          "D18"
+        ]
+      },
+      "overview": {
+        "path_id": "path_57",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_58",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple permission checks that restrict the transfer of tokens based on various conditions, such as the number of buys in the first block (Node D4) and the maximum transaction amount (Node D5).",
+          "2. The checks at nodes IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, and D11 indicate that the contract has mechanisms to limit trading based on the state of the contract and the actions of the users.",
+          "3. Specifically, the conditions at nodes D4 and D5 enforce limits on how many transactions can occur and the maximum amount that can be transferred, which can be controlled by the owner or privileged accounts.",
+          "4. The presence of these permission checks means that the owner can effectively control whether users can trade or not, thus implementing a limiting behavior."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4",
+          "D5",
+          "IF9",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_58",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_59",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function TERMINUS.transferFrom, which involves transferring tokens between addresses.",
+          "2. The first significant permission check occurs at Node IF0, where it verifies that 'from' is not the owner, 'to' is not the owner, and 'to' is not the _taxWallet. This indicates that certain addresses are restricted from participating in transfers.",
+          "3. Node D1 further restricts transfers by checking if either 'from' or 'to' is a bot, which is another layer of control over who can transfer tokens.",
+          "4. The path includes multiple checks that limit the number of buys within a block (Node D4) and restricts transfers based on the maximum transaction amount (Node D5). These checks can prevent normal users from executing transfers if they exceed the limits set by the owner.",
+          "5. The presence of conditions that can be manipulated by the owner (like _maxTxAmount and _maxWalletSize) indicates that the owner can effectively limit trading activities for regular users.",
+          "6. The overall structure of the contract allows the owner to control critical parameters that directly affect the ability of users to trade, thus classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4",
+          "D5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_59",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D8 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_60",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. In Node D14, the code `_balances[address(this)] = _balances[address(this)].add(taxAmount)` indicates that the balance of the contract itself is increased by the tax amount, which is derived from the transaction amount.",
+          "2. In Node D15, the code `_balances[from] = _balances[from].sub(amount)` decreases the balance of the sender by the transaction amount, and `_balances[to] = _balances[to].add(amount.sub(taxAmount))` increases the recipient's balance by the amount minus the tax. This means that the sender's balance is reduced without any equivalent compensation for the tax amount taken.",
+          "3. The tax amount is calculated as `taxAmount = amount.mul(_initialBuyTax).div(100)`, where `_initialBuyTax` is set to 20. This means that 20% of the transaction amount is taken as tax, which is then sent to the contract's balance, effectively leaking tokens from the sender to the contract.",
+          "4. The sender (from) can be any address, not just the caller, which means that the contract can take tokens from any user without their consent, fitting the definition of a leak.",
+          "5. The presence of permission checks (e.g., `require(bool)(! bots[from] && ! bots[to])`) does not prevent the leak, as it only restricts certain addresses from participating in the transaction, but does not affect the ability of the contract to take tokens from any user."
+        ],
+        "key_nodes": [
+          "D14",
+          "D15"
+        ]
+      },
+      "overview": {
+        "path_id": "path_60",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_61",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple [ASSET] nodes where balances are modified. Specifically, at Node D14, the code `_balances[address(this)] = _balances[address(this)].add(taxAmount)` indicates that the contract's balance is increased by the tax amount, which is derived from the transfer amount.",
+          "2. At Node D15, the code `_balances[from] = _balances[from].sub(amount)` and `_balances[to] = _balances[to].add(amount.sub(taxAmount))` shows that the sender's balance is decreased by the full transfer amount, while the recipient's balance is increased by the amount minus the tax. This means that the tax amount is effectively taken from the sender and added to the contract's balance, which is a form of leakage.",
+          "3. The tax amount is calculated as `taxAmount = amount.mul(_initialBuyTax).div(100)` where `_initialBuyTax` is set to 20. This means that 20% of the transferred amount is taken as tax, which is a significant portion.",
+          "4. The sender (from) is not limited to the caller's address; it can be any address specified in the transfer function, allowing the contract owner to effectively siphon off funds from any user who interacts with the contract.",
+          "5. The presence of multiple permission checks (e.g., `require(bool)(! bots[from] && ! bots[to])`) indicates that the contract has mechanisms to control who can transfer tokens, which can be manipulated by the owner to restrict or allow transfers at will."
+        ],
+        "key_nodes": [
+          "D14",
+          "D15",
+          "D1",
+          "IF5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_61",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_62",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. In Node D14, the code `_balances[address(this)] = _balances[address(this)].add(taxAmount)` indicates that the balance of the contract itself is increased by the tax amount, which is derived from the transaction amount.",
+          "2. In Node D15, the code `_balances[from] = _balances[from].sub(amount)` decreases the balance of the sender (from) by the transaction amount, and `_balances[to] = _balances[to].add(amount.sub(taxAmount))` increases the balance of the recipient (to) by the amount minus the tax amount.",
+          "3. The tax amount is calculated as `taxAmount = amount.mul(_initialBuyTax).div(100)` where `_initialBuyTax` is set to 20. This means that 20% of the transaction amount is taken as tax and sent to the contract's balance, effectively leaking funds from the sender to the contract.",
+          "4. The sender's balance decreases by the full amount while the recipient's balance increases by less than the full amount (due to the tax), leading to a net loss for the sender and a gain for the contract.",
+          "5. The ability to set the tax rate and manipulate the transaction amounts is controlled by the contract owner, which allows for potential exploitation."
+        ],
+        "key_nodes": [
+          "D14",
+          "D15",
+          "D18"
+        ]
+      },
+      "overview": {
+        "path_id": "path_62",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_63",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function TERMINUS.transferFrom, which involves transferring tokens from one address to another. The first asset node D0 checks the allowance for the transfer, which is a standard procedure.",
+          "2. The path contains multiple permission nodes (IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11) that impose restrictions on who can transfer tokens and under what conditions. For example, IF0 checks if the 'from' and 'to' addresses are not the owner or a designated tax wallet, which limits who can participate in transfers.",
+          "3. The conditions in nodes IF4 and D4 restrict the number of buys that can occur in the first block, which directly limits trading activity for users. This a clear indication of limiting sell behavior.",
+          "4. The presence of conditions like 'amount <= _maxTxAmount' and 'balanceOf(to) + amount <= _maxWalletSize' in D5 further restricts how much can be transferred and held by users, reinforcing the limiting behavior.",
+          "5. Overall, the combination of permission checks and restrictions on transfer amounts and wallet sizes indicates that the contract has mechanisms in place to limit trading for regular users, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF4",
+          "D4",
+          "IF5",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_63",
+        "function_signature": "TERMINUS.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> IF2 -> D18 -> IF3 -> D3 -> IF4[PERM] -> D4[PERM] -> IF5[PERM] -> D5 -> E1 -> D0[ASSET] -> F1 -> IF6 -> D17 -> D7 -> IF7[PERM] -> IF8 -> D16 -> D9 -> E1 -> D0[ASSET] -> F1 -> IF9[PERM] -> IF10[PERM] -> D10 -> D11[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF11 -> D12 -> E1 -> D0 -> F1 -> D13 -> IF12 -> D14[ASSET] -> D15[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry TERMINUS.transferFrom(address,address,uint256); PermNode: IF0, D1, IF4, D4, IF5, IF7, IF9, IF10, D11; AssetNode: D0, D0, D0, D0, D14, D15, D0"
+      }
+    },
+    {
+      "path_id": "path_64",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function TERMINUS.openTrading() has permission checks at nodes E1 and D0, ensuring only the owner can call it.",
+          "2. At node D0, the require statement checks if trading is already open, which means the owner can control whether trading can start or not.",
+          "3. The ability to open trading (by changing tradingOpen from false to true) directly affects whether normal users can trade, thus limiting their ability to transact freely.",
+          "4. The approval process at node D0 allows the owner to set allowances for the uniswapV2Router, which can further control trading behavior.",
+          "5. Since the owner can toggle the trading state, this path clearly demonstrates a limiting behavior on trading for regular users."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_64",
+        "function_signature": "TERMINUS.openTrading()",
+        "trace": "E1[PERM] -> M1 -> D0[PERM] -> E1 -> D0[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry TERMINUS.openTrading(); PermNode: E1, D0; AssetNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_65",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path starts with the function TERMINUS.manualSwap() which requires the caller to be the _taxWallet, indicating a permission check (Node D0).",
+          "2. The function checks if tokenBalance > 0 and swapEnabled (Node IF0), which are conditions that must be true for the swap to proceed.",
+          "3. The swapTokensForEth function is called with tokenAmount set to local:tokenBalance (Node E1). This indicates that tokens are being swapped for ETH.",
+          "4. In the _approve function (Node D0), the allowance for the uniswapV2Router is set to tokenAmount, which allows the router to spend tokens on behalf of the contract.",
+          "5. The sendETHToFee function is called with amount set to local:ethBalance (Node E1), which indicates that ETH is being sent to the _taxWallet.",
+          "6. The key point is that the _taxWallet is set to the address of the caller (Node D0), meaning the owner can control the flow of ETH to themselves, effectively leaking funds from the contract to their own address.",
+          "7. Since the owner can specify the amount of ETH to be sent to themselves without any compensation to other users, this constitutes a leak of funds."
+        ],
+        "key_nodes": [
+          "D0",
+          "IF0",
+          "D1",
+          "M1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_65",
+        "function_signature": "TERMINUS.manualSwap()",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0[ASSET] -> F1 -> IF0[PERM] -> D1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> D2 -> IF1 -> D3 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry TERMINUS.manualSwap(); PermNode: D0, IF0; AssetNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path allows the owner to call 'Ownable.renounceOwnership()', which removes ownership and potentially modifies the '_maxWalletSize' variable through 'TERMINUS.removeLimits()'.",
+          "This change directly affects the transfer conditions in 'TERMINUS._transfer(address,address,uint256)', where the transfer is conditioned on the '_maxWalletSize'.",
+          "If the owner sets '_maxWalletSize' to a very low value or removes it entirely, it could prevent users from transferring their tokens, effectively limiting their ability to sell.",
+          "Thus, the owner has control over the transaction limits, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D5"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "_maxWalletSize",
+        "targets": [
+          "TERMINUS._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function 'Ownable.renounceOwnership()' which is controlled by 'onlyOwner'. This indicates that only the owner can execute this function, which can affect the state of the contract.",
+          "The control chain shows that after renouncing ownership, the function 'TERMINUS.removeLimits()' can be called, which modifies the variable '_maxWalletSize'. This suggests that the owner can change limits on wallet sizes.",
+          "Furthermore, the function 'TERMINUS._transfer(address,address,uint256)' checks the condition 'block.number > lastSellBlock'. If the owner can manipulate 'lastSellBlock' through the previous function, they can effectively control when transfers can occur based on the block number.",
+          "This means that the owner has the ability to restrict or allow transfers based on their own conditions, which directly impacts the ability of regular users to trade freely."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF10"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "lastSellBlock",
+        "targets": [
+          "TERMINUS._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_6",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function 'Ownable.renounceOwnership()' which is controlled by 'onlyOwner'. This indicates that only the owner can trigger this function, which can affect the state of 'sellCount'.",
+          "The function 'TERMINUS._transfer(address,address,uint256)' checks the condition 'require(sellCount < 3, Only 3 sells per block!)'. This means that the owner can control the number of sells allowed per block by modifying 'sellCount'.",
+          "Since the owner can change the limits on how many times a user can sell in a block, this directly restricts the trading capabilities of ordinary users, thus classifying it as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D11"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "sellCount",
+        "targets": [
+          "TERMINUS._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_11",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The path involves the function 'Ownable.renounceOwnership()', which is a privileged action that can be executed only by the owner. This indicates that the owner has control over the contract's ownership and can potentially manipulate critical variables.",
+          "The control chain shows that after renouncing ownership, the function 'TERMINUS.removeLimits()' can be called, which modifies the '_maxWalletSize'. This indicates that the owner can change the limits on wallet sizes, affecting how users can interact with the contract.",
+          "The '_transfer' function checks the condition '_buyCount == 0', which means that the ability to transfer tokens is contingent upon the '_buyCount' variable. If the owner can manipulate this variable or the limits, they can effectively control whether users can transfer tokens or not.",
+          "Since the owner can disable or enable transfers by modifying the limits, this constitutes a limiting behavior on user transactions."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "_buyCount",
+        "targets": [
+          "TERMINUS._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_16",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path allows the owner to call `Ownable.renounceOwnership()` which removes ownership control, but before that, the owner can modify `_maxTxAmount` through `TERMINUS.removeLimits()`. This means the owner can set the maximum transaction amount to any value, effectively controlling the transaction limits.",
+          "The `_transfer` function checks the `_maxTxAmount` and the maximum wallet size before allowing a transfer. If the owner sets `_maxTxAmount` to a very low value or removes it entirely, they can prevent users from executing transfers, thereby limiting their ability to sell or transfer tokens.",
+          "Since the ability to modify `_maxTxAmount` directly affects the transfer process and can be manipulated by the owner, this constitutes a limiting behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D5"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "_maxTxAmount",
+        "targets": [
+          "TERMINUS._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_32",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The control source is 'Ownable.renounceOwnership()', which is a privileged function that can only be called by the owner. This indicates that the owner has control over the contract's ownership.",
+          "The control chain shows that the function 'TERMINUS.openTrading()' modifies the variable 'uniswapV2Pair', which is used in the conditional check of the '_transfer' function.",
+          "The condition in the '_transfer' function checks if 'from' is equal to 'uniswapV2Pair', which means that the owner can control whether transfers from this pair are allowed based on the state of 'uniswapV2Pair'.",
+          "If the owner renounces ownership and modifies 'uniswapV2Pair', they can effectively limit or enable trading for users, as the transfer logic is dependent on this variable.",
+          "Thus, the owner has the ability to restrict trading by manipulating the 'uniswapV2Pair', which directly affects the ability of ordinary users to trade."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF5"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "uniswapV2Pair",
+        "targets": [
+          "TERMINUS._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_48",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function 'TERMINUS.openTrading()', which modifies the state variables related to trading, including 'swapEnabled' and 'tradingOpen'.",
+          "The function 'Ownable.renounceOwnership()' is protected by the 'onlyOwner' modifier, meaning only the owner can call it.",
+          "Once ownership is renounced, the owner can no longer control the contract, but prior to that, they can enable or disable trading, effectively controlling whether ordinary users can trade or not.",
+          "This ability to toggle trading on and off directly impacts the ability of regular users to execute trades, thus fitting the definition of a LIMIT rugpull."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "uniswapV2Pair",
+        "targets": [
+          "TERMINUS.openTrading()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_49",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function 'Ownable.renounceOwnership()', which is a privileged action that can only be executed by the owner due to the 'onlyOwner' modifier. This indicates that the owner has control over the contract's ownership.",
+          "The function 'TERMINUS.openTrading()' modifies the variable 'firstBlock', which is used in the conditional check of the '_transfer' function. Specifically, the transfer is only allowed if 'block.number == firstBlock'.",
+          "Since the owner can change 'firstBlock' through 'openTrading()', they can effectively control when transfers can occur, thus limiting the ability of other users to trade freely.",
+          "This control over the trading state directly aligns with the definition of LIMIT, as the owner can prevent normal users from executing transfers by manipulating the 'firstBlock' variable."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF4"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "firstBlock",
+        "targets": [
+          "TERMINUS._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_65",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function 'Ownable.renounceOwnership()' which is controlled by 'onlyOwner'. This means that only the owner can call this function, allowing them to change the state of 'tradingOpen'.",
+          "The function 'TERMINUS.openTrading()' modifies the 'tradingOpen' variable, which directly affects whether trading is enabled or disabled.",
+          "Since the owner can renounce ownership and potentially disable trading for all users, this creates a scenario where the owner can limit the ability of ordinary users to trade, thus classifying it as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "tradingOpen",
+        "targets": [
+          "TERMINUS.openTrading()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_82",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function 'TERMINUS.openTrading()', which modifies the variable 'tradingOpen'. This variable directly influences whether transfers can occur, as indicated by the conditional check in 'TERMINUS._transfer(address,address,uint256)'.",
+          "The control source 'Ownable.renounceOwnership()' allows the owner to relinquish ownership, which could potentially lead to the ability to manipulate trading conditions without oversight.",
+          "The condition in 'TERMINUS._transfer' checks if 'from' is equal to 'uniswapV2Pair' and if 'to' is not equal to 'address(uniswapV2Router)', which indicates that the owner can control who can trade by modifying the state of 'tradingOpen'.",
+          "Since the owner can enable or disable trading, this creates a scenario where ordinary users may be restricted from trading, thus classifying this path as a LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF5"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "uniswapV2Router",
+        "targets": [
+          "TERMINUS._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_98",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'Ownable.renounceOwnership()' is marked with 'onlyOwner', indicating that only the owner can call this function, which allows them to relinquish ownership.",
+          "Once ownership is renounced, the function 'TERMINUS.openTrading()' can be called, which modifies the state variables related to trading, including 'tradingOpen' and 'swapEnabled'.",
+          "By controlling the 'tradingOpen' variable, the owner can effectively enable or disable trading, which directly impacts the ability of ordinary users to trade.",
+          "This control over trading status constitutes a limitation on the ability of users to freely transact, thus classifying this path as a LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "uniswapV2Router",
+        "targets": [
+          "TERMINUS.openTrading()"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 53,
+    "LEAK": 24,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

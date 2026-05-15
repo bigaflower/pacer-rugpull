@@ -1,0 +1,1213 @@
+{
+  "contract_name": "0x7b37a55ffb30c11d95f943672ae98f28cfb7b087",
+  "generated_at": "2026-02-25T12:18:24Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D13, execute _balances[address(this)] = _balances[address(this)].add(taxAmount), This means contract balance increases by taxAmount, belongs to asset increase .",
+          "2. At node D14, execute _balances[from] = _balances[from].sub(amount) and _balances[to] = _balances[to].add(amount.sub(taxAmount)), This means from balance decreases by amount, while to balance increases by amount subtract taxAmount.",
+          "3. because taxAmount is calculated based on the transaction amount, and At node D6, taxAmount = amount.mul(_finalBuyTax).div(100), This meansAt transaction, The privileged user can adjust _finalBuyTax to control from user account deducted fromamount, causing user actualamountsend amount.",
+          "4. because from is by msg.sender provided, while to is specified by the parameter, This meansThe privileged user can through set tax rate to influence user balance, matches the leak token definition.",
+          "5. because The privileged user can arbitrarily specify affected accounts (to) , and can through adjust tax rate to influence transaction, Therefore this path matches the LEAK definition."
+        ],
+        "key_nodes": [
+          "D13",
+          "D14",
+          "D6"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "FUFU.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D6 -> IF6[PERM] -> D7 -> IF7 -> D8 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transfer(address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D13, D14"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple [ASSET] nodes where balances are modified. Specifically, at Node D14, the code modifies balances as follows: _balances[from] = _balances[from].sub(amount) and _balances[to] = _balances[to].add(amount.sub(taxAmount).",
+          "2. The 'from' address is determined by msg.sender, which is the caller of the function. However, the 'to' address can be any address specified by the recipient parameter, which means the recipient can be an arbitrary address.",
+          "3. The taxAmount is calculated based on the amount being transferred, and this amount is deducted from the sender's balance and added to the contract's balance. This means that a portion of the transferred amount is effectively redirected to the contract, which can be controlled by the owner.",
+          "4. The presence of taxAmount > 0 at Node IF10 indicates that there is a fee being applied, which can be manipulated by the owner to increase the amount taken from the sender's balance.",
+          "5. The ability to set high fees or redirect funds to the contract address without the sender's consent constitutes a leak of tokens from the sender to the contract, which is a clear indication of a leak behavior."
+        ],
+        "key_nodes": [
+          "D14",
+          "D6",
+          "D13"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "FUFU.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D6 -> IF6[PERM] -> D7 -> IF7 -> D8 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transfer(address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D13, D14"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes several [ASSET] nodes where balances are modified. Specifically, at Node D13, the balance of the contract itself is increased by the tax amount: '_balances[address(this)] = _balances[address(this)].add(taxAmount)'. This indicates that the contract can accumulate tokens, which could be seen as a form of leakage if the tax is excessive.",
+          "2. At Node D14, the balance of the 'from' address is decreased: '_balances[from] = _balances[from].sub(amount)'. This indicates that the user is losing tokens, which is a clear sign of leakage.",
+          "3. The tax amount is calculated based on the transaction amount and can be controlled by the contract owner through the '_finalBuyTax' and '_finalSellTax' variables. This means the owner can set these taxes to high values, effectively draining users' balances during transactions.",
+          "4. The contract has permission checks (e.g., 'require(bool,string)(_buyCount > _preventSwapBefore || _buyerMap[from],Seller is not buyer)') that can restrict who can sell, which can lead to a situation where only certain users can sell while others are taxed heavily, further indicating a potential for leakage.",
+          "5. The ability to send ETH to various wallets (Node D0) also indicates that the contract can redirect funds, which is another form of leakage."
+        ],
+        "key_nodes": [
+          "D13",
+          "D14",
+          "D0",
+          "D9"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "FUFU.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D6 -> IF6[PERM] -> D7 -> IF7 -> D8 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transfer(address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D13, D14"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D14, the following operation was executed:",
+          "- L352: _balances[from] = _balances[from].sub(amount) /* from←msg.sender ; amount←param:amount */",
+          "- L353: _balances[to] = _balances[to].add(amount.sub(taxAmount)) /* to←param:recipient ; amount←param:amount */",
+          "here, from is msg.sender(caller), while to is a parameter recipient, means caller balance decreases by amount, while recipient balance increases by amount subtract taxAmount.",
+          "2. because taxAmount is calculated based on the transaction amount, and At node D6, taxAmount = amount.mul(_finalBuyTax).div(100) /* _finalBuyTax=2 */, This means transaction will 2% fee is deducttransfer contract address.",
+          "3. causing caller balance decreases, while The contract address balance increases, and contract address balance is controlled by the privileged user, therefore this matches the definition of token leaking.",
+          "4. because The privileged user can adjust tax rateor other parameter to transaction fee, further increase leak risk .",
+          "5. In summary, This path matches the LEAK definition, because The privileged user can through set tax rate to decrease user balance, will its transfer contract address."
+        ],
+        "key_nodes": [
+          "D14",
+          "D6",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "FUFU.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D6 -> IF6[PERM] -> D7 -> IF7 -> D8 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transfer(address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D13, D14"
+      }
+    },
+    {
+      "path_id": "path_4",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D14, the following operation was executed:",
+          "- L352: _balances[from] = _balances[from].sub(amount) /* from←msg.sender ; amount←param:amount */",
+          "- L353: _balances[to] = _balances[to].add(amount.sub(taxAmount)) /* to←param:recipient ; amount←param:amount */",
+          "here 'from' is the calleraddress, while 'to' is the recipient's address, 'amount' is transfer amount.",
+          "2. because 'from' is by msg.sender specified, and 'to' is specified by the parameter, This meansThe privileged user can call transfer function, arbitrary specify 'to' address, thereby causing 'from' balance decreaseswhile 'to' balance increases.",
+          "3. At node D13, the following operation was executed:",
+          "- L349: _balances[address(this)] = _balances[address(this)].add(taxAmount) // [ASSET]",
+          "here 'taxAmount' is calculated from the transfer amount, and is controlled by the privileged user tax rate.",
+          "4. because tax ratecan is The privileged user adjust, causingactual transfer amount less than 'amount', thereby make 'from' balance decreases, 'to' balance increasesalso, 'taxAmount' is transfer The privileged user control address, This matches the definition of token leaking.",
+          "5. In summary, The privileged user can adjust tax rateand specify transfer target, causing balance decrease, matches the LEAK definition."
+        ],
+        "key_nodes": [
+          "D14",
+          "D13"
+        ]
+      },
+      "overview": {
+        "path_id": "path_4",
+        "function_signature": "FUFU.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D6 -> IF6[PERM] -> D7 -> IF7 -> D15 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transfer(address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D13, D14"
+      }
+    },
+    {
+      "path_id": "path_5",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The transfer function allows for a tax to be applied to the amount being transferred, which is controlled by the contract owner. This evident in Node D14 where the balance of 'from' is reduced by 'amount' and the balance of 'to' is increased by 'amount - taxAmount'.",
+          "2. The taxAmount is calculated as 'amount.mul(_finalBuyTax).div(100)', where _finalBuyTax is controlled by the contract owner. This means the owner can set a high tax rate, effectively allowing them to siphon off funds from users without their consent.",
+          "3. In Node D13, the contract increases its own balance by the taxAmount, which is a clear indication of funds being redirected to the owner's control. This a classic case of leaking tokens.",
+          "4. The ability to set the tax rate and the fact that the tax is deducted from the user's transfer amount means that the owner can manipulate the transfer process to their advantage, leading to a loss of funds for users.",
+          "5. The presence of multiple permission checks (e.g., Node D1, D2, D3, D9) indicates that the owner has significant control over the transfer process, which can be exploited to leak funds."
+        ],
+        "key_nodes": [
+          "D14",
+          "D13",
+          "D1",
+          "D2",
+          "D9"
+        ]
+      },
+      "overview": {
+        "path_id": "path_5",
+        "function_signature": "FUFU.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D6 -> IF6[PERM] -> D7 -> IF7 -> D15 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transfer(address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D13, D14"
+      }
+    },
+    {
+      "path_id": "path_6",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple [ASSET] nodes that manipulate balances, specifically D13 and D14.",
+          "2. At node D14, the code modifies balances as follows: _balances[from] = _balances[from].sub(amount) and _balances[to] = _balances[to].add(amount.sub(taxAmount)). This indicates that the 'from' address is being reduced by 'amount', while the 'to' address receives less than 'amount' due to the tax deduction.",
+          "3. The taxAmount is calculated as taxAmount = amount.mul(_finalBuyTax).div(100), where _finalBuyTax is controlled by the contract. This means that the amount transferred to the 'to' address is less than the original amount, and the difference (taxAmount) is sent to the contract itself, which is a form of leakage.",
+          "4. The 'from' address can be any address specified by the caller, not limited to the caller themselves, which aligns with the definition of a leak.",
+          "5. The presence of the tax mechanism allows the contract owner to effectively siphon off funds from users without their consent, further supporting the classification as a leak."
+        ],
+        "key_nodes": [
+          "D14",
+          "D13",
+          "D6",
+          "D9"
+        ]
+      },
+      "overview": {
+        "path_id": "path_6",
+        "function_signature": "FUFU.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D6 -> IF6[PERM] -> D7 -> IF7 -> D15 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transfer(address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D13, D14"
+      }
+    },
+    {
+      "path_id": "path_7",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D14, the following operation was executed:",
+          "- L352: _balances[from] = _balances[from].sub(amount) /* from←msg.sender ; amount←param:amount */",
+          "- L353: _balances[to] = _balances[to].add(amount.sub(taxAmount)) /* to←param:recipient ; amount←param:amount */",
+          "here, from is msg.sender, to is param:recipient, amount is's parameter.",
+          "This means msg.sender balance will decrease, while recipient balance will increase, but increase amountis amount subtract taxAmount.",
+          "2. At node D13, the following operation was executed:",
+          "- L349: _balances[address(this)] = _balances[address(this)].add(taxAmount) // [ASSET]",
+          "here, taxAmount is calculated based on the transaction amount, and is controlled by the privileged user tax rate.",
+          "3. because taxAmount is from msg.sender balance deducted from, while msg.sender is can is arbitrary user, This meansThe privileged user can adjust tax rate to influenceother user balance, causing asset is transfer The privileged useraddress.",
+          "4. because exists from msg.sender deduction balance will its transfer privilege addresssituation, Therefore matches the Leak definition."
+        ],
+        "key_nodes": [
+          "D14",
+          "D13"
+        ]
+      },
+      "overview": {
+        "path_id": "path_7",
+        "function_signature": "FUFU.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D6 -> IF6[PERM] -> D7 -> IF7 -> D15 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transfer(address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D13, D14"
+      }
+    },
+    {
+      "path_id": "path_8",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple asset nodes where balances are modified: D13 and D14.",
+          "2. At D14, the code modifies balances as follows: _balances[from] = _balances[from].sub(amount) and _balances[to] = _balances[to].add(amount.sub(taxAmount)). This indicates that the 'from' address is being reduced by 'amount', while the 'to' address receives less than the original 'amount' due to the tax deduction.",
+          "3. The taxAmount is calculated as taxAmount = amount.mul(_initialBuyTax).div(100), which means that a portion of the transferred amount is redirected to the contract's balance, effectively leaking tokens from the sender's balance to the contract.",
+          "4. The sender ('from') is determined by msg.sender, which is the address initiating the transfer. This means that the sender can only reduce their own balance, but the taxAmount is sent to the contract, which is controlled by the owner, allowing for potential misuse.",
+          "5. The presence of the tax mechanism allows the owner to manipulate the tax rates, leading to a situation where they can effectively siphon off funds from users without their consent, especially if the tax rate is set to a high value.",
+          "6. The conditions for the transfer and tax application are controlled by permission nodes, indicating that only certain addresses can execute these transfers under specific conditions, which further supports the leak classification."
+        ],
+        "key_nodes": [
+          "D13",
+          "D14",
+          "D16",
+          "D9"
+        ]
+      },
+      "overview": {
+        "path_id": "path_8",
+        "function_signature": "FUFU.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D16 -> IF6[PERM] -> D7 -> IF7 -> D8 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transfer(address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D13, D14"
+      }
+    },
+    {
+      "path_id": "path_9",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple [ASSET] nodes where balances are modified. Specifically, at Node D14, the code modifies balances as follows: _balances[from] = _balances[from].sub(amount) and _balances[to] = _balances[to].add(amount.sub(taxAmount).",
+          "2. Here, 'from' is msg.sender (the caller), and 'to' is the recipient specified in the transfer function. The taxAmount is calculated based on the amount being transferred, which is controlled by the caller.",
+          "3. The balance of 'from' decreases by 'amount', while 'to' receives 'amount - taxAmount'. This indicates that a portion of the transferred amount is redirected to the contract itself (or potentially to a privileged address), which constitutes a leak.",
+          "4. The presence of taxAmount being deducted from the transfer indicates that the contract can take a portion of the funds being transferred, which is a clear case of leaking tokens from the user to the contract or a privileged address.",
+          "5. The ability to adjust tax rates or the mechanism of how funds are redirected to the contract further supports the classification as a leak."
+        ],
+        "key_nodes": [
+          "D14",
+          "D12",
+          "D9",
+          "D7",
+          "D16"
+        ]
+      },
+      "overview": {
+        "path_id": "path_9",
+        "function_signature": "FUFU.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D16 -> IF6[PERM] -> D7 -> IF7 -> D8 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transfer(address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D13, D14"
+      }
+    },
+    {
+      "path_id": "path_10",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple asset nodes, particularly D13 and D14, which modify balances.",
+          "2. At node D14, the code modifies balances as follows: _balances[from] = _balances[from].sub(amount) and _balances[to] = _balances[to].add(amount.sub(taxAmount)). This indicates that the balance of 'from' is decreased by 'amount', while 'to' receives 'amount - taxAmount'.",
+          "3. The taxAmount is calculated as taxAmount = amount.mul(_initialBuyTax).div(100), which means a portion of the transferred amount is redirected to the contract itself, effectively leaking tokens from the sender to the contract.",
+          "4. The sender (from) is determined by msg.sender, which is not the contract itself, allowing for arbitrary users to be affected. This means that the contract can take a portion of any user's balance without their consent, which fits the definition of a leak.",
+          "5. The presence of the tax mechanism allows the contract to siphon off funds from users, which is a clear indication of a leaking behavior."
+        ],
+        "key_nodes": [
+          "D14",
+          "D13",
+          "D16"
+        ]
+      },
+      "overview": {
+        "path_id": "path_10",
+        "function_signature": "FUFU.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D16 -> IF6[PERM] -> D7 -> IF7 -> D8 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transfer(address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D13, D14"
+      }
+    },
+    {
+      "path_id": "path_11",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. In Node D14, the balance of 'from' is decreased: _balances[from] = _balances[from].sub(amount). This indicates that the caller's balance is reduced by the amount specified in the transfer.",
+          "2. In the same Node D14, the balance of 'to' is increased by the amount minus the tax: _balances[to] = _balances[to].add(amount.sub(taxAmount). This means that the recipient's balance increases, but the amount received is less than what was sent due to the tax deduction.",
+          "3. The taxAmount is calculated in Node D16 as taxAmount = amount.mul(_initialBuyTax).div(100), where _initialBuyTax is a fixed value (2%). This means that a portion of the transferred amount is redirected to the contract itself, which is controlled by the owner.",
+          "4. The owner can manipulate the tax rates and the addresses receiving the tax, which allows for potential exploitation of the transfer process.",
+          "5. The transfer process allows the owner to effectively siphon off funds from users without their consent, as the tax is deducted from the amount being transferred.",
+          "6. The presence of multiple [PERM] nodes indicates that the transfer process is heavily controlled by the owner, allowing them to dictate the flow of funds."
+        ],
+        "key_nodes": [
+          "D14",
+          "D16",
+          "D0",
+          "D12"
+        ]
+      },
+      "overview": {
+        "path_id": "path_11",
+        "function_signature": "FUFU.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D16 -> IF6[PERM] -> D7 -> IF7 -> D8 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transfer(address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D13, D14"
+      }
+    },
+    {
+      "path_id": "path_12",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple [ASSET] nodes where balances are modified. Specifically, at Node D14, the code modifies balances as follows: _balances[from] = _balances[from].sub(amount) and _balances[to] = _balances[to].add(amount.sub(taxAmount).",
+          "2. Here, 'from' is msg.sender (the caller) and 'to' is the recipient parameter. The taxAmount is calculated based on the amount being transferred, which is controlled by the contract's logic.",
+          "3. The taxAmount can be significant (up to 30% as seen in Node D15), meaning that the recipient receives less than the amount sent, and the difference is sent to the contract itself (Node D13). This indicates a potential for leakage of funds.",
+          "4. The contract can also send ETH to various wallets (Node D0), which are hardcoded addresses, indicating that funds can be redirected to specific addresses without user consent.",
+          "5. The presence of permission checks (e.g., require statements) does not negate the fact that the contract can manipulate balances in a way that benefits the owner or specific addresses, which aligns with the definition of a Leak."
+        ],
+        "key_nodes": [
+          "D14",
+          "D13",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_12",
+        "function_signature": "FUFU.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D16 -> IF6[PERM] -> D7 -> IF7 -> D15 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transfer(address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D13, D14"
+      }
+    },
+    {
+      "path_id": "path_13",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple asset nodes (D13, D14) that modify balances.",
+          "2. At node D14, the code modifies balances as follows: _balances[from] = _balances[from].sub(amount) and _balances[to] = _balances[to].add(amount.sub(taxAmount)). This indicates that the 'from' address loses tokens while the 'to' address gains tokens minus a tax amount.",
+          "3. The tax amount is calculated as taxAmount = amount.mul(_initialBuyTax).div(100), where _initialBuyTax is controlled by the contract owner. This means the owner can set a high tax rate, effectively allowing them to siphon off funds from users during transactions.",
+          "4. The 'from' address is determined by the msg.sender, which is the user initiating the transfer, while the 'to' address can be any address specified by the recipient parameter. This means the owner can manipulate the tax rate and thus control how much is taken from users' balances.",
+          "5. The presence of the tax mechanism allows the owner to redirect funds away from users to themselves or other addresses, which fits the definition of a leak."
+        ],
+        "key_nodes": [
+          "D14",
+          "D13",
+          "D16"
+        ]
+      },
+      "overview": {
+        "path_id": "path_13",
+        "function_signature": "FUFU.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D16 -> IF6[PERM] -> D7 -> IF7 -> D15 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transfer(address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D13, D14"
+      }
+    },
+    {
+      "path_id": "path_14",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The transfer function involves multiple checks and balances, but ultimately allows for a tax to be deducted from the sender's balance.",
+          "2. In Node D14, the code modifies balances as follows: _balances[from] = _balances[from].sub(amount) and _balances[to] = _balances[to].add(amount.sub(taxAmount).",
+          "3. The sender's balance (from) is decreased by the full amount, while the recipient's balance (to) is increased by the amount minus the tax (taxAmount). This means that the taxAmount is effectively taken from the sender's balance and redirected to the contract's balance.",
+          "4. The taxAmount is calculated as taxAmount = amount.mul(_initialBuyTax).div(100), where _initialBuyTax is controlled by the contract owner, allowing them to set the tax rate arbitrarily.",
+          "5. The contract can take a portion of the transferred tokens as tax, which is then sent to the contract itself, allowing the owner to benefit from the transaction without providing any equivalent value to the sender.",
+          "6. The ability to set the tax rate and the fact that the sender's balance is reduced while the recipient's balance is not increased by the full amount indicates a potential for leaking tokens.",
+          "7. The presence of permission checks (e.g., require statements) does not negate the fact that the contract can siphon off funds from users through the tax mechanism."
+        ],
+        "key_nodes": [
+          "D14",
+          "D13",
+          "D16"
+        ]
+      },
+      "overview": {
+        "path_id": "path_14",
+        "function_signature": "FUFU.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D16 -> IF6[PERM] -> D7 -> IF7 -> D15 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transfer(address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D13, D14"
+      }
+    },
+    {
+      "path_id": "path_15",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple [ASSET] nodes where balances are modified. Specifically, at Node D14, the code modifies balances as follows: _balances[from] = _balances[from].sub(amount) and _balances[to] = _balances[to].add(amount.sub(taxAmount).",
+          "2. Here, 'from' is the msg.sender (the caller), and 'to' is the recipient parameter. The 'amount' is the parameter passed to the transfer function. The taxAmount is calculated based on the initial buy tax, which is controlled by the contract.",
+          "3. The balance of 'from' decreases by 'amount', while 'to' receives 'amount - taxAmount'. This indicates that a portion of the transferred amount is redirected to the contract itself (or potentially to a privileged address), which constitutes a leak.",
+          "4. The taxAmount can be significant (up to 30% as seen in Node D15), meaning that a large portion of the funds can be redirected away from the intended recipient to the contract or other specified addresses, which is a clear indication of a leak.",
+          "5. The presence of permission checks (e.g., require statements) does not negate the fact that the contract can siphon off funds from users through the tax mechanism, which is a form of leakage."
+        ],
+        "key_nodes": [
+          "D14",
+          "D13",
+          "D15"
+        ]
+      },
+      "overview": {
+        "path_id": "path_15",
+        "function_signature": "FUFU.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D16 -> IF6[PERM] -> D7 -> IF7 -> D15 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transfer(address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D13, D14"
+      }
+    },
+    {
+      "path_id": "path_16",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple permission checks that can restrict transfers based on various conditions, such as whether the sender or recipient is a bot (Node D1), whether the transfer is delayed (Node IF1), and whether the recipient is a contract (Node D4).",
+          "2. The presence of conditions like 'transferDelayEnabled' (Node IF1) and checks against the uniswapV2Router and uniswapV2Pair (Node IF2) indicates that the contract can control who can transfer tokens and under what circumstances.",
+          "3. The checks for '_buyCount' and '_preventSwapBefore' (Node D9) further demonstrate that the contract can limit trading based on the number of purchases made, which directly affects the ability of users to sell their tokens.",
+          "4. The ability to set these conditions and the fact that they are tied to the permissions of the contract owner or specific addresses indicates that the contract can limit user transactions, fitting the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF1",
+          "IF2",
+          "D3",
+          "D9"
+        ]
+      },
+      "overview": {
+        "path_id": "path_16",
+        "function_signature": "FUFU.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D6 -> IF6[PERM] -> D7 -> IF7 -> D8 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transferFrom(address,address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D0, D13, D14, D0"
+      }
+    },
+    {
+      "path_id": "path_17",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function FUFU.transferFrom has multiple permission checks that can restrict transfers based on various conditions, such as whether the sender or recipient is a bot (Node D1), whether the transfer is delayed (Node IF1), and whether the recipient is a contract (Node D4).",
+          "2. The checks in Node IF0, D1, IF1, IF2, D2, IF3, D9, and IF8 indicate that the owner or privileged addresses can control the transfer process by modifying the state of these checks, effectively limiting the ability of regular users to transfer tokens.",
+          "3. The presence of conditions like _buyCount < _preventSwapBefore (Node IF4) and _buyCount > _preventSwapBefore || _buyerMap[from] (Node D9) shows that the owner can manipulate the trading conditions, which directly affects the ability of users to sell their tokens.",
+          "4. The ability to set transfer delays and restrict transfers to certain addresses (like uniswapV2Router and uniswapV2Pair) further indicates that the contract has mechanisms to limit trading, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF1",
+          "IF2",
+          "D2",
+          "IF3",
+          "D9",
+          "IF8"
+        ]
+      },
+      "overview": {
+        "path_id": "path_17",
+        "function_signature": "FUFU.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D6 -> IF6[PERM] -> D7 -> IF7 -> D8 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transferFrom(address,address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D0, D13, D14, D0"
+      }
+    },
+    {
+      "path_id": "path_18",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple permission checks that can restrict the transfer of tokens based on various conditions, such as whether the sender or recipient is a bot, whether the transfer is delayed, and whether the recipient is a contract or a specific address (uniswapV2Router or uniswapV2Pair).",
+          "2. The checks at nodes IF0, D1, IF1, IF2, IF3, and D3 indicate that the transfer can be limited based on the state of the contract and the addresses involved. For example, the condition at D3 requires that the amount being transferred does not exceed _maxTxAmount and that the recipient's balance after the transfer does not exceed _maxWalletSize.",
+          "3. The presence of the _buyCount variable and its checks (IF5, IF7, D9) further indicates that the contract can limit transfers based on the number of purchases made by the sender, which can restrict trading for certain users.",
+          "4. The ability of the contract to control whether transfers can occur based on these conditions suggests that the contract has the potential to limit user transactions, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF1",
+          "IF2",
+          "D3",
+          "IF5",
+          "D9"
+        ]
+      },
+      "overview": {
+        "path_id": "path_18",
+        "function_signature": "FUFU.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D6 -> IF6[PERM] -> D7 -> IF7 -> D8 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transferFrom(address,address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D0, D13, D14, D0"
+      }
+    },
+    {
+      "path_id": "path_19",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function FUFU.transferFrom checks multiple permission nodes (IF0, D1, IF1, IF2, IF3, IF4, IF6, IF8, D9) that can restrict the transfer process based on various conditions.",
+          "2. Specifically, nodes like IF0 check if 'from' and 'to' are not the owner, and D1 checks if the addresses are not in a blacklist (bots). These conditions can prevent normal users from executing transfers.",
+          "3. The presence of conditions like 'transferDelayEnabled' (IF1) and checks against the uniswapV2Router and uniswapV2Pair (IF2) further indicate that the contract can limit trading based on the state of these variables.",
+          "4. The node D3 imposes limits on the transaction amount and wallet size, which can restrict users from transferring their tokens freely.",
+          "5. Overall, the ability of the contract to control transfer conditions and impose restrictions based on the state of various parameters indicates a limiting behavior."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF1",
+          "IF2",
+          "D3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_19",
+        "function_signature": "FUFU.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D6 -> IF6[PERM] -> D7 -> IF7 -> D8 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transferFrom(address,address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D0, D13, D14, D0"
+      }
+    },
+    {
+      "path_id": "path_20",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple permission checks that restrict the transfer of tokens based on various conditions, such as whether the sender or recipient is a bot, whether the transfer delay is enabled, and whether the recipient is a specific address (uniswapV2Router or uniswapV2Pair). These checks are found in nodes D1, IF1, IF2, and D3.",
+          "2. The presence of the condition 'from != owner() && to != owner()' in IF0 indicates that the owner has the ability to control who can transfer tokens, which is a clear indication of limiting the ability of regular users to trade.",
+          "3. The checks for '_buyCount' and '_preventSwapBefore' in D9 further restrict trading based on the number of purchases made, which can limit the ability of users to sell their tokens freely.",
+          "4. The overall structure of the transfer function shows that the owner can manipulate the conditions under which transfers can occur, effectively limiting the trading capabilities of regular users."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF1",
+          "IF2",
+          "D3",
+          "D9"
+        ]
+      },
+      "overview": {
+        "path_id": "path_20",
+        "function_signature": "FUFU.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D6 -> IF6[PERM] -> D7 -> IF7 -> D15 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transferFrom(address,address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D0, D13, D14, D0"
+      }
+    },
+    {
+      "path_id": "path_21",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function FUFU.transferFrom has multiple permission checks that can restrict transfers based on various conditions, such as whether the sender or recipient is a bot, whether the transfer is delayed, and whether the recipient is a contract.",
+          "2. The node D1 checks if the sender or recipient is a bot, which can prevent certain transfers from occurring, indicating a limitation on who can transact.",
+          "3. The node IF1 checks if transferDelayEnabled is true, which can also limit transfers based on a time delay.",
+          "4. The node IF3 checks if the sender is the uniswapV2Pair and the recipient is not the uniswapV2Router, which can restrict transfers to certain addresses.",
+          "5. The node D3 imposes limits on the maximum transaction amount and wallet size, which can prevent users from transferring amounts above these limits.",
+          "6. The node D9 checks if the buyer count is above a certain threshold, which can limit who can sell tokens based on their buying history.",
+          "7. Overall, these permission checks indicate that the contract has the ability to limit transfers based on various criteria, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF1",
+          "IF3",
+          "D3",
+          "D9"
+        ]
+      },
+      "overview": {
+        "path_id": "path_21",
+        "function_signature": "FUFU.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D6 -> IF6[PERM] -> D7 -> IF7 -> D15 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transferFrom(address,address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D0, D13, D14, D0"
+      }
+    },
+    {
+      "path_id": "path_22",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function FUFU.transferFrom, which involves transferring tokens from one address to another.",
+          "2. The first asset node D0 checks the allowance for the transfer, which is a standard procedure but does not indicate any minting or leaking.",
+          "3. The path contains multiple permission nodes (IF0, D1, IF1, IF2, D3, IF4, IF6, D9, IF8) that impose restrictions on the transfer process.",
+          "4. Specifically, nodes like IF0 check if 'from' and 'to' are not the owner, and D1 checks if the addresses are not blacklisted (bots).",
+          "5. Node D3 imposes limits on the transaction amount and wallet size, which are controlled by the contract's state variables (_maxTxAmount and _maxWalletSize).",
+          "6. The presence of these checks indicates that the contract owner can control who can transfer tokens and under what conditions, effectively limiting the ability of regular users to trade freely.",
+          "7. The path does not show any evidence of minting new tokens or leaking tokens to unauthorized addresses, as all asset changes are between specified addresses and do not involve arbitrary deductions or increases."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D3",
+          "D9"
+        ]
+      },
+      "overview": {
+        "path_id": "path_22",
+        "function_signature": "FUFU.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D6 -> IF6[PERM] -> D7 -> IF7 -> D15 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transferFrom(address,address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D0, D13, D14, D0"
+      }
+    },
+    {
+      "path_id": "path_23",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple permission checks that restrict transfers based on various conditions, such as whether the sender or recipient is a bot (Node D1), whether the transfer is delayed (Node IF1), and whether the recipient is a contract (Node D4).",
+          "2. The presence of conditions like 'transferDelayEnabled' (Node IF1) and checks against the uniswapV2Router and uniswapV2Pair (Node IF2) indicate that the contract can control who can transfer tokens and under what circumstances.",
+          "3. The checks for _maxTxAmount and _maxWalletSize (Node D3) further limit the ability of users to transfer tokens, as they impose hard limits on the amount that can be transferred and the total amount held by any single wallet.",
+          "4. The path also includes a check for _buyCount and _preventSwapBefore (Node D9), which restricts transfers based on the number of purchases made, indicating that the contract can limit trading based on user activity.",
+          "5. Overall, the combination of these permission checks allows the contract owner to effectively limit trading capabilities for regular users, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF1",
+          "IF2",
+          "D3",
+          "D9"
+        ]
+      },
+      "overview": {
+        "path_id": "path_23",
+        "function_signature": "FUFU.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D6 -> IF6[PERM] -> D7 -> IF7 -> D15 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transferFrom(address,address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D0, D13, D14, D0"
+      }
+    },
+    {
+      "path_id": "path_24",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple [ASSET] nodes where balances are modified. Specifically, at Node D13, the code `_balances[address(this)] = _balances[address(this)].add(taxAmount)` indicates that the contract's balance is increased by the tax amount, which is derived from the transaction amount.",
+          "2. At Node D14, the code `_balances[from] = _balances[from].sub(amount)` decreases the balance of the sender by the transaction amount, and `_balances[to] = _balances[to].add(amount.sub(taxAmount))` increases the recipient's balance by the amount minus the tax. This means the sender's balance is reduced without any compensation for the tax amount, which is sent to the contract.",
+          "3. The tax amount is calculated as `taxAmount = amount.mul(_initialBuyTax).div(100)` at Node D16, where `_initialBuyTax` is controlled by the contract owner. This means the owner can set the tax rate, effectively allowing them to dictate how much of the transaction is taken as a fee.",
+          "4. The ability to set the tax rate and the fact that the tax amount is taken from the sender's balance without any equivalent return to them indicates a potential for leaking tokens from users to the contract or to addresses controlled by the owner.",
+          "5. The path does not exhibit any characteristics of MINT or LIMIT behaviors, as there are no indications of arbitrary balance increases or restrictions on trading that would prevent users from executing transactions."
+        ],
+        "key_nodes": [
+          "D13",
+          "D14",
+          "D16"
+        ]
+      },
+      "overview": {
+        "path_id": "path_24",
+        "function_signature": "FUFU.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D16 -> IF6[PERM] -> D7 -> IF7 -> D8 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transferFrom(address,address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D0, D13, D14, D0"
+      }
+    },
+    {
+      "path_id": "path_25",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function FUFU.transferFrom, which involves transferring tokens from one address to another.",
+          "2. The first asset node D0 checks the allowance for the transfer, which is a standard ERC20 operation.",
+          "3. The path contains multiple permission checks (IF0, D1, IF1, IF2, D3, D4, D5, IF6, IF7, D9, IF8) that restrict the transfer based on various conditions, including whether the sender or recipient is a bot, whether the transfer is delayed, and whether the recipient is a contract.",
+          "4. The presence of conditions like 'from != owner() && to != owner()' (IF0) and checks against a bot list (D1) indicate that the contract can limit who can transfer tokens.",
+          "5. The checks for _maxTxAmount and _maxWalletSize (D3) further restrict the amount that can be transferred, which is a clear indication of limiting the ability to sell or transfer tokens freely.",
+          "6. The path also includes a mechanism to prevent swaps before a certain count (_preventSwapBefore), which is another limitation on trading.",
+          "7. Overall, the combination of these permission checks and restrictions on transfers indicates that the contract has the ability to limit trading for users, thus categorizing this path as LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF1",
+          "D2",
+          "D3",
+          "IF4",
+          "IF6",
+          "D9"
+        ]
+      },
+      "overview": {
+        "path_id": "path_25",
+        "function_signature": "FUFU.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D16 -> IF6[PERM] -> D7 -> IF7 -> D8 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transferFrom(address,address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D0, D13, D14, D0"
+      }
+    },
+    {
+      "path_id": "path_26",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple permission checks that restrict the transfer of tokens based on various conditions, such as whether the sender or recipient is a bot (Node D1), whether the transfer is delayed (Node IF1), and whether the recipient is a contract (Node D4).",
+          "2. The presence of conditions like 'from != owner() && to != owner()' (Node IF0) and checks against the uniswapV2Router and uniswapV2Pair (Node IF2) indicate that the contract can limit who can transfer tokens.",
+          "3. The checks for _maxTxAmount and _maxWalletSize (Node D3) further restrict the amount of tokens that can be transferred, which can be manipulated by the owner to prevent normal users from trading freely.",
+          "4. The path also includes a mechanism to prevent swaps before a certain count (_preventSwapBefore) (Node IF4), which can be controlled by the owner, effectively limiting trading capabilities.",
+          "5. Overall, the combination of these permission checks and restrictions indicates that the contract has the ability to limit user transactions significantly."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF1",
+          "IF2",
+          "D3",
+          "IF4"
+        ]
+      },
+      "overview": {
+        "path_id": "path_26",
+        "function_signature": "FUFU.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D16 -> IF6[PERM] -> D7 -> IF7 -> D8 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transferFrom(address,address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D0, D13, D14, D0"
+      }
+    },
+    {
+      "path_id": "path_27",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function FUFU.transferFrom has multiple permission checks that can restrict transfers based on various conditions, such as whether the sender or recipient is a bot (Node D1), whether transfer delays are enabled (Node IF1), and whether the recipient is a contract (Node D4).",
+          "2. The presence of conditions like 'transferDelayEnabled' (Node IF1) and checks against the uniswapV2Router and uniswapV2Pair (Node IF2) indicate that the contract can limit who can transfer tokens and under what conditions.",
+          "3. The checks for _buyCount and _preventSwapBefore (Node D9) further restrict transfers based on the number of purchases made, which can limit the ability of users to sell their tokens.",
+          "4. The ability to modify these parameters (like transferDelayEnabled) by a privileged account (e.g., owner) means that the contract can effectively control and limit user transactions, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF1",
+          "IF2",
+          "D2",
+          "D3",
+          "D9"
+        ]
+      },
+      "overview": {
+        "path_id": "path_27",
+        "function_signature": "FUFU.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D16 -> IF6[PERM] -> D7 -> IF7 -> D8 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transferFrom(address,address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D0, D13, D14, D0"
+      }
+    },
+    {
+      "path_id": "path_28",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D14, the following operation was executed:",
+          "- L352: _balances[from] = _balances[from].sub(amount) // from←param:sender ; amount←param:amount",
+          "- L353: _balances[to] = _balances[to].add(amount.sub(taxAmount)) // to←param:recipient ; amount←param:amount",
+          "here, from is provided by the parameteraddress, rather thanis the caller itself, Therefore this constitutes balance deduction.",
+          "2. At node D13, the following operation was executed:",
+          "- L349:_balances [address (this)] =_balances [address (this)].add (taxAmount)//This to increase the tax amount to the contract address",
+          "This means from transaction deducted from tax will is transferred to the contract address, causing user actualreceive amount decrease .",
+          "3. because The privileged user can adjust the tax rate (e.g.,at node D16, _initialSellTax=30%) to transaction fee,",
+          "make ordinary user at transaction will fee, further causing asset leak .",
+          "4. In summary, The privileged user can through set tax rateand directlydeduction balance,",
+          "causing user asset is transfer contract or privilege address, matches the Leak definition."
+        ],
+        "key_nodes": [
+          "D14",
+          "D13",
+          "D16"
+        ]
+      },
+      "overview": {
+        "path_id": "path_28",
+        "function_signature": "FUFU.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D16 -> IF6[PERM] -> D7 -> IF7 -> D15 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transferFrom(address,address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D0, D13, D14, D0"
+      }
+    },
+    {
+      "path_id": "path_29",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple permission checks that restrict the transfer of tokens based on various conditions, such as whether the sender or recipient is a bot (Node D1), whether the transfer is delayed (Node IF1), and whether the recipient is a specific address (Node IF2).",
+          "2. The presence of conditions like 'from != owner() && to != owner()' (Node IF0) and checks against the maximum transaction amount (Node D3) indicate that the contract has mechanisms to limit who can transfer tokens and under what circumstances.",
+          "3. The variable '_buyCount' is used to control whether a transfer can occur based on the number of previous purchases (Node D9), which further restricts trading for users who do not meet certain criteria.",
+          "4. The checks for whether the recipient is a contract (Node D4) and whether the transfer is allowed based on the buyer's status (Node D9) also indicate that the contract can limit transfers based on the state of the sender and recipient.",
+          "5. Overall, the combination of these permission checks creates a scenario where the contract owner can effectively control and limit the ability of users to trade tokens, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF1",
+          "IF2",
+          "D3",
+          "D9"
+        ]
+      },
+      "overview": {
+        "path_id": "path_29",
+        "function_signature": "FUFU.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D16 -> IF6[PERM] -> D7 -> IF7 -> D15 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transferFrom(address,address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D0, D13, D14, D0"
+      }
+    },
+    {
+      "path_id": "path_30",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple permission checks that restrict the transfer of tokens based on various conditions, such as whether the sender or recipient is a bot (Node D1), whether the transfer is delayed (Node IF1), and whether the recipient is a contract (Node D4).",
+          "2. The presence of conditions like 'from != owner() && to != owner()' (Node IF0) and checks against the uniswapV2Router and uniswapV2Pair (Node IF2) indicate that the contract has the ability to limit who can transfer tokens and under what circumstances.",
+          "3. The checks for _maxTxAmount and _maxWalletSize (Node D3) further restrict the amount of tokens that can be transferred, which can be manipulated by the owner to prevent normal users from trading.",
+          "4. The ability to modify the transfer conditions (e.g., transferDelayEnabled, bots mapping) gives the owner significant control over the trading process, effectively limiting the ability of regular users to transact freely.",
+          "5. Overall, the combination of these permission checks and conditions indicates that the contract can limit user transactions, thus categorizing this path as LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF1",
+          "IF2",
+          "D3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_30",
+        "function_signature": "FUFU.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D16 -> IF6[PERM] -> D7 -> IF7 -> D15 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transferFrom(address,address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D0, D13, D14, D0"
+      }
+    },
+    {
+      "path_id": "path_31",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple permission checks that restrict the transfer of tokens based on various conditions, such as whether the sender or recipient is a bot (Node D1), whether the transfer delay is enabled (Node IF1), and whether the recipient is a contract (Node D4).",
+          "2. The presence of conditions like 'from == uniswapV2Pair && to != address(uniswapV2Router) && ! _isExcludedFromFee[to]' (Node IF3) indicates that transfers can be limited based on the addresses involved and their status in relation to the contract.",
+          "3. The checks for '_maxTxAmount' and '_maxWalletSize' (Node D3) further restrict the amount of tokens that can be transferred, which can be manipulated by the owner to limit trading activities.",
+          "4. The ability to modify the '_buyCount' and '_preventSwapBefore' variables (Node D9) allows the owner to control when and how transfers can occur, effectively limiting the ability of regular users to trade freely.",
+          "5. Overall, the combination of these permission checks and the ability to control trading parameters indicates that the contract has mechanisms in place to limit user transactions."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF1",
+          "IF3",
+          "D3",
+          "D9"
+        ]
+      },
+      "overview": {
+        "path_id": "path_31",
+        "function_signature": "FUFU.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> IF3[PERM] -> D3 -> E1 -> D0[ASSET] -> F1 -> IF4[PERM] -> D4 -> E1 -> D0 -> F1 -> D5 -> IF5 -> D16 -> IF6[PERM] -> D7 -> IF7 -> D15 -> D9[PERM] -> D10 -> E1 -> D0[ASSET] -> F1 -> IF8[PERM] -> D11 -> E1 -> M1 -> IF0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF9 -> D12 -> E1 -> D0[PERM] -> F1 -> IF10 -> D13[ASSET] -> D14[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry FUFU.transferFrom(address,address,uint256); PermNode: IF0, D1, IF1, IF2, D2, IF3, IF4, IF6, D9, IF8, D0; AssetNode: D0, D0, D0, D13, D14, D0"
+      }
+    },
+    {
+      "path_id": "path_32",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function FUFU.openTrading() has a permission check at Node E1 that ensures only the owner can call it, which is a typical pattern for controlling access to sensitive functions.",
+          "2. At Node D0, there is a require statement that checks if trading is already open. If tradingOpen is false, it allows the owner to set it to true, thus enabling trading. This means the owner can control whether trading is allowed or not, which directly impacts the ability of regular users to trade.",
+          "3. The ability to toggle trading on or off effectively limits the trading capabilities of all other users, as they cannot trade unless the owner allows it. This aligns with the definition of LIMIT as the owner can restrict trading.",
+          "4. There are no asset changes that indicate minting or leaking of tokens in this path, as the only asset-related operations are approvals and balance checks, which do not alter balances in a way that would indicate a rugpull."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_32",
+        "function_signature": "FUFU.openTrading()",
+        "trace": "E1[PERM] -> M1 -> D0[PERM] -> E1 -> D0[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry FUFU.openTrading(); PermNode: E1, D0; AssetNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_33",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path starts with the function FUFU.manualSwap() which requires the caller to be a specific address (_mainForListingsAndCex) as seen in Node D0 [PERM]. This indicates that only a privileged address can execute this function.",
+          "2. The function checks the token balance of the contract (Node D0 [ASSET]) and proceeds to swap tokens for ETH if the balance is greater than zero (Node IF0). This indicates that the function can potentially convert tokens into ETH.",
+          "3. In Node D3, the function FUFU.sendETHToFee(uint256) is called, which sends ETH to multiple addresses, including _tradingAIWallet, _teamMultisig, and _operationsandMarketing. These addresses are hardcoded and controlled by the contract owner, indicating that the owner can direct funds to their own wallets.",
+          "4. The presence of multiple require statements in Node D0 [PERM] ensures that only the owner can send ETH to these addresses, which means that the owner can effectively leak funds from the contract to their own specified addresses.",
+          "5. The flow of funds is from the contract to the specified addresses without any compensation to the users, which fits the definition of a leak. The contract can reduce the ETH balance of the contract while increasing the balance of the owner's addresses.",
+          "6. The fact that the token balance can be swapped for ETH and then sent to the owner's addresses without any checks on the recipients indicates a clear potential for leaking funds."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_33",
+        "function_signature": "FUFU.manualSwap()",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0[ASSET] -> F1 -> IF0 -> D1 -> E1 -> M1 -> IF0 -> F1 -> D2 -> IF1 -> D3 -> E1 -> D0[PERM] -> F1 -> F1",
+        "summary": "Entry FUFU.manualSwap(); PermNode: D0, D0; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function 'Ownable.renounceOwnership()' which is controlled by 'onlyOwner'. This indicates that only the owner can call this function, thus controlling the ownership of the contract.",
+          "Once ownership is renounced, the function 'FUFU.openTrading()' can be called, which modifies the state variable 'tradingOpen'. This variable directly affects whether trading is enabled or disabled.",
+          "The ability to change 'tradingOpen' means that the owner can effectively limit or enable trading at will, preventing ordinary users from freely trading their tokens.",
+          "Since the control over trading is in the hands of the owner, this path fits the definition of LIMIT, as it allows the owner to restrict trading for all users."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "tradingOpen",
+        "targets": [
+          "FUFU.openTrading()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_50",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function 'Ownable.renounceOwnership()' which is a privileged function that can only be called by the owner (node E1).",
+          "Once ownership is renounced, the function 'FUFU.openTrading()' (node D0) can be executed, which modifies the state variables 'swapEnabled', 'tradingOpen', 'uniswapV2Pair', and 'uniswapV2Router'.",
+          "The ability to modify 'tradingOpen' and 'swapEnabled' directly impacts whether trading can occur, effectively allowing the owner to control trading access for all users.",
+          "This means that the owner can disable trading at will, which restricts normal users from executing trades, thus fitting the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "uniswapV2Router",
+        "targets": [
+          "FUFU.openTrading()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_95",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function 'FUFU.openTrading()' which modifies the state variables 'swapEnabled', 'tradingOpen', and 'uniswapV2Pair'.",
+          "The function 'FUFU.openTrading()' can only be called after the ownership has been renounced by the owner, as indicated by the 'onlyOwner' modifier in 'Ownable.renounceOwnership()'.",
+          "Once the ownership is renounced, the owner can no longer control the contract, but the ability to open trading is still a significant control point.",
+          "The modification of 'swapEnabled' and 'tradingOpen' directly affects whether users can trade, thus limiting their ability to sell or buy tokens based on the owner's actions.",
+          "Since the owner can control the trading state, this represents a limiting behavior for normal users."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "uniswapV2Pair",
+        "targets": [
+          "FUFU.openTrading()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_45",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function 'Ownable.renounceOwnership()' which is marked with 'onlyOwner', indicating that only the owner can call this function. This function affects the 'swapEnabled' variable, which is crucial for the '_transfer' function.",
+          "The '_transfer' function has a conditional check that includes 'swapEnabled'. If 'swapEnabled' is set to false by the owner, it can prevent transfers to the 'uniswapV2Pair', effectively limiting the ability of users to trade.",
+          "Since the owner can control the 'swapEnabled' state, they can disable trading for all users, which directly aligns with the definition of a limiting sell behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF8"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "swapEnabled",
+        "targets": [
+          "FUFU._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_91",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function 'Ownable.renounceOwnership()' which is controlled by 'onlyOwner'. This indicates that only the owner can execute this function, which can potentially affect the trading state.",
+          "The function 'FUFU.openTrading()' modifies the variable 'uniswapV2Router', which is likely related to trading functionality.",
+          "The '_transfer' function checks the condition 'require(_buyCount > _preventSwapBefore || _buyerMap[from], Seller is not buyer)'. This means that the ability to transfer tokens is contingent on whether the sender is a buyer or if a certain condition is met, which can be controlled by the owner.",
+          "Since the owner can renounce ownership and potentially manipulate trading conditions, this creates a scenario where the owner can limit or control trading for other users, thus classifying it as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D9"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "_buyerMap",
+        "targets": [
+          "FUFU._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_93",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function 'FUFU._transfer(address,address,uint256)' which checks the condition '_buyCount < _preventSwapBefore'.",
+          "The control source 'Ownable.renounceOwnership()' allows the owner to relinquish ownership, which could potentially lead to the owner manipulating the '_buyCount' variable.",
+          "If the owner can modify '_buyCount' through other means, they can effectively control whether transfers can occur based on the condition set in the transfer function.",
+          "This means that the owner has the ability to limit trading by adjusting '_buyCount' relative to '_preventSwapBefore', thus restricting normal users' ability to execute transfers."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF4"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "_buyCount",
+        "targets": [
+          "FUFU._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_40",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function `Ownable.renounceOwnership()` is a permissioned function that can only be called by the owner, as indicated by the `onlyOwner` modifier (Node ID: E1). This allows the owner to relinquish ownership, which could potentially lead to changes in control over critical variables.",
+          "2. The `FUFU.openTrading()` function modifies the `tradingOpen` variable, which is a control variable that can affect whether trading is allowed or not. This indicates that the owner can enable or disable trading at will.",
+          "3. The `uniswapV2Pair` variable is also modified by the `FUFU.openTrading()` function, which is used in the `_transfer` function to check if the recipient address is allowed to receive tokens. If the owner sets `uniswapV2Pair` to a specific address, they can control who can trade, effectively limiting the ability of ordinary users to transact freely.",
+          "4. The conditional check in the `_transfer` function (`to != address(uniswapV2Router) && to != address(uniswapV2Pair)`) means that if the owner decides to change the `uniswapV2Pair`, they can prevent users from transferring tokens to that address, thus limiting their ability to sell or trade.",
+          "5. Since the owner has the ability to control trading through the `tradingOpen` and `uniswapV2Pair` variables, this path demonstrates a clear case of limiting user transactions."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF2"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "uniswapV2Pair",
+        "targets": [
+          "FUFU._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_90",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function Ownable.renounceOwnership() which is protected by the onlyOwner modifier, indicating that only the owner can call this function (Node E1).",
+          "Once ownership is renounced, the uniswapV2Router variable can be modified, which is used in the FUFU._transfer function (Node IF2).",
+          "The condition in FUFU._transfer checks if the 'to' address is not equal to uniswapV2Router or uniswapV2Pair. If the owner renounces ownership and modifies uniswapV2Router, they can effectively control the transfer conditions.",
+          "This means that the owner can prevent transfers to certain addresses, thereby limiting the ability of ordinary users to trade, which fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF2"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "uniswapV2Router",
+        "targets": [
+          "FUFU._transfer(address,address,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 23,
+    "LEAK": 19,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

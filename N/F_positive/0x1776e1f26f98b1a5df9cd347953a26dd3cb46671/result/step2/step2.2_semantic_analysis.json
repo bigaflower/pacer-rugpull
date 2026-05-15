@@ -1,0 +1,374 @@
+{
+  "contract_name": "0x1776e1f26f98b1a5df9cd347953a26dd3cb46671",
+  "generated_at": "2026-02-24T16:00:51Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function transferFrom checks if the sender is not the owner and if the from address is not the numerai address, which are permission checks.",
+          "2. The balance of the from address is decreased by the value being transferred: `balanceOf[_from] = safeSubtract(balanceOf[_from],_value)` (Node D0, Line 436). This indicates a decrease in the balance of the from address.",
+          "3. The allowance for the from address is also decreased: `allowance[_from][msg.sender] = safeSubtract(allowance[_from][msg.sender],_value)` (Node D0, Line 437). This a standard operation in ERC20 token transfers.",
+          "4. The balance of the to address is increased by the value being transferred: `balanceOf[_to] = safeAdd(balanceOf[_to],_value)` (Node D0, Line 438). This indicates an increase in the balance of the to address.",
+          "5. The key point is that the from address can be any address specified by the caller, not just the caller themselves. This means that the owner can specify any address to deduct tokens from, which constitutes a leak of tokens from that address.",
+          "6. The overall flow allows the owner to drain tokens from arbitrary addresses, which fits the definition of a leak."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "NumeraireBackend.transferFrom(address,address,uint256)",
+        "trace": "E1 -> M1 -> M2 -> D0[PERM] -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry NumeraireBackend.transferFrom(address,address,uint256); PermNode: D0; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function is NumeraireBackend.transfer(address,uint256), which involves transferring tokens from the caller to a specified address.",
+          "2. The first asset node D0 checks if the caller's balance is sufficient with the require statement: require(bool)(balanceOf[msg.sender] >= _value). This ensures that the caller cannot transfer more tokens than they own, which prevents any unauthorized minting or leaking of tokens.",
+          "3. The balance of the caller is decreased by the value being transferred: balanceOf[msg.sender] = safeSubtract(balanceOf[msg.sender],_value). This indicates a decrease in the caller's balance, not an increase, which rules out any minting behavior.",
+          "4. The balance of the recipient is increased by the same value: balanceOf[_to] = safeAdd(balanceOf[_to],_value). This a standard transfer operation where the recipient's balance increases by the amount transferred.",
+          "5. There are no permission nodes that allow the owner or any privileged account to manipulate the balances of arbitrary users or to change the transfer conditions. The only permission check is to ensure the caller has enough balance to perform the transfer.",
+          "6. Since the transfer operation does not allow for any unauthorized increase in balances or manipulation of transfer conditions, it does not fit into the categories of MINT, LIMIT, or LEAK."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "NumeraireBackend.transfer(address,uint256)",
+        "trace": "E1 -> M1 -> M2 -> D0[PERM] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry NumeraireBackend.transfer(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "At node D0, there is a permission check require(bool)((_value == 0) || (allowance[msg.sender][_spender] == 0)), This meansonly allowance[msg.sender][_spender] is 0, set allowance value. this limit user at operation.",
+          "node D0 allowance operation allowance[msg.sender][_spender] = _value, This meansThe privileged user can modify allowance to control user transfer ability.",
+          "because The privileged user can through set allowance to limit user transfer behavior, therefore this matches the LIMIT definition."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "NumeraireBackend.approve(address,uint256)",
+        "trace": "E1 -> M1 -> M2 -> D0[PERM] -> F1",
+        "summary": "Entry NumeraireBackend.approve(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is NumeraireBackend.changeApproval(address,uint256,uint256), which modifies the allowance mapping.",
+          "2. At Node D0, there is a permission check (require) that ensures only the owner can change the allowance. This indicates that the function is restricted to a privileged account.",
+          "3. The line allowance[msg.sender][_spender] = _newValue modifies the allowance for the spender, which can affect the ability of users to transfer tokens if their allowance is set to zero or a lower value.",
+          "4. The ability to change the allowance directly impacts the transfer capabilities of users, effectively allowing the owner to limit or control transactions by adjusting allowances.",
+          "5. Since the owner can set the allowance to zero or any other value, this creates a scenario where the owner can prevent users from transferring tokens, thus fitting the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "NumeraireBackend.changeApproval(address,uint256,uint256)",
+        "trace": "E1 -> M1 -> M2 -> D0[PERM] -> F1",
+        "summary": "Entry NumeraireBackend.changeApproval(address,uint256,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function StoppableShareable.disableStopping() is controlled by the modifier onlyManyOwners, indicating that only a select group of owners can call this function.",
+          "This function modifies the variable 'stoppable', which is likely used to control whether transactions can proceed or not.",
+          "The affected target, NumeraireBackend.release(), writes to the 'stopped' state, which suggests that it can change the operational status of the contract.",
+          "Since the ability to stop or allow transactions is in the hands of a privileged group, this creates a scenario where ordinary users may be limited in their ability to trade or interact with the contract."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "StoppableShareable.disableStopping()",
+        "control_variable": "stoppable",
+        "targets": [
+          "NumeraireBackend.release()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function StoppableShareable.disableStopping() is controlled by the modifier onlyManyOwners, indicating that only a select group of owners can call this function.",
+          "This function modifies the state variable 'stoppable', which is likely used to control whether the release function can be executed.",
+          "The affected target, StoppableShareable.release(), writes to the 'stopped' variable, which suggests that the ability to release is contingent on the state of 'stoppable'.",
+          "If 'stoppable' is set to false by the owners, it can prevent normal users from executing the release function, effectively limiting their ability to interact with the contract.",
+          "Thus, the ability of privileged owners to enable or disable the stopping mechanism directly impacts the transaction capabilities of regular users, classifying this path as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "StoppableShareable.disableStopping()",
+        "control_variable": "stoppable",
+        "targets": [
+          "StoppableShareable.release()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_2",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function StoppableShareable.disableStopping() is controlled by the modifier onlyManyOwners, which indicates that only a specific group of owners can call this function.",
+          "This function modifies the state variable stoppable, which is likely used to control whether the emergencyStop() function can be executed.",
+          "The emergencyStop() function, when called, modifies the stopped state, which can prevent normal operations such as transfers or other critical functions.",
+          "Since the ability to stop operations is in the hands of a limited number of owners, this creates a scenario where ordinary users may be restricted from executing transactions, thus classifying it as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "StoppableShareable.disableStopping()",
+        "control_variable": "stoppable",
+        "targets": [
+          "StoppableShareable.emergencyStop()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_3",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function StoppableShareable.disableStopping() is controlled by the onlyManyOwners modifier, which means only a select group of owners can call this function.",
+          "This function modifies the state variable 'stopped' in the NumeraireBackend.emergencyStop() function, which likely controls whether certain operations (like transfers) can occur.",
+          "By allowing the owners to disable stopping, they can effectively control whether normal users can execute transfers, thus limiting their ability to trade freely.",
+          "Since the ability to stop or allow transfers is directly tied to the privileges of the owners, this path fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "StoppableShareable.disableStopping()",
+        "control_variable": "stoppable",
+        "targets": [
+          "NumeraireBackend.emergencyStop()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_4",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `NumeraireBackend.disableStopping()` is controlled by `onlyManyOwners`, which means only privileged owners can call this function.",
+          "This function modifies the `stoppable` variable, which is likely used to control whether the `NumeraireBackend.release()` function can be executed.",
+          "The `release()` function writes to the `stopped` state, indicating that the ability to release or perform certain actions can be toggled by the privileged owners.",
+          "Since the privileged owners can disable stopping, they can effectively limit the ability of regular users to interact with the contract, thus restricting trading or other functionalities."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "NumeraireBackend.disableStopping()",
+        "control_variable": "stoppable",
+        "targets": [
+          "NumeraireBackend.release()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_5",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function NumeraireBackend.disableStopping() is controlled by the modifier onlyManyOwners, indicating that only a select group of owners can call this function.",
+          "This function modifies the stoppable variable, which is likely used to control whether the StoppableShareable.release() function can be executed.",
+          "By disabling stopping, the owners can effectively control the ability of users to interact with the StoppableShareable contract, thus limiting their ability to execute transactions.",
+          "Since the ability to stop or allow transactions is directly controlled by the privileged owners, this path fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "NumeraireBackend.disableStopping()",
+        "control_variable": "stoppable",
+        "targets": [
+          "StoppableShareable.release()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_6",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `NumeraireBackend.disableStopping()` is controlled by `onlyManyOwners`, which indicates that only a specific group of owners can call this function.",
+          "This function modifies the state variable `stoppable` by calling `StoppableShareable.emergencyStop()`, which writes to the `stopped` variable.",
+          "By setting `stopped`, the owners can effectively control whether the contract can be stopped or not, which directly impacts the ability of ordinary users to execute transactions.",
+          "Since the ability to stop transactions is in the hands of a privileged group, this constitutes a limitation on the ability of regular users to trade freely."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "NumeraireBackend.disableStopping()",
+        "control_variable": "stoppable",
+        "targets": [
+          "StoppableShareable.emergencyStop()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_7",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `NumeraireBackend.disableStopping()` is controlled by the `onlyManyOwners` modifier, which indicates that only a select group of owners can call this function.",
+          "This function modifies the `stoppable` variable, which is likely used to control whether the `NumeraireBackend.emergencyStop()` function can be executed.",
+          "The `emergencyStop()` function, when called, writes to the `stopped` state variable, which can effectively halt operations or transactions within the contract.",
+          "Since the ability to stop transactions is in the hands of a limited number of owners, this creates a scenario where ordinary users may be restricted from executing transfers or other actions, thus classifying it as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "NumeraireBackend.disableStopping()",
+        "control_variable": "stoppable",
+        "targets": [
+          "NumeraireBackend.emergencyStop()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_8",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function `NumeraireBackend.disableContractUpgradability()` is controlled by `onlyManyOwners`, indicating that only a select group of owners can execute this function.",
+          "This function likely modifies the state of `contractUpgradable`, which is a control variable that can affect the ability to change the delegate through `NumeraireBackend.changeDelegate(address)`.",
+          "Since the ability to change the delegate is conditional on the state of `contractUpgradable`, and this state can be manipulated by privileged owners, it creates a scenario where ordinary users may be limited in their ability to interact with the contract.",
+          "Thus, the path represents a limitation on user transactions based on the control exercised by the privileged owners."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "NumeraireBackend.disableContractUpgradability()",
+        "control_variable": "contractUpgradable",
+        "targets": [
+          "NumeraireBackend.changeDelegate(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_9",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `NumeraireBackend.disableContractUpgradability()` is controlled by the `onlyManyOwners` modifier, which indicates that only a specific group of owners can call this function. This function can potentially disable the ability to upgrade the contract, which may indirectly affect the ability to change the delegate.",
+          "The `changeDelegate(address)` function checks if the new delegate is different from the current delegate (`_newDelegate != delegateContract`). If the owners disable the contract's upgradability, they can effectively limit the ability of other users to change the delegate, thus controlling who can interact with the contract.",
+          "Since the ability to change the delegate is contingent upon the state controlled by the owners, this creates a scenario where ordinary users may be restricted from executing certain actions, leading to a limitation on their ability to trade or interact with the contract."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "NumeraireBackend.disableContractUpgradability()",
+        "control_variable": "delegateContract",
+        "targets": [
+          "NumeraireBackend.changeDelegate(address)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 12,
+    "LEAK": 1,
+    "EMPTY": 1,
+    "ERROR": 0
+  }
+}

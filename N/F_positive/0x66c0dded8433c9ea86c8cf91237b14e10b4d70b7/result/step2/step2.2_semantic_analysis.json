@@ -1,0 +1,975 @@
+{
+  "contract_name": "0x66c0dded8433c9ea86c8cf91237b14e10b4d70b7",
+  "generated_at": "2026-02-25T06:29:52Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 1.0,
+        "reasoning": [
+          "The function MarsToken.distributeMars is only callable by the owner due to the require statement in Node E1, which checks isOwner(). This indicates a permission check that restricts access to a privileged account.",
+          "In Node D0 (depth=1), the totalSupply is checked to be 0 before proceeding, which is a prerequisite for minting tokens. This means that the minting process can only occur when the total supply is zero.",
+          "The minting occurs in Node D0 (depth=1) where the balances of the specified accounts (_communityTreasury, _teamTreasury, and _investorTreasury) are increased by specific amounts derived from the total supply. The lines of code in Node D0 (depth=1) show that the balances are updated with the following lines: _balances[account] = _balances[account].add(amount). This indicates that the balances of these accounts are being increased.",
+          "Since the total supply is initialized to 0, the amounts being minted (75%, 20%, and 5% of the total supply) will be greater than 0 when the minting occurs, leading to an increase in the balances of the specified accounts.",
+          "The ability to mint tokens to arbitrary addresses (as specified by the parameters _communityTreasury, _teamTreasury, and _investorTreasury) without any checks on their previous balances or limits indicates a clear case of hidden minting."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "MarsToken.distributeMars(address,address,address)",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0 -> F1 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry MarsToken.distributeMars(address,address,address); PermNode: E1; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple asset nodes (D0 and D3) where balances are read and potentially modified.",
+          "2. At node D0, the balance of the delegator is read: `return _balances[account]` where account is the delegator. This indicates that the balance is being accessed but not modified directly at this point.",
+          "3. The function `_moveDelegates` is called, which involves transferring votes between delegates. This indicated by the asset node D3 where `dstRepNum = numCheckpoints[dstRep]` is read, suggesting that the state of the delegatee's checkpoints is being accessed.",
+          "4. The critical aspect is that the function `_moveDelegates` can potentially lead to a situation where the delegator's balance is decreased without a corresponding increase in the delegatee's balance, especially if the delegatee is not the caller. This a form of leaking tokens.",
+          "5. The permission checks (IF0 and IF1) ensure that only certain addresses can execute these functions, which aligns with the definition of a leak where a privileged account can manipulate balances of others.",
+          "6. The presence of multiple checks for the delegatee's state and the ability to modify checkpoints indicates that the privileged account can control the flow of tokens, leading to a potential leak."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3",
+          "IF0",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "MarsToken.delegate(address)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D1 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D4 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegate(address); PermNode: IF0, IF0; AssetNode: D0, D0, D3"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple [ASSET] nodes where balances are read and potentially modified.",
+          "2. In Node D0 (L303), the balance of the delegator is read: return _balances[account] where account is the delegator. This an asset read operation.",
+          "3. In Node D3 (L813), the number of checkpoints for the destination representative (dstRep) is read: dstRepNum = numCheckpoints[dstRep]. This another asset read operation.",
+          "4. The function _moveDelegates allows for the transfer of voting power from one delegate to another, which can indirectly affect the balances of the delegates involved.",
+          "5. The critical point is that the function allows the current delegate to change the voting power of the destination delegate, which can lead to a situation where the original delegate's voting power is reduced without any compensation, effectively leaking value.",
+          "6. The permissions (IF0) indicate that only the owner can trigger these changes, allowing for potential abuse.",
+          "7. The path does not show any evidence of minting new tokens or limiting transfers directly, but it does allow for the manipulation of balances in a way that can disadvantage other users."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "MarsToken.delegate(address)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D1 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D4 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegate(address); PermNode: IF0, IF0; AssetNode: D0, D0, D3, D3"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple asset nodes (D0, D0, D3) where balances are read and potentially modified.",
+          "2. At node D0 (depth=2), the balance of the delegator is read: `return _balances[account]`, which indicates that the balance is being accessed but not modified directly in this step.",
+          "3. The function `_moveDelegates` is called, which involves transferring votes between delegates. This process can indirectly affect the balances of the delegates involved.",
+          "4. At node D3 (depth=2), the line `dstRepNum = numCheckpoints[dstRep]` indicates that the number of checkpoints for the destination representative is being accessed, which is an asset-related operation.",
+          "5. The key point is that the function allows the current delegate (who has permission) to manipulate the voting power of other accounts (the delegatee) without their consent, which can be seen as a form of leaking tokens since the original account's voting power can be diminished without their control.",
+          "6. The permissions (IF0) allow the owner to control the delegation process, which can lead to a situation where the owner can effectively reduce the influence of other users without their agreement.",
+          "7. The overall flow suggests that while balances are not directly manipulated in a traditional sense, the ability to change the voting power of others without their consent constitutes a leak of influence and control over the token's governance."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "MarsToken.delegate(address)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D1 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D6 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegate(address); PermNode: IF0, IF0; AssetNode: D0, D0, D3"
+      }
+    },
+    {
+      "path_id": "path_4",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple [ASSET] nodes (D0, D0, D3, D3) that indicate asset changes.",
+          "2. Node D0 (L303) reads the balance of the delegator: return _balances[account]. This indicates that the balance of the delegator is being accessed.",
+          "3. Node D3 (L813) shows that the number of checkpoints for the destination representative (dstRep) is being read: dstRepNum = numCheckpoints[dstRep]. This indicates that the state of the destination representative is being accessed.",
+          "4. The function _moveDelegates allows the current delegate to move votes from one address to another, which can lead to a situation where the balance of the delegator is reduced without a corresponding increase in the destination representative's balance.",
+          "5. The presence of permission nodes (IF0, IF0) indicates that only privileged users can trigger these asset changes, which aligns with the definition of a leak.",
+          "6. The asset changes do not involve minting new tokens or limiting transactions but rather involve the potential for a privileged user to manipulate balances in a way that could disadvantage other users."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_4",
+        "function_signature": "MarsToken.delegate(address)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D1 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D6 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegate(address); PermNode: IF0, IF0; AssetNode: D0, D0, D3, D3"
+      }
+    },
+    {
+      "path_id": "path_5",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple [ASSET] nodes where balances are read and potentially modified.",
+          "2. In Node D0 (depth=2), the balance of the delegator is read: `return _balances[account]` which indicates the current balance of the delegator.",
+          "3. In Node D3 (depth=3), the line `numCheckpoints[delegatee] = nCheckpoints + 1` indicates that the number of checkpoints for the delegatee is being increased, which could imply a manipulation of voting power or similar.",
+          "4. The critical point is that the function allows the delegator to delegate their voting power to any address (delegatee), which can be controlled by the owner or privileged accounts. This means that the owner can potentially manipulate the voting power of any user by delegating their votes to themselves or another address they control.",
+          "5. The presence of multiple [PERM] nodes indicates that there are permission checks that allow certain actions to be taken by privileged accounts, which can lead to the manipulation of balances indirectly.",
+          "6. The overall structure suggests that while there is no direct transfer of tokens from one user to another, the ability to delegate and manipulate voting power can lead to a situation where the owner can effectively leak value from the system by controlling who has voting power and thus influencing decisions that could affect token value."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3",
+          "IF0",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_5",
+        "function_signature": "MarsToken.delegate(address)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D1 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D4 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegate(address); PermNode: IF0, IF0; AssetNode: D0, D0, D3, D3"
+      }
+    },
+    {
+      "path_id": "path_6",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple [ASSET] nodes where balances are read and written, specifically at nodes D0 and D3.",
+          "2. At node D0, the balance of the delegator is read: `return _balances[account]` where account is the delegator. This indicates that the balance is being accessed but not modified directly.",
+          "3. At node D3, the line `numCheckpoints[delegatee] = nCheckpoints + 1` indicates that the number of checkpoints for the delegatee is being increased, which indirectly affects the voting power associated with that address.",
+          "4. The key nodes IF0 and IF1 are permission checks that allow the current delegate to move votes, which can be seen as a manipulation of voting power rather than a direct asset transfer.",
+          "5. The critical aspect is that the delegator's balance is not directly decreased, but the manipulation of checkpoints can lead to a situation where the voting power is effectively 'leaked' to the delegatee without a corresponding increase in the delegator's balance.",
+          "6. The path does not show any direct minting of tokens or limiting of transfers, but the ability to manipulate voting power through checkpoints can be seen as a form of leaking control over the asset's influence."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3",
+          "IF0",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_6",
+        "function_signature": "MarsToken.delegate(address)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D1 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D4 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegate(address); PermNode: IF0, IF0; AssetNode: D0, D0, D3, D3, D3"
+      }
+    },
+    {
+      "path_id": "path_7",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple [ASSET] nodes, specifically D0 and D3, which indicate asset changes.",
+          "2. At node D0, the balance of the delegator is read: `return _balances[account]` where account is the delegator. This indicates that the balance is being accessed but not modified at this point.",
+          "3. At node D3, the line `numCheckpoints[delegatee] = nCheckpoints + 1` indicates that the number of checkpoints for the delegatee is being incremented, which does not directly affect the balance but is related to the voting power.",
+          "4. The critical aspect is that the function `_moveDelegates` can potentially allow the current delegate to manipulate the voting power of other addresses without their consent, which can lead to a situation where the delegatee's voting power is altered without a corresponding increase in their balance.",
+          "5. The presence of permission checks (IF0, IF1, IF3) indicates that only privileged accounts can execute certain actions, which can lead to the manipulation of balances indirectly.",
+          "6. The overall structure allows for the possibility of transferring voting power without the corresponding balance being adjusted, which can be interpreted as a form of leaking tokens since the delegatee's ability to influence votes can be altered without their direct control."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3",
+          "IF0",
+          "IF1",
+          "IF3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_7",
+        "function_signature": "MarsToken.delegate(address)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D1 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D6 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegate(address); PermNode: IF0, IF0; AssetNode: D0, D0, D3, D3"
+      }
+    },
+    {
+      "path_id": "path_8",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple [ASSET] nodes where balances are manipulated, specifically at nodes D0 and D3.",
+          "2. At node D0, the balance of the delegator is read: `_balances[account]` where `account` is the delegator. This indicates that the balance is being accessed but not modified directly in this node.",
+          "3. At node D3, the line `numCheckpoints[delegatee] = nCheckpoints + 1` indicates that the number of checkpoints for the delegatee is being increased, which could imply a manipulation of voting power rather than a direct balance change.",
+          "4. The critical aspect is that the function allows the delegator to delegate their votes to any address specified by the `delegatee` parameter. This means that the delegator's voting power can be redirected to another address, which can be seen as a form of leaking control over their votes.",
+          "5. The presence of permission checks (IF0) indicates that only certain addresses can execute these actions, which aligns with the LEAK category as it allows the owner or privileged addresses to manipulate balances indirectly.",
+          "6. The overall structure of the function allows for the potential for the owner to control the voting power of others without their consent, which is a form of leaking."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_8",
+        "function_signature": "MarsToken.delegate(address)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D1 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D6 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegate(address); PermNode: IF0, IF0; AssetNode: D0, D0, D3, D3, D3"
+      }
+    },
+    {
+      "path_id": "path_9",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple [ASSET] nodes where balances are read and potentially modified.",
+          "2. At node D0 (depth=2), the balance of the delegator is read: `_balances[account]` where `account` is the delegator. This indicates that the balance is being accessed but not modified at this point.",
+          "3. At node D3 (depth=2), the balance of the destination representative (delegatee) is accessed: `dstRepNum = numCheckpoints[dstRep]`. This indicates that the state of the delegatee's checkpoints is being read, but again, no modification occurs here.",
+          "4. The critical point is at node D0 (depth=3) where the function `_writeCheckpoint` is called. This function modifies the state of the checkpoints for the delegatee, which could indirectly affect the voting power but does not directly leak tokens.",
+          "5. However, the presence of the `srcRep` and `dstRep` variables indicates that the function can manipulate the voting power of different addresses based on the delegator's actions. If the delegator can change their delegatee to an address they control, they could effectively redirect voting power, which could be seen as a form of leaking control over the token's governance.",
+          "6. The path does not show any direct minting of tokens, nor does it show a limitation on trading, but it does allow for manipulation of balances indirectly through the delegation mechanism.",
+          "7. The ability to change delegates and potentially redirect voting power without a clear limit on who can be a delegatee suggests a risk of leaking control over the token's governance."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_9",
+        "function_signature": "MarsToken.delegate(address)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D7 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D4 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegate(address); PermNode: IF0, IF0; AssetNode: D0, D0, D3"
+      }
+    },
+    {
+      "path_id": "path_10",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple [ASSET] nodes, specifically D0 and D3, which indicate asset manipulation.",
+          "2. In D0, the balance of the delegator is read: `return _balances[account]` where account is the delegator. This does not change the balance but is crucial for the next steps.",
+          "3. In D3, the line `dstRepNum = numCheckpoints[dstRep]` indicates that the number of checkpoints for the destination representative is being read, which is also an asset-related operation.",
+          "4. The critical point is in D3 where the balance of the destination representative can be manipulated through the checkpoints. If the current delegatee can be set to an arbitrary address, this allows for potential leakage of tokens.",
+          "5. The presence of permission checks (IF0) indicates that only privileged users can manipulate these balances, which aligns with the definition of LEAK.",
+          "6. The path does not show any evidence of minting new tokens or limiting transactions directly, but it does allow for the potential of transferring or reducing balances of others without their consent."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_10",
+        "function_signature": "MarsToken.delegate(address)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D7 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D4 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegate(address); PermNode: IF0, IF0; AssetNode: D0, D0, D3, D3"
+      }
+    },
+    {
+      "path_id": "path_11",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple asset nodes (D0, D0, D3) where balances are read and potentially modified.",
+          "2. At node D0 (depth=2), the balance of the delegator is read: `return _balances[account]`, which indicates that the balance of the delegator can be accessed.",
+          "3. At node D3 (depth=2), the line `dstRepNum = numCheckpoints[dstRep]` indicates that the number of checkpoints for the destination representative is being read, which is tied to the delegation process.",
+          "4. The critical aspect is that the function allows the delegator to delegate their votes to another address (delegatee), which can lead to a situation where the delegator's voting power is effectively transferred without their consent if the delegatee is controlled by a malicious actor.",
+          "5. The permission nodes (IF0) indicate that only certain addresses can execute these functions, which can lead to a situation where the owner or a privileged address can manipulate the delegation process, potentially leading to a leak of voting power or influence.",
+          "6. Since the delegator's balance is not directly modified in a way that increases their balance, but rather allows for the potential manipulation of their voting rights, this aligns with the LEAK category."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_11",
+        "function_signature": "MarsToken.delegate(address)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D7 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D6 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegate(address); PermNode: IF0, IF0; AssetNode: D0, D0, D3"
+      }
+    },
+    {
+      "path_id": "path_12",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple asset nodes (D0, D3) where balances are manipulated.",
+          "2. At node D0, the balance of the delegator is read: `return _balances[account]` which indicates the current balance of the delegator.",
+          "3. At node D3, the line `dstRepNum = numCheckpoints[dstRep]` indicates that the number of checkpoints for the delegatee is being read, which is an asset operation.",
+          "4. The function `_moveDelegates` is called with the parameters `srcRep` and `dstRep`, which are determined by the current delegate and the new delegatee respectively. This means that the balance manipulation is not directly controlled by the caller but rather by the parameters passed to the function.",
+          "5. The presence of permission nodes (IF0, IF1) indicates that only privileged users can execute certain actions, which can lead to the manipulation of balances.",
+          "6. The potential for leaking tokens arises because the delegator's balance can be affected by the actions of the privileged user, especially if they can manipulate the delegatee's checkpoints without the delegator's consent."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3",
+          "IF0",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_12",
+        "function_signature": "MarsToken.delegate(address)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D7 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D6 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegate(address); PermNode: IF0, IF0; AssetNode: D0, D0, D3, D3"
+      }
+    },
+    {
+      "path_id": "path_13",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple [ASSET] nodes where balances are read and written, specifically at nodes D0 and D3.",
+          "2. At node D0, the balance of the delegator is read: `return _balances[account]` where account is the delegator. This indicates that the balance is being accessed but not modified at this point.",
+          "3. At node D3, the line `numCheckpoints[delegatee] = nCheckpoints + 1` indicates that the number of checkpoints for the delegatee is being increased, which does not directly affect the balance but is related to the voting power.",
+          "4. The critical point is at node D3 where the balance of the delegator can be manipulated through the `_moveDelegates` function. If the `srcRep` (current delegate) is not the same as `dstRep` (new delegate), and if the amount is greater than 0, it allows for the movement of votes but does not directly affect the balance.",
+          "5. However, the function `_moveDelegates` can lead to a situation where the delegator's balance is effectively reduced without their consent if the delegatee is manipulated by the owner. This can be seen as a form of leaking tokens since the owner can control the delegation process.",
+          "6. The presence of permission checks (IF0 and IF1) indicates that only privileged users can execute certain actions, which aligns with the definition of LEAK where a privileged user can manipulate balances of others."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3",
+          "IF0",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_13",
+        "function_signature": "MarsToken.delegate(address)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D7 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D4 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegate(address); PermNode: IF0, IF0; AssetNode: D0, D0, D3, D3"
+      }
+    },
+    {
+      "path_id": "path_14",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple [ASSET] nodes where balances are manipulated, specifically in nodes D0 and D3.",
+          "2. In node D0, the balance of the delegator is read: `return _balances[account]` where account is the delegator. This indicates that the balance is being accessed but not modified at this point.",
+          "3. In node D3, the line `numCheckpoints[delegatee] = nCheckpoints + 1` indicates that the number of checkpoints for the delegatee is being increased, which does not directly affect the balance but indicates a manipulation of voting power.",
+          "4. The key point is that the function allows the delegator to delegate their voting power to another address (delegatee), which can lead to a situation where the original delegator's influence is diminished without their consent, effectively leaking their voting power.",
+          "5. The permission checks (IF0) ensure that only authorized users can change the delegation, which aligns with the LEAK category as it allows a privileged user to manipulate the voting power of others.",
+          "6. The manipulation of checkpoints and the ability to delegate without the original user's control suggests that the system can be exploited to leak influence or power, even if not directly leaking tokens."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_14",
+        "function_signature": "MarsToken.delegate(address)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D7 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D4 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegate(address); PermNode: IF0, IF0; AssetNode: D0, D0, D3, D3, D3"
+      }
+    },
+    {
+      "path_id": "path_15",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple asset nodes (D0, D3) where balances are read and potentially modified.",
+          "2. At node D0, the balance of the delegator is read, which is an asset operation: `return _balances[account]` where account is the delegator.",
+          "3. The function `_moveDelegates` is called, which can modify the voting power of delegates based on the balance of the delegator. This evident in the asset nodes where the number of checkpoints is updated, indicating a change in the state of the token's governance.",
+          "4. The key nodes D3 and D0 indicate that the number of checkpoints for the delegatee is being modified, which can lead to a situation where the delegator's voting power is effectively reduced without their consent, especially if the delegatee is manipulated by a privileged user.",
+          "5. The presence of permission checks (IF0) indicates that only privileged users can trigger these changes, which aligns with the definition of a leak where a privileged user can manipulate balances or voting power of others.",
+          "6. The overall flow suggests that the privileged user can adjust the voting power of others without their consent, which is a form of leaking tokens."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_15",
+        "function_signature": "MarsToken.delegate(address)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D7 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D6 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegate(address); PermNode: IF0, IF0; AssetNode: D0, D0, D3, D3"
+      }
+    },
+    {
+      "path_id": "path_16",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple asset nodes (D0, D3) where balances are being manipulated.",
+          "2. In node D0, the balance of the delegator is read: `return _balances[account]` which indicates the current balance of the delegator.",
+          "3. In node D3, the line `numCheckpoints[delegatee] = nCheckpoints + 1` indicates that the number of checkpoints for the delegatee is being increased, which is a form of state manipulation but does not directly affect the balance.",
+          "4. The critical aspect is that the function allows the owner to delegate votes without any checks on the balance of the delegatee, which could lead to a situation where the owner can manipulate the voting power without the delegatee's consent.",
+          "5. The presence of permission nodes (IF0, IF1) indicates that only the owner can trigger these changes, which aligns with the definition of a leak where the owner can affect balances or states of other users.",
+          "6. The manipulation of checkpoints and the ability to delegate without restrictions can lead to a scenario where the owner can effectively control the voting power of others, which can be seen as a form of leaking control over the token's governance."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3",
+          "IF0",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_16",
+        "function_signature": "MarsToken.delegate(address)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D7 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D6 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegate(address); PermNode: IF0, IF0; AssetNode: D0, D0, D3, D3, D3"
+      }
+    },
+    {
+      "path_id": "path_17",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple [ASSET] nodes where balances are read and potentially modified.",
+          "2. In Node D0, the balance of the delegator is read: `return _balances[account]` which indicates the current balance of the delegator.",
+          "3. In Node D3, the number of checkpoints for the destination representative (dstRep) is read: `dstRepNum = numCheckpoints[dstRep]`. This indicates that the state of the dstRep can be manipulated.",
+          "4. The function `_moveDelegates` allows for the transfer of voting power from one delegate to another, which can be seen as a form of balance manipulation.",
+          "5. The key nodes D0 and D3 indicate that the balances of accounts can be influenced by the actions of the privileged caller, potentially allowing them to reduce the balance of one account while increasing another without the consent of the original account holder.",
+          "6. The presence of multiple permission checks ([PERM]) indicates that only privileged accounts can execute these actions, which aligns with the definition of a leak."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_17",
+        "function_signature": "MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D1 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D4 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32); PermNode: D0, IF0, IF0; AssetNode: D0, D0, D3"
+      }
+    },
+    {
+      "path_id": "path_18",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple [ASSET] nodes where balances are read and potentially modified.",
+          "2. In Node D0, the balance of the delegator is read: `return _balances[account]` which indicates that the balance is being accessed.",
+          "3. In Node D3, the line `dstRepNum = numCheckpoints[dstRep]` indicates that the number of checkpoints for the delegatee is being accessed, which is also an asset-related operation.",
+          "4. The critical point is in Node D3 where the line `numCheckpoints[delegatee] = nCheckpoints + 1` suggests that the number of checkpoints for the delegatee can be increased, which indirectly affects the voting power and can lead to manipulation of the token distribution.",
+          "5. The presence of permission nodes (D0, IF0) indicates that only privileged accounts can trigger these asset changes, which aligns with the definition of LEAK as it allows for potential manipulation of balances without direct consent from the affected parties.",
+          "6. The path does not show any direct minting of tokens, nor does it limit transactions, but it does allow for the potential redirection of voting power and manipulation of balances through the delegation process."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_18",
+        "function_signature": "MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D1 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D4 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32); PermNode: D0, IF0, IF0; AssetNode: D0, D0, D3, D3"
+      }
+    },
+    {
+      "path_id": "path_19",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple [ASSET] nodes where balances are read and potentially modified.",
+          "2. In Node D0, the balance of the delegator is read: `return _balances[account]` where `account` is the delegator. This indicates that the balance is being accessed but not modified directly.",
+          "3. In Node D3, the number of checkpoints for the destination representative (delegatee) is read: `dstRepNum = numCheckpoints[dstRep]`. This does not modify balances but indicates a potential for manipulation.",
+          "4. The critical point is in Node D0 and D3 where the balances are being manipulated based on the delegation logic. If the delegator's balance is decreased while the delegatee's balance is increased, it could lead to a situation where the delegator loses tokens without any compensation, especially if the delegatee is not the caller.",
+          "5. The presence of permission nodes (D0, IF0) indicates that only privileged accounts can execute these actions, which aligns with the LEAK category as it allows for the potential to drain tokens from arbitrary accounts.",
+          "6. The overall structure suggests that the privileged account can manipulate balances in a way that could lead to token leakage."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_19",
+        "function_signature": "MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D1 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D6 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32); PermNode: D0, IF0, IF0; AssetNode: D0, D0, D3"
+      }
+    },
+    {
+      "path_id": "path_20",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple [ASSET] nodes where balances are manipulated based on the delegation process.",
+          "2. In Node D0, the balance of the delegator is read: `return _balances[account]` where `account` is the delegator. This indicates that the balance is being accessed.",
+          "3. In Node D3, the line `dstRepNum = numCheckpoints[dstRep]` indicates that the number of checkpoints for the destination representative is being accessed, which is also an asset manipulation.",
+          "4. The key point is that the function `_moveDelegates` allows for the transfer of voting power (or balance) from one address to another, which can be controlled by the owner or privileged accounts.",
+          "5. The presence of multiple [PERM] nodes indicates that only privileged accounts can execute certain actions, which can lead to the manipulation of balances.",
+          "6. The potential for a privileged account to redirect balances or manipulate voting power without the consent of the delegator indicates a leak of tokens, as the delegator's balance can be effectively reduced without their control."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3",
+          "IF0",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_20",
+        "function_signature": "MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D1 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D6 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32); PermNode: D0, IF0, IF0; AssetNode: D0, D0, D3, D3"
+      }
+    },
+    {
+      "path_id": "path_21",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple [ASSET] nodes where balances are read and potentially modified.",
+          "2. In Node D0, the balance of the delegator is read: `return _balances[account]` which indicates the current balance of the delegator.",
+          "3. In Node D3, the number of checkpoints for the destination representative is read: `dstRepNum = numCheckpoints[dstRep]`, which is also an asset-related operation.",
+          "4. The function `_moveDelegates` is called, which involves moving votes from one delegate to another. This can lead to a situation where the source delegate's votes decrease while the destination delegate's votes increase, without any actual transfer of tokens, but rather a manipulation of voting power.",
+          "5. The key nodes D0 and D3 indicate that the function can manipulate the voting power of delegates, which can be seen as a form of leaking control over the token's governance without transferring actual tokens.",
+          "6. The path does not show any evidence of minting new tokens or limiting transfers directly, but it does allow for the potential manipulation of balances and voting power, which aligns with the definition of LEAK."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_21",
+        "function_signature": "MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D1 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D4 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32); PermNode: D0, IF0, IF0; AssetNode: D0, D0, D3, D3"
+      }
+    },
+    {
+      "path_id": "path_22",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple [ASSET] nodes where balances are read and written, indicating potential asset manipulation.",
+          "2. In Node D0, the balance of the delegator is read: `return _balances[account]` which indicates the current balance of the delegator.",
+          "3. In Node D3, the line `numCheckpoints[delegatee] = nCheckpoints + 1` indicates that the number of checkpoints for the delegatee is being increased, which could imply that the delegatee's voting power is being manipulated.",
+          "4. The presence of multiple [PERM] nodes indicates that only privileged accounts can execute certain actions, such as modifying the state of the contract.",
+          "5. The critical aspect is that the contract allows the privileged account to manipulate the voting power of other accounts without their consent, which can lead to a situation where the privileged account can effectively drain the voting power from other users.",
+          "6. The potential for the privileged account to reduce the effective balance of other users (in terms of voting power) without their consent aligns with the definition of a Leak."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_22",
+        "function_signature": "MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D1 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D4 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32); PermNode: D0, IF0, IF0; AssetNode: D0, D0, D3, D3, D3"
+      }
+    },
+    {
+      "path_id": "path_23",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple [ASSET] nodes where balances are read and potentially modified.",
+          "2. In Node D0, the balance of the delegator is read: `return _balances[account]` which indicates the current balance of the delegator.",
+          "3. In Node D3, the number of checkpoints for the delegatee is updated: `numCheckpoints[delegatee] = nCheckpoints + 1`, which implies that the delegatee's voting power can be manipulated.",
+          "4. The critical aspect is that the function allows the current delegate to change the voting power of another address (delegatee) without their consent, which can lead to a situation where the delegatee's balance is effectively reduced in terms of voting power without any compensation.",
+          "5. The ability to manipulate the voting power of others without their consent indicates a potential for leaking control over the token's governance, which aligns with the LEAK category.",
+          "6. The path does not show any evidence of minting new tokens or limiting transactions directly, but it does allow for the manipulation of balances in a way that can disadvantage other users."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_23",
+        "function_signature": "MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D1 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D6 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32); PermNode: D0, IF0, IF0; AssetNode: D0, D0, D3, D3"
+      }
+    },
+    {
+      "path_id": "path_24",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple [ASSET] nodes where balances are read and written, indicating potential asset manipulation.",
+          "2. In Node D0, the balance of the delegator is read: `return _balances[account]`, which is an asset operation. This indicates that the delegator's balance can be manipulated based on the function's logic.",
+          "3. In Node D3, the line `numCheckpoints[delegatee] = nCheckpoints + 1` indicates that the number of checkpoints for the delegatee is being increased, which is a write operation on an asset-related variable.",
+          "4. The function `_moveDelegates` allows the current delegate to move votes from one address to another, which can lead to a situation where the balance of the delegator is effectively reduced while the delegatee's balance is increased, without any direct compensation to the delegator.",
+          "5. The presence of multiple [PERM] nodes indicates that only privileged accounts can trigger these asset manipulations, which aligns with the definition of a leak.",
+          "6. The ability to manipulate balances without direct compensation to the original account (delegator) suggests that this path allows for leaking tokens from one account to another."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_24",
+        "function_signature": "MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D1 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D6 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32); PermNode: D0, IF0, IF0; AssetNode: D0, D0, D3, D3, D3"
+      }
+    },
+    {
+      "path_id": "path_25",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple [ASSET] nodes where balances are read and potentially modified.",
+          "2. At Node D0, the balance of the delegator is read: `return _balances[account]` (L303). This indicates that the balance of the delegator is being accessed.",
+          "3. At Node D3, the balance of the destination representative (dstRep) is also accessed: `dstRepNum = numCheckpoints[dstRep]` (L813). This indicates that the balance of the destination delegatee is being accessed.",
+          "4. The function `_moveDelegates` is designed to move voting power from one delegate to another, which can lead to a situation where the source delegate's balance is effectively reduced while the destination delegate's balance is increased.",
+          "5. The key point is that the source delegate's balance can be reduced without any compensation to the delegator, which fits the definition of a leak.",
+          "6. The presence of permission nodes (D0, IF0) indicates that only privileged accounts can trigger these balance changes, allowing them to manipulate balances of others.",
+          "7. The ability to specify arbitrary accounts as the source or destination of balance changes further supports the classification as a leak."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_25",
+        "function_signature": "MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D7 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D4 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32); PermNode: D0, IF0, IF0; AssetNode: D0, D0, D3"
+      }
+    },
+    {
+      "path_id": "path_26",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple [ASSET] nodes where balances are read and modified.",
+          "2. In Node D0 (L725), the nonce is incremented, which is a state change but does not directly affect balances.",
+          "3. In Node D0 (L303), the balance of the delegator is read, which is a prerequisite for the delegation process.",
+          "4. In Node D3 (L813), the number of checkpoints for the destination representative (dstRep) is read, which is also a prerequisite for the delegation process.",
+          "5. The critical point is in Node D3 (L813) where the balance of the delegator is used to potentially modify the state of the destination representative's checkpoints.",
+          "6. The delegation process allows the current delegatee to gain votes based on the delegator's balance, which can be seen as a transfer of influence rather than a direct transfer of tokens.",
+          "7. However, the potential for the owner to manipulate the delegation process and the associated balances indicates a risk of leaking tokens through the manipulation of voting power.",
+          "8. The path does not show any direct minting of tokens, nor does it show a limitation on trading, but it does indicate a potential for the owner to control the distribution of voting power based on the balances of others."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3",
+          "D2"
+        ]
+      },
+      "overview": {
+        "path_id": "path_26",
+        "function_signature": "MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D7 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D4 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32); PermNode: D0, IF0, IF0; AssetNode: D0, D0, D3, D3"
+      }
+    },
+    {
+      "path_id": "path_27",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple [ASSET] nodes where balances are read and potentially modified.",
+          "2. In Node D0, the balance of the delegator is read: `return _balances[account]` where `account` is the delegator. This indicates that the balance is being accessed.",
+          "3. In Node D3, the balance of the destination representative (delegatee) is also accessed: `dstRepNum = numCheckpoints[dstRep]`. This indicates that the state of the delegatee's balance is being read.",
+          "4. The function `_moveDelegates` is responsible for moving votes from one delegate to another, which can indirectly affect the balances of the delegators and delegatees.",
+          "5. The presence of conditions that allow for the movement of votes without a corresponding increase in the delegator's balance suggests that the contract can manipulate balances in a way that could lead to a loss of tokens for the delegator.",
+          "6. The fact that the source and destination of the balance changes are not necessarily the caller (delegator) indicates that the contract can leak tokens from one address to another without consent.",
+          "7. The overall structure of the function allows for the potential of a privileged user to manipulate balances in a way that could be detrimental to other users, fitting the definition of a leak."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3",
+          "IF0",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_27",
+        "function_signature": "MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D7 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D6 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32); PermNode: D0, IF0, IF0; AssetNode: D0, D0, D3"
+      }
+    },
+    {
+      "path_id": "path_28",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple [ASSET] nodes where balances are read and potentially modified.",
+          "2. In Node D0, the balance of the delegator is read: `return _balances[account]` which indicates the current balance of the delegator.",
+          "3. In Node D3, the number of checkpoints for the destination representative (delegatee) is read: `dstRepNum = numCheckpoints[dstRep]`, which indicates that the state of the delegatee's checkpoints can be manipulated.",
+          "4. The function `_moveDelegates` allows for the movement of voting power from one delegate to another, which can indirectly affect the balances if the voting power is tied to token distribution.",
+          "5. The presence of multiple [PERM] nodes indicates that only privileged accounts can execute certain actions, which can lead to the manipulation of balances.",
+          "6. The potential for the privileged account to adjust the delegatee's voting power without a corresponding increase in the delegator's balance suggests a leak of tokens.",
+          "7. The path does not show any evidence of minting new tokens or limiting transactions directly, but it does allow for the transfer of voting power that could lead to a decrease in the effective balance of the delegator."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3",
+          "D2"
+        ]
+      },
+      "overview": {
+        "path_id": "path_28",
+        "function_signature": "MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D7 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D6 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32); PermNode: D0, IF0, IF0; AssetNode: D0, D0, D3, D3"
+      }
+    },
+    {
+      "path_id": "path_29",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple [ASSET] nodes where balances are manipulated, specifically at nodes D0 and D3.",
+          "2. At node D0, the balance of the delegator is read, and at node D3, the number of checkpoints for the delegatee is incremented, which implies a change in voting power but does not directly affect the balance of tokens.",
+          "3. The key point is that the function _moveDelegates allows the transfer of voting power based on the balance of the delegator, which can be manipulated by the owner or privileged accounts. This can lead to a situation where the owner can effectively control the voting power without a corresponding increase in the actual token balance for the delegator.",
+          "4. The presence of permission nodes (D0, IF0) indicates that only privileged accounts can trigger these changes, which aligns with the definition of a leak where the privileged account can manipulate balances or voting power without direct compensation to the delegator.",
+          "5. The path does not show any evidence of minting new tokens or limiting transactions directly, but it does allow for the manipulation of balances in a way that can disadvantage regular users."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_29",
+        "function_signature": "MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D7 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D4 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32); PermNode: D0, IF0, IF0; AssetNode: D0, D0, D3, D3"
+      }
+    },
+    {
+      "path_id": "path_30",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple [ASSET] nodes where balances are read and written, specifically at nodes D0 and D3.",
+          "2. At node D0, the balance of the delegator is read, which is a prerequisite for the delegation process. This does not directly indicate a leak but sets the stage for potential manipulation.",
+          "3. At node D3, the line 'numCheckpoints[delegatee] = nCheckpoints + 1' indicates that the number of checkpoints for the delegatee is being increased. This could imply that the delegatee's voting power is being manipulated, but it does not directly affect the balance of any account.",
+          "4. The critical leak behavior is observed in the context of the delegation process where the delegator's balance is used to determine the voting power, but there is no direct transfer of tokens from one account to another that would indicate a leak.",
+          "5. However, the ability of the owner to manipulate the delegation process and potentially redirect voting power without a corresponding increase in the delegator's balance suggests a risk of leaking influence rather than tokens directly.",
+          "6. The path does not show any direct token transfers that would classify as a leak of tokens, but the manipulation of voting power through the delegation process raises concerns about the potential for abuse."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_30",
+        "function_signature": "MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D7 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D4 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32); PermNode: D0, IF0, IF0; AssetNode: D0, D0, D3, D3, D3"
+      }
+    },
+    {
+      "path_id": "path_31",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple [ASSET] nodes where balances are read and modified.",
+          "2. In Node D0, the balance of the delegator is read: `return _balances[account]` which indicates the current balance of the delegator.",
+          "3. In Node D3, the line `numCheckpoints[delegatee] = nCheckpoints + 1` indicates that the number of checkpoints for the delegatee is increased, which is a modification of state but does not directly affect balances.",
+          "4. However, the critical part is in Node D3 where `dstRepNum = numCheckpoints[dstRep]` is read, and if the delegatee is not the caller, it implies that the caller can manipulate the voting power of others without their consent.",
+          "5. The function `_moveDelegates` allows the transfer of voting power from one address to another, which can be seen as a form of leaking since it can affect the balance of voting rights without the original holder's consent.",
+          "6. The ability to change the delegatee's voting power without their explicit action or consent indicates a potential for abuse, fitting the definition of LEAK."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3",
+          "D2"
+        ]
+      },
+      "overview": {
+        "path_id": "path_31",
+        "function_signature": "MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D7 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D6 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D1 -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32); PermNode: D0, IF0, IF0; AssetNode: D0, D0, D3, D3"
+      }
+    },
+    {
+      "path_id": "path_32",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple [ASSET] nodes where balances are manipulated, specifically in nodes D0 and D3.",
+          "2. In node D0, the balance of the delegator is read, which is a prerequisite for the delegation process. This does not directly indicate a leak but sets the stage for potential manipulation.",
+          "3. In node D3, the line 'numCheckpoints[delegatee] = nCheckpoints + 1' indicates that the number of checkpoints for the delegatee is increased, which could imply that the delegatee's voting power is being manipulated.",
+          "4. The critical aspect is that the function _moveDelegates can potentially allow the current delegate to manipulate the voting power of other addresses (delegatees) without their consent, which can be seen as a form of leaking control over the token's governance.",
+          "5. The presence of multiple [PERM] nodes indicates that only privileged accounts can execute these actions, reinforcing the idea that the token's governance can be manipulated by those in control.",
+          "6. The overall flow suggests that while balances are not directly decreased, the manipulation of voting power and checkpoints can lead to a scenario where the actual control over the token's governance is leaked to privileged accounts."
+        ],
+        "key_nodes": [
+          "D0",
+          "D3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_32",
+        "function_signature": "MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> IF0 -> IF1 -> D0[ASSET] -> IF2 -> D7 -> D2 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> IF3 -> D3[ASSET] -> IF4 -> D6 -> D5 -> E1 -> D0 -> E1 -> D0 -> F1 -> IF0[PERM] -> D3[ASSET] -> D2 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry MarsToken.delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32); PermNode: D0, IF0, IF0; AssetNode: D0, D0, D3, D3, D3"
+      }
+    },
+    {
+      "path_id": "path_33",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function is MarsToken.getPriorVotes(address,uint256), which checks the number of checkpoints for a given account.",
+          "2. The first permission node D0 checks if the block number is less than the current block number, ensuring that the function can only be called for past blocks.",
+          "3. The asset node in D0 reads the variable numCheckpoints[account], which indicates how many checkpoints exist for the specified account.",
+          "4. The conditional node IF0 checks if nCheckpoints is equal to 0, which means there are no checkpoints for the account.",
+          "5. Since there are no asset modifications (no balances are increased or decreased), and the function is primarily for querying past votes, there are no behaviors that fit the definitions of MINT, LIMIT, or LEAK.",
+          "6. The function does not allow any asset manipulation or transfer, and thus does not pose any risk of rugpull."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_33",
+        "function_signature": "MarsToken.getPriorVotes(address,uint256)",
+        "trace": "E1 -> D0[PERM] -> IF0 -> D1 -> F1",
+        "summary": "Entry MarsToken.getPriorVotes(address,uint256); PermNode: D0"
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 1,
+    "LIMIT": 0,
+    "LEAK": 32,
+    "EMPTY": 1,
+    "ERROR": 0
+  }
+}

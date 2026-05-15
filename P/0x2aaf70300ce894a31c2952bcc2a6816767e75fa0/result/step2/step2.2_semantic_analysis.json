@@ -1,0 +1,538 @@
+{
+  "contract_name": "0x2aaf70300ce894a31c2952bcc2a6816767e75fa0",
+  "generated_at": "2025-12-09T13:32:11Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The control source is the transferOwnership function, which is restricted to the owner via the onlyOwner modifier. This grants high privileges to the designated owner.",
+          "The function acceptOwnership is used to change ownership, culminating in the variable newun being assigned a new value. This indicates a potential switch in ownership control of the contract.",
+          "In the transferFrom function, there is a conditional check that depends on the value of newun. If newun is set to address(0) (which is likely manageable by the owner), the conditional can dictate whether transfers proceed or not. This means the owner can effectively control or block transfers.",
+          "Thus, by altering the value of newun, the owner has the ability to block normal users from transferring tokens, hence implementing a limiting sell scenario."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Owned.transferOwnership(address)",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.8,
+        "reasoning": [
+          "1. The path starts from the function 'Owned.transferOwnership(address)' which is controlled by 'onlyOwner' (node E1). This indicates that only an owner can execute this function, establishing a clear privilege.",
+          "2. Upon ownership transfer, the new owner is set through 'TokenBEP20.acceptOwnership()' (control chain). This indicates that control over the token is transferred to a potentially different address.",
+          "3. The function 'Shinugami.transfernewun(address)' allows the new owner to perform operations on behalf of a new address (newun), allowing the new owner to specify an arbitrary address for transactions.",
+          "4. The affected target 'TokenBEP20.transfer(address,uint256)' modifies balances (node D0). If the new owner calls this transfer function with 'newun' as the address, they could reduce the balance of another user without consent or compensation.",
+          "5. This creates a scenario where the new owner can potentially drain balances from any arbitrary user, as the transfer source could be set to a victim's address.",
+          "6. Given that the new owner's address can be manipulated to target other users' balances directly, it constitutes a Leak."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Owned.transferOwnership(address)",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_2",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.85,
+        "reasoning": [
+          "The path involves a transfer of ownership through `Owned.transferOwnership(address)` which is restricted to the owner (node E1). Such control allows the owner to change the `owner` variable that impacts `Shinugami.transferFrom(address,address,uint256)` (node IF0).",
+          "Once the ownership is transferred to a new address (referenced as `newun`), the conditions for calling `transferFrom` are contingent on the `newun` being address zero. This suggests the owner can dictate whether transfers can occur or not, effectively limiting users' ability to sell or transfer tokens based on their control over the ownership status.",
+          "Since the owner has the ability to allow or deny transfers through changing the ownership status, this functionality aligns with the LIMIT classification."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Owned.transferOwnership(address)",
+        "control_variable": "newun",
+        "targets": [
+          "Shinugami.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_3",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.8,
+        "reasoning": [
+          "The control source function 'Owned.transferOwnership(address)' is restricted to 'onlyOwner', meaning the owner can transfer ownership to a new address, thus gaining control over the token.",
+          "The transfer to the new owner affects the 'owner' variable in the control chain, which indirectly affects the 'Shinugami.transfer(address,uint256)' function.",
+          "In 'Shinugami.transfer(address,uint256)', the balances are modified, and if the 'newun' address is set to an arbitrary address (not limited to only the caller), this could enable the owner to transfer funds from any specified address to the new owner, leading to potential token leakage.",
+          "Therefore, the combination of ownership transfer with the subsequent potential for unrestricted balance modification at the 'newun' path leads to a conclusion of LEAK."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Owned.transferOwnership(address)",
+        "control_variable": "newun",
+        "targets": [
+          "Shinugami.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_24",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "1. `Owned.acceptOwnership()` is a public function that allows a privileged identity (the owner) to call it, thereby potentially modifying `newun`.",
+          "2. The condition in the `TokenBEP20.transferFrom(address,address,uint256)` function checks whether `from` is not the zero address and whether `newun` is equal to the zero address. If `newun` is controlled by the owner, they can manipulate it to affect the transfer functionality.",
+          "3. Since `newun` can be set by the privileged user and is used in a condition that affects whether transfers can happen, the owner could effectively lock or unlock transfers by changing `newun`, which limits the ability of ordinary users to execute transfers.",
+          "4. Thus, this creates a condition where the owner can control the state of `newun` and subsequently control the ability of users to transfer tokens, fitting the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Owned.acceptOwnership()",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_25",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves the function `Owned.acceptOwnership()` which allows the owner to accept ownership of the contract, granting them control over the variable `newun`.",
+          "2. The variable `newun` is linked to the function `Shinugami.transfernewun(address)` which is called with an arbitrary address, indicating that the owner can specify any address as the recipient in the transfer.",
+          "3. The affected target is `TokenBEP20.transfer(address,uint256)`, which modifies the balances of the involved addresses. This implies the owner can reduce the balance of the account specified in the function call without it being the caller's balance.",
+          "4. Therefore, the ability for the owner to transfer tokens from an arbitrary account (as specified by `newun`) into their own account or another account means they can deduct from others without consent, which classifies it as a leak."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Owned.acceptOwnership()",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_26",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path allows the control function Owned.acceptOwnership() to set a control variable newun which is likely used to restrict transfers based on conditions.",
+          "Specifically, in the Shinugami.transferFrom(address,address,uint256) function, the condition 'newun == address(0)' indicates that transfers can only occur if newun is in a specific state, effectively allowing the owner to enable or disable transfers based on their control of newun.",
+          "This implies that the owner can manipulate the transfer logic, thus limiting ordinary users' ability to perform transfers until newun is set to an acceptable value."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Owned.acceptOwnership()",
+        "control_variable": "newun",
+        "targets": [
+          "Shinugami.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_27",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "Node E1 indicates that the function 'Owned.acceptOwnership()' is public, allowing anyone to invoke it, which may lead to ownership being transferred potentially maliciously.",
+          "The return value 'newun' in node D0 suggests that 'Shinugami.transfer(address,uint256)' can execute transfers using addresses that are not necessarily the caller's own, implying the potential for leaking tokens.",
+          "As 'newun' is controlled by the results within the contract, if a malicious actor gains ownership, they could define 'newun' as any address they choose, allowing them to drain balances from any chosen account without it being the caller.",
+          "This direct manipulation of balances indicates a clear path to leaking tokens from arbitrary addresses."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Owned.acceptOwnership()",
+        "control_variable": "newun",
+        "targets": [
+          "Shinugami.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_48",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'TokenBEP20.transferOwnership(address)' is callable only by the owner, as indicated by the 'onlyOwner' modifier (E1).",
+          "This function allows the owner to change the ownership to a new address (newun).",
+          "The affected target 'TokenBEP20.transferFrom(address,address,uint256)' has a conditional check 'newun == address(0)', indicating that if 'newun' is modified by the owner, it can control whether transfers can occur based on this state.",
+          "Thus, the owner has the ability to effectively lock or unlock transfers by changing 'newun', which meets the criteria for the LIMIT behavior.",
+          "The dependency on 'newun' being an address controlled by the owner directly impacts the transferability of tokens."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.transferOwnership(address)",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_49",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.8,
+        "reasoning": [
+          "1. The function TokenBEP20.transferOwnership(address) is restricted by the onlyOwner modifier, meaning only the owner can call it. This gives the owner control over the ownership of the contract.",
+          "2. Once ownership is transferred using acceptOwnership(), the new owner can influence the state of the contract, specifically the parameter newun.",
+          "3. The function Shinugami.transfernewun(address) uses the variable newun, which if controlled by the owner, allows them to dictate the target address for transfers.",
+          "4. The affected target TokenBEP20.transfer(address,uint256) modifies balances based on inputs provided. If the owner uses newun, they can potentially dictate transfers from other users to an address they control or reduce balances of arbitrary accounts, which qualifies as leaking tokens.",
+          "5. The path showcases that there is a potential for the owner (after changing ownership) to manipulate balances of arbitrary users, fitting into the Leak category."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.transferOwnership(address)",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_50",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The ownership of the Shinugami contract can be transferred through the TokenBEP20.transferOwnership function, which requires the caller to be the current owner (onlyOwner modifier). This indicates strong control over the contract by the owner.",
+          "The variable 'newun' is linked to the transferFrom function of Shinugami. If 'newun' is set to address(0), it may prevent transfers from happening depending on the logic executed in the transferFrom function, effectively allowing the owner to manipulate the trading status.",
+          "Given that the owner has the ability to modify ownership and thus influence the state of 'newun', this introduces a situation where the owner can limit transfers performed by other users.",
+          "The ability to control the transfer conditions indicates that this scenario aligns with the definition of LIMIT, as it empowers the owner to block or allow trading for users based on ownership status, hence affecting their ability to conduct trades."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.transferOwnership(address)",
+        "control_variable": "newun",
+        "targets": [
+          "Shinugami.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_51",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "Step 1: The function `TokenBEP20.transferOwnership(address)` is modified with `onlyOwner`, indicating that only the owner can transfer ownership, which is a potential risk point in how the contract is controlled.",
+          "Step 2: Once ownership is transferred using `acceptOwnership()`, the control of the `newun` variable is indirectly passed to a new owner, who can then call `Shinugami.transfernewun(address)`.",
+          "Step 3: This transfer of ownership allows the new owner to control `Shinugami.transfer(address,uint256)`, which writes to `_balances`. If the new owner sets controls on transfer (for example, by introducing conditions or flags that allow stopping transfers), it can limit the ability of users to engage in transactions.",
+          "Step 4: The presence of `onlyOwner` in the ownership transfer mechanism emphasizes that the new owner has significant control over the transfer process potentially affecting all users, thus limiting their transactions.",
+          "Conclusion: Given that the new owner can control the transfer functionalities via the `newun` variable, and the original users are subject to this control, this pathway clearly shows limiting behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.transferOwnership(address)",
+        "control_variable": "newun",
+        "targets": [
+          "Shinugami.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_72",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path starts with the function `TokenBEP20.acceptOwnership()`, which allows an owner the ability to accept ownership, potentially manipulating under which conditions transfers may occur.",
+          "2. The condition for `TokenBEP20.transferFrom(address,address,uint256)` states that execution relies on `newun == address(0)`. This indicates that the transfer functionality can be controlled by the owner through setting `newun`.",
+          "3. Given that the ownership acceptance can control the behavior of `newun`, this effectively creates a situation where the owner can restrict or enable transfers based on whether `newun` has been modified, thus limiting the ability to trade or transfer tokens by normal users.",
+          "4. The absence of any direct asset increase or decrease (MINT or LEAK) means that the preferred classification here is LIMIT due to the control over transfer permissions."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.acceptOwnership()",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_73",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function `TokenBEP20.acceptOwnership()` grants ownership rights that may ultimately influence the balance of the contract, as seen in node E1.",
+          "2. The method `Shinugami.transfernewun(address)` indicates that the address being transferred to (newun) is controlled by the caller, who may be a privileged user, thus allowing them to set arbitrary addresses.",
+          "3. The `TokenBEP20.transfer(address,uint256)` function at node D0 writes to `balances`, which means it can modify user balances.",
+          "4. If privileged users are able to control the address from which amounts are being deducted and to which they are being transferred without owning those accounts, it constitutes a leakage of tokens.",
+          "5. Additionally, since the control source comes from a public function, it may be exploited to direct funds from any arbitrary address, fulfilling the criteria for the LEAK category."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.acceptOwnership()",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_74",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.85,
+        "reasoning": [
+          "The path involves a function 'Shinugami.transferFrom(address,address,uint256)' that contains a conditional check based on 'newun'. The variable 'newun' can be controlled by the owner as indicated by 'TokenBEP20.acceptOwnership()'.",
+          "If 'newun' is set to address(0), the transfer condition can potentially be bypassed. This means that if the owner chooses to set 'newun', they can control whether transfers are executed or not.",
+          "This ability to alter 'newun' indicates a control over the ability to transfer tokens, effectively limiting users from transferring their assets without the owner's consent."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.acceptOwnership()",
+        "control_variable": "newun",
+        "targets": [
+          "Shinugami.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_75",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the control source TokenBEP20.acceptOwnership() which is public and can be executed by any user.",
+          "2. This allows the user to set the variable newun which is then used as a parameter in Shinugami.transfernewun(address).",
+          "3. The target function Shinugami.transfer(address,uint256) changes balances, and based on the input provided by the user (i.e., the address provided to newun), this could lead to arbitrary amounts being deducted from the specified account's balance.",
+          "4. Since the transfer is directed towards an address defined by newun, which is not limited to the caller itself, it represents a direct leakage or transfer of tokens from an arbitrary user's account to potentially the owner or another controlled account.",
+          "5. The ability to define the address against which transfers can be executed makes this risk relevant as it allows unauthorized reductions of balances without direct consent from the affected users."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.acceptOwnership()",
+        "control_variable": "newun",
+        "targets": [
+          "Shinugami.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_96",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'TokenBEP20.transfernewun(address)' is controlled by 'onlyOwner', which means only the contract owner can invoke it. This function modifies a control variable that indirectly affects the ability to use the 'transferFrom' function.",
+          "In the 'transferFrom' function (Node ID IF0), there is a condition 'newun == address(0)', which could be influenced by the owner setting 'newun' to different values. If 'newun' is not equal to address(0), the transfer is not allowed.",
+          "Thus, the owner can control whether 'transferFrom' can proceed by manipulating 'newun', effectively limiting the ability of ordinary users to transfer tokens. This characteristic of the LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.transfernewun(address)",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_97",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.8,
+        "reasoning": [
+          "path in `TokenBEP20.transfernewun(address)` function `onlyOwner`, thereforeonlyThe privileged user can callthis function.",
+          "the functionwill `TokenBEP20.transfer(address,uint256)`, is `balances` performed on function.",
+          "`transfer` function allow The privileged userthrough `transfernewun` to transfer arbitraryaddresstoken, thereforefrom user to, The privileged userdeduction specify address balance, This matches the Leak definition.",
+          "at Leak definitionin, The privileged userdeduction caller account while privilege account or otheraddress, operation is asset leak .",
+          "because `transfernewun` functionin balance perform control, at asset path, thereforedetermined as Leak."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.transfernewun(address)",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_98",
+      "path_type": "INDIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 0.0,
+        "reasoning": [
+          "The function `TokenBEP20.transfernewun(address)` is controlled by the `onlyOwner` modifier, which indicates that only the contract owner can call it.",
+          "However, the relevant asset manipulation occurs in the `Shinugami.transferFrom(address,address,uint256)` function, which has the condition `from != address(0) && newun == address(0)`. This means that 'from' must not be the zero address.",
+          "There are no explicit asset changes (like balance increases or decreases) occurring directly within the path based on the provided information. The only check performed involves addresses, and none of the executed steps result in an observable asset manipulation affecting balances.",
+          "Since there is no direct or indirect evidence of adding to balances (MINT), or restricting transfers (LIMIT), as well as no malicious asset leak (LEAK) due to the lack of parameters that specify others' addresses being manipulated, the category is classified as empty."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.transfernewun(address)",
+        "control_variable": "newun",
+        "targets": [
+          "Shinugami.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_99",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function TokenBEP20.transfernewun is marked with onlyOwner, indicating that only a privileged account can execute it (Node E1).",
+          "2. The affected target Shinugami.transfer indicates that a transfer of tokens is performed, where the balances of accounts are modified (Node D0).",
+          "3. If the 'newun' parameter is provided by an external caller (instead of being restricted to the calling owner), it means the owner can control the outcome of the transfer arbitrarily.",
+          "4. Because the owner can specify the recipient address for the Shinugami transfer, this mechanism allows the owner to potentially transfer tokens from an arbitrary account, thereby reducing the balance of that account without its consent, satisfying the criteria for a direct leak."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.transfernewun(address)",
+        "control_variable": "newun",
+        "targets": [
+          "Shinugami.transfer(address,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 10,
+    "LEAK": 9,
+    "EMPTY": 1,
+    "ERROR": 0
+  }
+}

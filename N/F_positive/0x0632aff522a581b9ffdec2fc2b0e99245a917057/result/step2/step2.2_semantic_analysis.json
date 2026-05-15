@@ -1,0 +1,482 @@
+{
+  "contract_name": "0x0632aff522a581b9ffdec2fc2b0e99245a917057",
+  "generated_at": "2026-02-24T12:15:25Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the Token.transfer function, which leads to the Token._transfer function where permissions are checked.",
+          "2. In Node IF0, there is a permission check that allows the transfer to proceed if the recipient is the uniswapPair and its balance is zero. This indicates that the contract can control transfers based on the state of the uniswapPair.",
+          "3. In Node IF1, there is another permission check that restricts transfers if the sender is the uniswapPair and the block number is less than a certain threshold. This means that the contract can limit transfers based on the block number, which is a form of control over the transfer process.",
+          "4. In Node D2, the recipient is set to the owner, which means that any transfer that occurs will send tokens to the owner address. This indicates that the owner can receive tokens without any corresponding transfer to the sender.",
+          "5. In Node D0, the balances are modified: _balances[sender] is decreased by amount and _balances[recipient] is increased by amount. This means that while the sender's balance decreases, the recipient's balance (which is the owner's) increases by the same amount.",
+          "6. The key point is that the sender can be any address, and the recipient is always the owner. This allows the owner to effectively drain tokens from any sender without their consent, which qualifies as a leak.",
+          "7. The balance change simulation shows that the sender's balance decreases while the owner's balance increases, confirming the leak behavior."
+        ],
+        "key_nodes": [
+          "IF0",
+          "IF1",
+          "D0",
+          "D2"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "Token.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1 -> IF1[PERM] -> D2 -> E1 -> D0[ASSET] -> F1 -> F1 -> F1",
+        "summary": "Entry Token.transfer(address,uint256); PermNode: IF0, IF1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "In the path, node IF0 and IF1 is permission node, control transfer conditions.",
+          "node IF0 check recipient is uniswapPair and its balance is 0, This meansThe privileged user can transfer uniswapPair, limit ordinary user transaction ability.",
+          "node IF1 check sender is uniswapPair and is less than first + kill, further limit at transfer behavior .",
+          "because exists, The privileged user can modify variable to control ordinary user transaction, matches the LIMIT definition."
+        ],
+        "key_nodes": [
+          "IF0",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "Token.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1 -> IF1[PERM] -> D2 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry Token.transferFrom(address,address,uint256); PermNode: IF0, IF1; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'Ownable.waiveOwnership()' is controlled by 'onlyOwner', which means only the owner can call this function to waive ownership.",
+          "Once ownership is waived, the variable 'uniswapPair' can be changed through 'Token.changeRouterVersion(address)', which is also controlled by the owner.",
+          "In the '_transfer' function, there is a conditional check that restricts transfers if the recipient is 'uniswapPair' and its balance is zero. This means that the owner can effectively control whether transfers to 'uniswapPair' can occur based on the state of 'uniswapPair'.",
+          "Thus, the owner can limit the ability of users to trade by manipulating the 'uniswapPair' variable, which directly affects the transfer process."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.waiveOwnership()",
+        "control_variable": "uniswapPair",
+        "targets": [
+          "Token._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function 'Ownable.waiveOwnership()' is controlled by 'onlyOwner', allowing the owner to relinquish ownership.",
+          "2. The control chain shows that the owner can change the 'uniswapPair' variable through 'Token.changeRouterVersion(address)', which is a critical variable for the transfer logic.",
+          "3. The '_transfer' function checks if 'sender == uniswapPair && block.number < first + kill', meaning the owner can manipulate the 'uniswapPair' and potentially control whether transfers can occur based on the block number.",
+          "4. Since the owner can change the state of 'uniswapPair', they can effectively limit or enable transfers for all users, thus restricting their ability to trade freely."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.waiveOwnership()",
+        "control_variable": "first",
+        "targets": [
+          "Token._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_2",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'Ownable.waiveOwnership()' allows the owner to relinquish ownership, which could lead to the 'kill' variable being set by the 'Token.setKing(uint256)' function. This variable is then used in the conditional check within 'Token._transfer(address,address,uint256)'.",
+          "The condition 'sender == uniswapPair && block.number < first + kill' indicates that the transfer can be restricted based on the value of 'kill'. If 'kill' is set to a high value or manipulated by the owner, it can effectively limit the ability of users to transfer tokens, as transfers will be blocked if the condition is not met.",
+          "Thus, the owner has the ability to control the transfer process by modifying the 'kill' variable, which directly impacts the ability of ordinary users to execute transfers."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.waiveOwnership()",
+        "control_variable": "kill",
+        "targets": [
+          "Token._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_4",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'Ownable.transferOwnership(address)' is controlled by 'onlyOwner', which means only the owner can change the ownership of the contract. This gives the owner the ability to change the 'uniswapPair' variable.",
+          "The 'Token._transfer(address,address,uint256)' function checks if the recipient is the 'uniswapPair' and if the balance of 'uniswapPair' is 0. If the owner sets 'uniswapPair' to a specific address, they can control whether transfers to that address are allowed based on the balance condition.",
+          "This effectively allows the owner to limit or disable transfers to the 'uniswapPair', which can restrict normal users from trading their tokens freely, thus implementing a limiting behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "uniswapPair",
+        "targets": [
+          "Token._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_5",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'Ownable.transferOwnership(address)' is controlled by 'onlyOwner', which means only the owner can change the ownership of the contract. This a privilege that can affect the control over the token's transfer functionality.",
+          "The 'Token._transfer(address,address,uint256)' function checks if 'sender == uniswapPair && block.number < first + kill'. This indicates that the transfer can be restricted based on the state of 'first' and 'kill', which are controlled by the owner.",
+          "Since the owner can modify the 'uniswapPair' and the conditions under which transfers can occur, they can effectively limit the ability of ordinary users to trade their tokens, thus implementing a limiting behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "first",
+        "targets": [
+          "Token._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_6",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'Ownable.transferOwnership(address)' is controlled by 'onlyOwner', which means only the owner can change the ownership of the contract. This a permissioned action that can affect the control over the token's transfer functionality.",
+          "The variable 'kill' can be set by the owner through the 'Token.setKing(uint256)' function, which allows the owner to modify the conditions under which transfers can occur.",
+          "In the '_transfer' function, there is a conditional check that restricts transfers based on the 'kill' variable: 'sender == uniswapPair && block.number < first + kill'. This means that the owner can effectively limit or disable transfers by adjusting the 'kill' variable.",
+          "Since the owner can control whether transfers are allowed based on the value of 'kill', this constitutes a limitation on the ability of ordinary users to freely trade their tokens."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "kill",
+        "targets": [
+          "Token._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_8",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Token.waiveOwnership() is controlled by the onlyOwner modifier, which means only the owner can call this function (Node E1).",
+          "This function changes the uniswapPair variable, which is used in the conditional check within the Token._transfer function (Node IF0).",
+          "The condition in Token._transfer checks if the recipient is the uniswapPair and if its balance is zero. If the owner sets uniswapPair to a new address, they can effectively control whether transfers to that address can occur based on its balance.",
+          "By controlling the uniswapPair, the owner can prevent users from transferring tokens to this address if they choose to set its balance to zero, thus limiting the ability of ordinary users to trade.",
+          "This behavior aligns with the definition of LIMIT, as the owner can manipulate the trading state by changing the uniswapPair variable."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Token.waiveOwnership()",
+        "control_variable": "uniswapPair",
+        "targets": [
+          "Token._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_9",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Token.waiveOwnership() is controlled by the onlyOwner modifier, meaning only the owner can call it, which gives them control over the contract's ownership.",
+          "Once ownership is waived, the control variable 'first' can be manipulated, which is used in the conditional check within the Token._transfer function.",
+          "The conditional check in Token._transfer requires that the sender is equal to uniswapPair and that the block number is less than 'first + kill'. This means that the owner can effectively control whether transfers can occur based on the state of 'first' and 'kill'.",
+          "By changing the value of 'first', the owner can prevent transfers from occurring, thus limiting the ability of regular users to trade their tokens."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Token.waiveOwnership()",
+        "control_variable": "first",
+        "targets": [
+          "Token._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_10",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Token.waiveOwnership() is controlled by the onlyOwner modifier, allowing the owner to waive ownership and potentially change the state of the contract.",
+          "The variable 'kill' can be set by the owner through the function Token.setKing(uint256), which can affect the transfer conditions.",
+          "In the _transfer function, there is a conditional check that restricts transfers based on the sender being the uniswapPair and the block number being less than 'first + kill'.",
+          "This means that the owner can manipulate the 'kill' variable to control whether transfers can occur, effectively limiting the ability of users to trade."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Token.waiveOwnership()",
+        "control_variable": "kill",
+        "targets": [
+          "Token._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_12",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `Token.transferOwnership(address)` is controlled by `onlyOwner`, which means only the owner can change the ownership of the contract. This gives the owner the ability to modify the `uniswapPair` variable.",
+          "The affected target `Token._transfer(address,address,uint256)` has a conditional check that includes `recipient == uniswapPair && balanceOf(address(uniswapPair)) == 0`. This means that if the owner sets `uniswapPair` to a specific address, they can effectively control whether transfers to that address are allowed based on the balance condition.",
+          "Since the owner can change the `uniswapPair` and potentially set it to an address with a zero balance, they can prevent users from transferring tokens to that address, effectively limiting the ability of ordinary users to trade.",
+          "Thus, the ability of the owner to control the `uniswapPair` and the conditions under which transfers can occur indicates a limiting behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Token.transferOwnership(address)",
+        "control_variable": "uniswapPair",
+        "targets": [
+          "Token._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_13",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `Token._transfer(address,address,uint256)` has a conditional check that restricts transfers based on the `sender` being equal to `uniswapPair` and the block number being less than `first + kill`. This indicates that the transfer can be controlled based on the state of `first` and `kill`, which are likely set by the owner.",
+          "The `transferOwnership` function is protected by the `onlyOwner` modifier, meaning only the owner can change the ownership and potentially manipulate the `uniswapPair` variable. This gives the owner the ability to control whether transfers can occur or not, effectively limiting the ability of regular users to trade.",
+          "Since the owner can modify the conditions under which transfers are allowed, this constitutes a limitation on the ability of ordinary users to freely transact, thus categorizing this path as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Token.transferOwnership(address)",
+        "control_variable": "first",
+        "targets": [
+          "Token._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_14",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Token.transferOwnership(address) is controlled by onlyOwner, allowing the owner to change the ownership of the contract.",
+          "The control variable 'kill' can be set by the owner through the function Token.setKing(uint256).",
+          "In the _transfer function, there is a conditional check that restricts transfers based on the condition 'sender == uniswapPair && block.number < first + kill'.",
+          "This means that the owner can manipulate the 'kill' variable to control whether transfers can occur, effectively limiting the ability of users to trade.",
+          "Since the owner can disable transfers by adjusting the 'kill' variable, this path fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Token.transferOwnership(address)",
+        "control_variable": "kill",
+        "targets": [
+          "Token._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_16",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Token.setKing(uint256) is controlled by onlyOwner, allowing the owner to set the variable 'kill'.",
+          "In the _transfer function, there is a conditional check that restricts transfers based on the sender being the uniswapPair and the block number being less than 'first + kill'.",
+          "This means that if the owner sets 'kill' to a value that restricts transfers, they can effectively prevent users from trading, thus limiting their ability to sell.",
+          "The ability to control the 'kill' variable directly impacts the transfer process, making it a clear case of limiting user transactions."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Token.setKing(uint256)",
+        "control_variable": "kill",
+        "targets": [
+          "Token._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_17",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Token.setKing(uint256) is controlled by onlyOwner, which means only the owner can set the value of 'first'.",
+          "The _transfer function checks if the sender is the uniswapPair and if the current block number is less than 'first + kill'.",
+          "By modifying 'first', the owner can effectively control whether transfers can occur or not, thus limiting the ability of regular users to trade.",
+          "This creates a scenario where the owner can disable transfers for all users by setting 'first' to a high value, preventing them from executing transfers."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Token.setKing(uint256)",
+        "control_variable": "first",
+        "targets": [
+          "Token._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_18",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function Token.changeRouterVersion(address) is controlled by onlyOwner, which means only the owner can change the uniswapPair address.",
+          "In the _transfer function, there is a conditional check that restricts transfers if the recipient is the uniswapPair and its balance is zero.",
+          "This means that the owner can effectively disable transfers to the uniswapPair by changing its address or ensuring its balance is zero, thus limiting the ability of regular users to trade."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Token.changeRouterVersion(address)",
+        "control_variable": "uniswapPair",
+        "targets": [
+          "Token._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_19",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Token.changeRouterVersion(address) is controlled by onlyOwner, which means only the owner can change the router version.",
+          "This change affects the conditional check in Token._transfer(address,address,uint256), specifically the condition 'sender == uniswapPair && block.number < first + kill'.",
+          "If the owner changes the value of 'first', it directly impacts whether transfers can occur based on the block number, effectively allowing the owner to control when transfers can happen.",
+          "This means that the owner can disable or enable transfers for users, which fits the definition of LIMIT as it restricts normal users' ability to trade."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Token.changeRouterVersion(address)",
+        "control_variable": "first",
+        "targets": [
+          "Token._transfer(address,address,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 17,
+    "LEAK": 1,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

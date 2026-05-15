@@ -1,0 +1,152 @@
+{
+  "contract_name": "0xa5d04fd00ed911ba809b4d1bc9e90f79ee5a4e47",
+  "generated_at": "2026-02-25T19:54:03Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function Avatr.burn(uint256) allows the caller to burn tokens from their own balance.",
+          "2. In Node D0, the balance of the account (msg.sender) is decreased by the amount specified in the burn function: _balances[account] = accountBalance - amount.",
+          "3. The balance change is clearly a decrease, as the account's balance is reduced by the amount being burned.",
+          "4. The account is determined by msg.sender, which means the caller can only burn their own tokens, not someone else's. Therefore, this does not constitute a direct leak of tokens from another user's balance.",
+          "5. However, the function does not allow for any increase in balance, nor does it allow for any manipulation of transfer permissions, thus it does not fit the MINT or LIMIT categories.",
+          "6. The burn operation is a legitimate operation that reduces the total supply of tokens, but since it does not allow for any increase or manipulation of other users' balances, it is classified as LEAK due to the potential for misuse in a broader context."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "Avatr.burn(uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0[ASSET] -> E1[PERM] -> M1 -> D0 -> F1 -> F1 -> F1",
+        "summary": "Entry Avatr.burn(uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path starts with the function Avatr.burnFrom(address,uint256), which allows a spender to burn tokens from an account's balance.",
+          "2. The key asset nodes are D0, which involve reading and writing to the _balances mapping.",
+          "3. In Node D0 (depth=1), the balance of the account is decreased by the amount specified: _balances[account] = accountBalance - amount. This indicates a decrease in the balance of the account specified by the parameter.",
+          "4. The account from which tokens are burned is determined by the parameter 'account', which can be any address, not just the caller's address. This means that the owner can specify any account to burn tokens from, leading to a potential leak of tokens.",
+          "5. The simulation shows that if the initial balance is 100 and an amount is burned, the balance will decrease, confirming that this a leak of tokens.",
+          "6. The ability to specify any account for burning tokens indicates that the owner can arbitrarily reduce the balances of others without their consent, which fits the definition of a leak."
+        ],
+        "key_nodes": [
+          "D0",
+          "D0",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "Avatr.burnFrom(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> IF0 -> D1 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> D0[ASSET] -> E1[PERM] -> M1 -> D0 -> F1 -> F1 -> F1",
+        "summary": "Entry Avatr.burnFrom(address,uint256); PermNode: E1; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 0.0,
+        "reasoning": [
+          "1. The path starts with the function Avatr.transfer(address,uint256) which calls _transfer. The owner is determined as the caller.",
+          "2. In the _transfer function, the following asset-related operations occur: _balances[from] is decreased by amount and _balances[to] is increased by amount.",
+          "3. The specific lines of code that modify balances are: L553: _balances[from] = fromBalance - amount and L556: _balances[to] += amount.",
+          "4. The balance change for 'from' is a decrease (fromBalance - amount) and for 'to' is an increase (toBalance + amount).",
+          "5. The initial balance for 'from' is assumed to be 100. If amount is less than or equal to 100, 'from' will decrease to a value greater than or equal to 0, and 'to' will increase accordingly.",
+          "6. Since the 'from' address is the owner (the caller), the transfer is not a leak as it does not involve arbitrary accounts being manipulated by the owner.",
+          "7. There are no conditions that allow the owner to mint new tokens or restrict transfers, thus it does not fall under MINT or LIMIT categories.",
+          "8. The path does not exhibit any behavior that would classify it as a rugpull, as all operations are standard transfers between accounts."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "Avatr.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0[ASSET] -> E1[PERM] -> M1 -> D0 -> F1 -> F1 -> F1",
+        "summary": "Entry Avatr.transfer(address,uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function Avatr.transferFrom, which involves transferring tokens from one address to another.",
+          "2. The asset nodes (D0) indicate that balances are being modified: specifically, the line '_balances[from] = fromBalance - amount' (L553) decreases the balance of the 'from' address, and the line '_balances[to] += amount' (L556) increases the balance of the 'to' address.",
+          "3. The balance change for the 'from' address is a decrease, while the 'to' address receives the amount. This indicates a transfer of tokens.",
+          "4. The key point is that the 'from' address is determined by the function parameters, which means the caller can specify any address to deduct tokens from, not just their own. This allows for the potential of a privileged user to drain tokens from arbitrary accounts.",
+          "5. The allowance mechanism is also in place, which means that the spender can transfer tokens on behalf of the owner, but the owner can be any address, not limited to the caller. This further supports the potential for leaking tokens.",
+          "6. Therefore, since the privileged user can specify the 'from' address and deduct tokens without consent from that address, this behavior fits the definition of a leak."
+        ],
+        "key_nodes": [
+          "D0",
+          "D0",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "Avatr.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> IF0 -> D1 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> D0[ASSET] -> E1[PERM] -> M1 -> D0 -> F1 -> F1 -> F1",
+        "summary": "Entry Avatr.transferFrom(address,address,uint256); PermNode: E1; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_4",
+      "path_type": "DIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function Avatr.mint(address,uint256) allows for minting tokens to a specified address.",
+          "2. The node D0 contains the line '_balances[account] += amount', which indicates that the balance of the specified account is increased by the amount parameter.",
+          "3. The parameters 'account' and 'amount' are bound to the function inputs, meaning the caller can specify any address and any amount to mint.",
+          "4. Since the balance of the specified account is increased without any checks on the current balance or restrictions on the address (other than not being the zero address), this constitutes a hidden minting behavior.",
+          "5. The minting process is controlled by the permissions at node E1, which indicates that only authorized users can call this function, thus confirming the presence of a privileged minting mechanism."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_4",
+        "function_signature": "Avatr.mint(address,uint256)",
+        "trace": "E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> E1[PERM] -> M1 -> D0 -> F1 -> F1 -> F1",
+        "summary": "Entry Avatr.mint(address,uint256); PermNode: E1; AssetNode: D0"
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 1,
+    "LIMIT": 0,
+    "LEAK": 3,
+    "EMPTY": 1,
+    "ERROR": 0
+  }
+}

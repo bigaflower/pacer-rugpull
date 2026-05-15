@@ -1,0 +1,545 @@
+{
+  "contract_name": "0x2bda5b625d3b50848e8563480ed50ec782dd42ee",
+  "generated_at": "2025-12-09T13:50:43Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function is BaseToken.transfer(address,uint256), which checks if the contract is paused (Node E1). This a permission check but does not affect asset balances directly.",
+          "2. The transfer function calls BaseToken._transfer(address,address,uint256) (Node D0), which contains several permission and asset checks.",
+          "3. In Node D0, the first permission check ensures the recipient address (_to) is not zero (L289). The second check ensures the sender (_from) has enough balance to cover the transfer (L291). The third check ensures that the recipient's balance will not overflow (L293).",
+          "4. The asset changes occur in L295 and L297: balanceOf[_from] is decreased by _value and balanceOf[_to] is increased by _value. The balances are modified as follows: _from's balance decreases and _to's balance increases, indicating a normal transfer without any hidden minting or leaking.",
+          "5. The balance change for _from is calculated as follows: start = 100, end = 100 - _value (which is a decrease). For _to, start = 100, end = 100 + _value (which is an increase). Since both balances are adjusted correctly without any unauthorized increase or decrease, this does not fall under MINT, LIMIT, or LEAK.",
+          "6. The checks ensure that the transfer can only occur if the sender has sufficient balance and the recipient is valid, which prevents any unauthorized asset manipulation."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "BaseToken.transfer(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0[PERM] -> F1 -> F1",
+        "summary": "Entry BaseToken.transfer(address,uint256); PermNode: E1, D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 0.0,
+        "reasoning": [
+          "1. In the path, node E1 and D0 is permission node, E1 check contract is, D0 check balance and .",
+          "2. At node D0, the asset operations involved include:",
+          "- L321: approvals [_from] [msg.sender] = approvals [_from] [msg.sender].sub (_value)//deduction authorization",
+          "- L323: balanceOf [_from] = balanceOf [_from].sub (_value)//Deduct sender's balance",
+          "- L325: balanceOf [_to] = balanceOf [_to].add (_value)//Increase recipient balance",
+          "3. Balance change analysis:",
+          "- assuming _from Initial balance is 100, _to Initial balance is 100, _value is 50.",
+          "- deductionoperation, _from balance is 100 - 50 = 50, _to balance is 100 + 50 = 150.",
+          "- balance is decrease and increase, and there is no balance is The privileged userdirectly increase or decrease .",
+          "4. privilege caller not arbitrary specify affected account, because _from and _to is a function parameter, caller provide .",
+          "5. because nofind The privileged user can arbitrarily increase balance or directlydeduction balance situation, Therefore does not match MINT, LIMIT or LEAK definition."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "BaseToken.transferFrom(address,address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[PERM] -> F1",
+        "summary": "Entry BaseToken.transferFrom(address,address,uint256); PermNode: E1, D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is AdvanceToken.transfer(address,uint256), which is subject to permission checks.",
+          "2. The first permission check at Node E1 ensures that the contract is not paused, which is a prerequisite for executing the transfer.",
+          "3. In Node D0, multiple permission checks are performed, including verifying that the sender's balance is sufficient (L409) and that the sender is not frozen (L413).",
+          "4. The function AdvanceToken._transfer has a permission check at Node IF0 that verifies if saleContract[_from] is false, which restricts the transfer based on the sender's status.",
+          "5. If the sender is marked as a sale contract, they cannot transfer tokens, effectively limiting their ability to sell.",
+          "6. The ability to control whether a user can transfer tokens based on their saleContract status indicates that the contract owner can limit trading for specific addresses.",
+          "7. Since the contract owner can manipulate the saleContract mapping, they can prevent users from transferring tokens, which aligns with the LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "AdvanceToken.transfer(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0[PERM] -> E1 -> IF0 -> D0 -> F1 -> IF0[PERM] -> D1 -> E1 -> IF0 -> D0 -> F1 -> D2[ASSET] -> F1 -> F1",
+        "summary": "Entry AdvanceToken.transfer(address,uint256); PermNode: E1, D0, IF0; AssetNode: D2"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, exists asset operations:L321: approvals[_from][msg.sender] = approvals[_from][msg.sender].sub(_value) and L323: balanceOf[_from] = balanceOf[_from].sub(_value). This indicates from _from deducted from address _value .",
+          "2. The balance change formula is:balanceOf[_from] = balanceOf[_from].sub(_value), This means _from balance decreases by _value, while _to balance increases by _value (L325: balanceOf[_to] = balanceOf[_to].add(_value)) .",
+          "3. because _from is a function parameter, privilege caller can arbitrarily specify _from address, thereforecan from arbitrary user balance deductedtoken, This matches the definition of token leaking.",
+          "4. because _from balance decreases, while _to balance increases, and _from is specified by the caller, causingtoken leak ."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "AdvanceToken.transferFrom(address,address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[PERM] -> F1",
+        "summary": "Entry AdvanceToken.transferFrom(address,address,uint256); PermNode: E1, D0"
+      }
+    },
+    {
+      "path_id": "path_4",
+      "path_type": "DIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function is AdvanceToken.mintToken(uint256), which is marked with a permission check at Node E1. This means only the owner can call this function.",
+          "2. At Node D0, the asset operation is performed: balanceOf[msg.sender] = balanceOf[msg.sender].add(mintSupply). This indicates that the balance of the caller (msg.sender) is increased by mintSupply.",
+          "3. The mintSupply is a parameter of the function and can be controlled by the owner when calling the function. Therefore, the owner can increase their balance without any restrictions.",
+          "4. The simulation shows that if the initial balance is 100 and mintSupply is a positive value, the new balance will be greater than 100, confirming that this a minting operation.",
+          "5. Since the owner can mint tokens at will, this path clearly falls under the definition of Hidden Mint."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_4",
+        "function_signature": "AdvanceToken.mintToken(uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> F1",
+        "summary": "Entry AdvanceToken.mintToken(uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_5",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is AdvanceToken.burn(uint256), which has a permission check at Node E1 that restricts access to the owner only.",
+          "2. At Node D0, there is an asset operation where the balance of the caller (msg.sender) is checked and then decreased: 'balanceOf[msg.sender] = balanceOf[msg.sender].sub(_value)'.",
+          "3. The balance change formula indicates that the balance of the caller is reduced by the value specified in the function parameter (_value).",
+          "4. The balance of the caller is guaranteed to decrease since the require statement ensures that the caller has enough balance to burn the tokens.",
+          "5. The caller can only burn their own tokens, which means they cannot specify another address to deduct tokens from, thus it does not fit the criteria for a direct leak to another address.",
+          "6. However, the ability to burn tokens means that the total supply is reduced, which could be seen as a form of value extraction from the token holders, as it reduces the overall circulating supply.",
+          "7. Since the function allows the owner to control the burning process and potentially manipulate the supply, it leans towards a leak in terms of value extraction from the overall token ecosystem."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_5",
+        "function_signature": "AdvanceToken.burn(uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[PERM] -> F1",
+        "summary": "Entry AdvanceToken.burn(uint256); PermNode: E1, D0"
+      }
+    },
+    {
+      "path_id": "path_6",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is AdvanceToken.burnFrom(address,uint256) which requires the caller to be the owner (Node E1). This indicates that only the owner can invoke this function, establishing a permission boundary.",
+          "2. In Node D0, the asset manipulation occurs: 'require(balanceOf[_from] >= _value)' ensures that the balance of the address specified by '_from' is sufficient before proceeding. The line 'balanceOf[_from] = balanceOf[_from].sub(_value)' decreases the balance of the '_from' address by '_value'.",
+          "3. The balance change formula is: balanceOf[_from] = balanceOf[_from] - _value. The address '_from' is a parameter provided to the function, meaning the owner can specify any address to deduct tokens from, not just their own.",
+          "4. Given that the owner can specify any address for '_from', this allows the owner to arbitrarily reduce the balance of any user without their consent, which fits the definition of a Leak.",
+          "5. The simulation shows that if the initial balance of '_from' is 100 and '_value' is 50, the new balance would be 50, indicating a decrease. This confirms the leak behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_6",
+        "function_signature": "AdvanceToken.burnFrom(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> F1",
+        "summary": "Entry AdvanceToken.burnFrom(address,uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'owned.transferOwnership(address)' is controlled by 'onlyOwner', which means only the owner can change the ownership of the sale contract.",
+          "The variable 'saleContract' can be modified by the function 'saleOwned.delSaleOwner(address)', which is also controlled by the owner.",
+          "In the affected target 'AdvanceToken._transfer(address,address,uint256)', there is a conditional check that prevents transfers if 'saleContract[_from] == false'.",
+          "This means that the owner can effectively disable transfers for any address by manipulating the 'saleContract' variable, thus limiting the ability of ordinary users to trade."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "owned.transferOwnership(address)",
+        "control_variable": "saleContract",
+        "targets": [
+          "AdvanceToken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_8",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'saleOwned.transferOwnership(address)' is controlled by 'onlyOwner', which means only the owner can change the ownership of the sale contract.",
+          "The control variable 'saleContract' can be modified by the owner through 'saleOwned.delSaleOwner(address)', which allows the owner to change the state of the sale contract.",
+          "In the affected target 'AdvanceToken._transfer(address,address,uint256)', there is a conditional check 'saleContract[_from] == false'. If the owner sets 'saleContract[_from]' to true, it would prevent transfers from that address, effectively limiting the ability of users to transfer tokens.",
+          "Since the owner has the ability to control the transfer conditions, this constitutes a limitation on the ability of ordinary users to freely transact."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "saleOwned.transferOwnership(address)",
+        "control_variable": "saleContract",
+        "targets": [
+          "AdvanceToken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_16",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'saleOwned.addSaleOwner(address)' is controlled by 'onlyOwner', which means only the owner can add sale owners.",
+          "The affected target 'AdvanceToken._transfer(address,address,uint256)' checks the condition 'saleContract[_from] == false'.",
+          "If the owner modifies the 'saleContract' mapping to set a specific address to true, it would prevent transfers from that address, effectively limiting the ability of users to trade.",
+          "This control over the 'saleContract' variable directly impacts whether users can execute transfers, thus classifying it as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "saleOwned.addSaleOwner(address)",
+        "control_variable": "saleContract",
+        "targets": [
+          "AdvanceToken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_17",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'saleOwned.delSaleOwner(address)' is controlled by 'onlyOwner', which means only the owner can execute this function.",
+          "This function modifies the 'saleContract' variable, which is used in the '_transfer' function of 'AdvanceToken'.",
+          "In the '_transfer' function, there is a conditional check that prevents transfers if 'saleContract[_from] == false'.",
+          "Since the owner can control the 'saleContract' status, they can effectively disable transfers for any user by setting 'saleContract[user] = false'.",
+          "This gives the owner the ability to limit the ability of users to sell or transfer their tokens, thus classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "saleOwned.delSaleOwner(address)",
+        "control_variable": "saleContract",
+        "targets": [
+          "AdvanceToken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_18",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'Pausable.addSaleOwner(address)' is controlled by 'onlyOwner', which means only the owner can add a sale owner.",
+          "This function modifies the 'saleContract' variable, which is used in the '_transfer' function to check if transfers are allowed.",
+          "In the '_transfer' function, the condition 'saleContract[_from] == false' determines whether the transfer can proceed or not.",
+          "If the owner sets 'saleContract[_from]' to true, it effectively prevents the transfer from occurring for that address, thus limiting the ability of regular users to trade.",
+          "Therefore, the ability of the owner to control the 'saleContract' variable directly impacts the transfer functionality for all users, classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Pausable.addSaleOwner(address)",
+        "control_variable": "saleContract",
+        "targets": [
+          "AdvanceToken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_19",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'Pausable.delSaleOwner(address)' is controlled by 'onlyOwner', which means only the owner can call this function.",
+          "This function modifies the 'saleContract' variable, which is used in the '_transfer' function of 'AdvanceToken'.",
+          "In the '_transfer' function, there is a conditional check that prevents transfers if 'saleContract[_from] == false'.",
+          "Thus, the owner can effectively control whether transfers can occur by modifying the 'saleContract' state, limiting the ability of regular users to execute transfers."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Pausable.delSaleOwner(address)",
+        "control_variable": "saleContract",
+        "targets": [
+          "AdvanceToken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_20",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The control function 'Pausable.transferOwnership(address)' can be executed only by the owner due to the 'onlyOwner' modifier, indicating a privileged access point.",
+          "This function directly influences the 'saleContract' variable, which is then referenced in the 'AdvanceToken._transfer(address,address,uint256)' function as a conditional check with 'saleContract[_from] == false'.",
+          "If the owner modifies the 'saleContract' variable, they can disable transfers for certain users (where 'saleContract[_from]' is true), effectively limiting the ability for those users to transact freely.",
+          "Because the transfer capability can be controlled by the owner through changing the state of 'saleContract', this indicates a potential limitation on the normal users' transfer abilities."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Pausable.transferOwnership(address)",
+        "control_variable": "saleContract",
+        "targets": [
+          "AdvanceToken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_28",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function BaseToken.addSaleOwner(address) is controlled by onlyOwner, which means only the owner can add a sale owner.",
+          "The affected target AdvanceToken._transfer(address,address,uint256) checks the condition saleContract[_from] == false, which implies that the owner can control whether a specific address can transfer tokens based on the saleContract state.",
+          "Since the owner can modify the saleContract mapping, they can effectively prevent or allow transfers for specific addresses, thus limiting the ability of ordinary users to trade."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "BaseToken.addSaleOwner(address)",
+        "control_variable": "saleContract",
+        "targets": [
+          "AdvanceToken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_29",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function BaseToken.delSaleOwner(address) is controlled by onlyOwner, which means only the owner can call this function.",
+          "This function modifies the saleContract variable, which is then checked in the AdvanceToken._transfer function.",
+          "The condition saleContract[_from] == false in the _transfer function indicates that if the saleContract for a particular address is true, the transfer will be restricted.",
+          "Thus, the owner has the ability to enable or disable transfers for any address, effectively limiting the ability of ordinary users to trade."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "BaseToken.delSaleOwner(address)",
+        "control_variable": "saleContract",
+        "targets": [
+          "AdvanceToken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_30",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `BaseToken.transferOwnership(address)` is controlled by `onlyOwner`, which means only the owner can change the ownership of the `saleContract`.",
+          "The `saleContract` variable is then used in the `AdvanceToken._transfer(address,address,uint256)` function as a condition to check if transfers are allowed: `saleContract[_from] == false`. This indicates that if the owner sets `saleContract[_from]` to true, transfers from that address will be disabled.",
+          "This gives the owner the ability to control whether or not transfers can occur, effectively limiting the ability of ordinary users to trade their tokens."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "BaseToken.transferOwnership(address)",
+        "control_variable": "saleContract",
+        "targets": [
+          "AdvanceToken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_38",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'AdvanceToken.addSaleOwner(address)' is controlled by the 'onlyOwner' modifier, which means only the owner can call this function.",
+          "This function modifies the 'saleContract' variable, which is used in the '_transfer' function to check if transfers are allowed based on the condition 'saleContract[_from] == false'.",
+          "If the owner sets 'saleContract[_from]' to true for a specific address, that address will be restricted from transferring tokens, effectively limiting their ability to sell.",
+          "Thus, the owner has the power to control the transferability of tokens for any address, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "AdvanceToken.addSaleOwner(address)",
+        "control_variable": "saleContract",
+        "targets": [
+          "AdvanceToken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_39",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'AdvanceToken.delSaleOwner(address)' is controlled by 'onlyOwner', which means only the owner can call this function.",
+          "This function modifies the 'saleContract' mapping, which is used in the '_transfer' function to check if transfers are allowed based on the condition 'saleContract[_from] == false'.",
+          "If the owner sets 'saleContract[_from]' to true for a specific address, it effectively prevents that address from transferring tokens, thus limiting the ability of regular users to trade.",
+          "The ability to control the 'saleContract' mapping directly impacts the transfer functionality, making it a clear case of limiting user transactions."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "AdvanceToken.delSaleOwner(address)",
+        "control_variable": "saleContract",
+        "targets": [
+          "AdvanceToken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_40",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'AdvanceToken.transferOwnership(address)' is controlled by 'onlyOwner', which means only the owner can change the ownership of the contract.",
+          "The control variable 'saleContract' is modified by the function 'saleOwned.delSaleOwner(address)', which can affect the transfer behavior.",
+          "In the '_transfer' function, there is a conditional check 'saleContract[_from] == false', which indicates that if the address is marked as true in 'saleContract', the transfer will be disabled.",
+          "This means that the owner can effectively control whether transfers can occur or not by modifying the 'saleContract' mapping, thus limiting the ability of normal users to trade."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "AdvanceToken.transferOwnership(address)",
+        "control_variable": "saleContract",
+        "targets": [
+          "AdvanceToken._transfer(address,address,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 1,
+    "LIMIT": 14,
+    "LEAK": 3,
+    "EMPTY": 2,
+    "ERROR": 0
+  }
+}

@@ -1,0 +1,118 @@
+{
+  "contract_name": "0xe0b7ad7f8f26e2b00c8b47b5df370f15f90fcf48",
+  "generated_at": "2026-02-27T11:35:45Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the Token.transfer function, which leads to the Token._transfer function where the actual transfer logic is implemented.",
+          "2. In Node D0, several permission checks are performed before the transfer occurs, including checks for zero addresses and balance sufficiency.",
+          "3. Node IF0 checks if 'firstBuyCompleted' is false and if the sender is the 'uniswapPool'. This indicates that the transfer can only proceed if these conditions are met, effectively limiting who can perform transfers based on the state of 'firstBuyCompleted'.",
+          "4. Node D1 further restricts the transfer by requiring that 'tx.origin' must be the owner, which means only the owner can initiate transfers until 'firstBuyCompleted' is set to true.",
+          "5. The combination of these permission checks means that the owner has control over whether transfers can occur, thus limiting the ability of regular users to trade freely.",
+          "6. Since the owner can control the state of 'firstBuyCompleted', they can effectively prevent all other users from transferring tokens until they decide to allow it, which fits the definition of a LIMIT rugpull."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "Token.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0[ASSET] -> IF0[PERM] -> D1[PERM] -> E1 -> D0 -> F1 -> D2[ASSET] -> F1 -> F1",
+        "summary": "Entry Token.transfer(address,uint256); PermNode: IF0, D1; AssetNode: D0, D2"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function Token.transferFrom, which checks the allowance of the sender against the amount to be transferred. This is a standard ERC20 check and does not indicate any rugpull behavior.",
+          "2. The first permission check (Node IF0) verifies that 'firstBuyCompleted' is false and that the sender is the uniswapPool. This indicates that the transfer is restricted based on the state of 'firstBuyCompleted'.",
+          "3. The second permission check (Node D1) requires that 'tx.origin' is equal to 'owner()'. This means that only the owner can complete the first buy, effectively limiting who can perform this action until the first buy is completed.",
+          "4. The asset nodes (D0 and D2) show that balances are being transferred from the sender to the recipient, which is normal behavior. However, the presence of the permission checks indicates that the owner can control whether transfers can occur based on the state of 'firstBuyCompleted'.",
+          "5. Since the owner has the ability to control the transfer process and can prevent normal users from executing transfers until a certain condition is met, this behavior aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "Token.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0[ASSET] -> IF0[PERM] -> D1[PERM] -> E1 -> D0 -> F1 -> D2[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry Token.transferFrom(address,address,uint256); PermNode: IF0, D1; AssetNode: D0, D0, D2, D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Token.setUniswapPool(address) is controlled by onlyOwner, which means only the owner can set the uniswapPool address.",
+          "In the _transfer function, there is a conditional check that prevents transfers if firstBuyCompleted is false and the sender is the uniswapPool.",
+          "This means that the owner can effectively control whether transfers can occur by setting the uniswapPool address and the state of firstBuyCompleted, thus limiting the ability of regular users to trade."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Token.setUniswapPool(address)",
+        "control_variable": "uniswapPool",
+        "targets": [
+          "Token._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Token.setUniswapPool(address) is controlled by onlyOwner, which means only the owner can set the uniswapPool address.",
+          "The variable firstBuyCompleted is checked in the Token._transfer function, specifically in the condition '!firstBuyCompleted && sender == uniswapPool'.",
+          "If the owner sets firstBuyCompleted to false and controls the uniswapPool, they can effectively prevent transfers from occurring for users who are not the owner, thus limiting their ability to sell.",
+          "This control over the transfer process directly aligns with the definition of LIMIT, as the owner can manipulate the state of firstBuyCompleted to restrict trading."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Token.setUniswapPool(address)",
+        "control_variable": "firstBuyCompleted",
+        "targets": [
+          "Token._transfer(address,address,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 4,
+    "LEAK": 0,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

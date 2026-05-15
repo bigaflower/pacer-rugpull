@@ -1,0 +1,222 @@
+{
+  "contract_name": "0x4fc15c91a9c4a9efb404174464687e8e128730c2",
+  "generated_at": "2026-02-25T02:47:01Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, execute `_balances[holder] = _balances[holder].sub(value)`, This indicates from `holder` balance deducted `value`, therefore balance is decrease .",
+          "2. `holder` is function parameter, means The privileged user can arbitrarily specifyaffected account, rather than limited to the caller themselves, This matches the definition of token leaking.",
+          "3. because `value` is provided by the function parameter, The privileged user can control this value, thereforecan causingarbitrary account balance decreases.",
+          "4. In this path, there is nobalance increasesoperation, and The privileged user can directlyother user balance, matches the LEAK definition."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "STAT.lock(address,uint256,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry STAT.lock(address,uint256,uint256); PermNode: E1; AssetNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, execute `_balances[holder] = _balances[holder].sub(value)`, This indicates from holder deducted from the balance of value .",
+          "2. here holder is specified by the parameter, means The privileged user can arbitrarily specify account to deductionits balance, rather than limited to the caller themselves, This matches the definition of token leaking.",
+          "3. At node D0, execute `_balances[from] = _balances[from].sub(value)`, This indicates from msg.sender deducted from the balance of value, althoughis transfer, but, The privileged user can throughoperationto control .",
+          "4. Therefore, The privileged user can call transferWithLock function, specify arbitrary holder to deductionits balance, and noprovide compensation, This matches the leak tokencharacteristic."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "STAT.transferWithLock(address,uint256,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry STAT.transferWithLock(address,uint256,uint256); PermNode: E1; AssetNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is STAT.unlock(address,uint256), which has permission checks at nodes E1 and D0.",
+          "2. At node D0, the code checks if the timelockList for the holder has a valid index: require(timelockList[holder].length > idx). This ensures that the holder has a valid lock entry.",
+          "3. At node D0 (depth=1), the asset operation occurs: _balances[holder] = _balances[holder].add(releaseAmount). This indicates that the balance of the holder is increased by releaseAmount.",
+          "4. The releaseAmount is not defined in the provided nodes, but since it is added to the holder's balance, it suggests that the holder's balance is increasing.",
+          "5. However, the function allows the admin or owner to unlock funds for any holder, which means they can control who receives the releaseAmount. If the holder is not the caller, this could lead to a situation where the admin can manipulate balances of arbitrary users.",
+          "6. Since the admin can specify the holder and increase their balance, this could be seen as a potential leak of tokens from other users if the admin decides to unlock funds for themselves or others at the expense of other holders.",
+          "7. Therefore, while the balance of the holder is increasing, the ability of the admin to control this process and potentially manipulate balances leads to the classification of LEAK."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "STAT.unlock(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[PERM] -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry STAT.unlock(address,uint256); PermNode: E1, D0; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'Ownable.transferOwnership(address)' is protected by the 'onlyOwner' modifier, which means only the current owner can change the ownership.",
+          "This ownership transfer affects the 'owner' variable, which is crucial for the conditional check in 'STAT.balanceOf(address)'.",
+          "The condition 'timelockList[owner].length > 0' indicates that the ability to check balances is dependent on the current owner, which can be changed by the owner.",
+          "If the owner decides to transfer ownership, they can potentially lock or unlock access to certain functionalities, thus limiting the ability of other users to interact with the contract freely."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "owner",
+        "targets": [
+          "STAT.balanceOf(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function AdminRole.transferOwnership(address) is controlled by the onlyOwner modifier, which means only the owner can call this function.",
+          "This function allows the owner to change the ownership of the contract, which could potentially allow the new owner to manipulate the state of the contract, including the ability to control whether transfers can occur.",
+          "The affected target STAT.balanceOf(address) is checked against a condition that depends on the owner, specifically timelockList[owner].length > 0. If the owner is changed, this condition could be manipulated to restrict or allow transfers based on the new owner's actions.",
+          "Since the owner has the ability to control the transfer conditions, this represents a limitation on the ability of regular users to freely transact, thus categorizing it as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "AdminRole.transferOwnership(address)",
+        "control_variable": "owner",
+        "targets": [
+          "STAT.balanceOf(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_2",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'Pausable.transferOwnership(address)' is controlled by 'onlyOwner', which means only the owner can change the ownership of the contract.",
+          "This ownership transfer can affect the ability to call other functions, including those that may control trading or transfer functionalities.",
+          "The affected target 'STAT.balanceOf(address)' has a conditional check that depends on 'timelockList[owner].length > 0'. If the owner can change, they can manipulate the conditions under which balances are checked or modified.",
+          "Thus, the owner has the ability to limit or control the trading status of users based on their ownership status, which fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Pausable.transferOwnership(address)",
+        "control_variable": "owner",
+        "targets": [
+          "STAT.balanceOf(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_3",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function ERC20Pausable.transferOwnership(address) is controlled by onlyOwner, meaning only the owner can change the ownership of the contract.",
+          "The affected target STAT.balanceOf(address) has a conditional check that depends on the owner: 'timelockList[owner].length > 0'.",
+          "If the owner is changed, it could potentially affect the ability of users to interact with the balance check, thus limiting their ability to transfer tokens based on the state of the timelockList.",
+          "Since the owner can control the ownership and indirectly influence the transfer conditions, this represents a limitation on user transactions."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "ERC20Pausable.transferOwnership(address)",
+        "control_variable": "owner",
+        "targets": [
+          "STAT.balanceOf(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_4",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function STAT.transferOwnership(address) is controlled by the onlyOwner modifier, which means only the owner can call this function.",
+          "This function allows the owner to change the ownership of the contract, which could potentially allow the new owner to manipulate the state of the contract, including the ability to control the transfer of tokens.",
+          "The affected target, STAT.balanceOf(address), is checked under the condition 'timelockList[owner].length > 0'. If the owner is changed, the new owner could potentially manipulate the timelockList, affecting the ability of users to transfer tokens.",
+          "Since the owner has the ability to change ownership and potentially control the transfer conditions, this represents a limiting behavior on the ability of users to freely trade their tokens."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "STAT.transferOwnership(address)",
+        "control_variable": "owner",
+        "targets": [
+          "STAT.balanceOf(address)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 5,
+    "LEAK": 3,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

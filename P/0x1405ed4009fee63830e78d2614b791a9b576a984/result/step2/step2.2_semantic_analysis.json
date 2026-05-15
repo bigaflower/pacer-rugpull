@@ -1,0 +1,531 @@
+{
+  "contract_name": "0x1405ed4009fee63830e78d2614b791a9b576a984",
+  "generated_at": "2025-12-09T08:11:38Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The ownership can be transferred via the Owned.transferOwnership(address) function, which is controlled by the onlyOwner modifier.",
+          "2. Upon transferring ownership, the new address is stored in the variable 'newun'. This pivotal as it can affect subsequent transfers.",
+          "3. The affected function SmuzzySmallDoge.transferFrom checks if 'newun' is equal to address(0) to determine if the transfer can proceed.",
+          "4. The condition 'newun == address(0)' can be manipulated by the owner to enable or disable transfers. If the owner sets 'newun' to any address other than address(0), this would effectively block transfers that rely on this condition.",
+          "5. Since the owner has control over the state that directly affects the ability to transfer tokens, this meets the criteria for a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Owned.transferOwnership(address)",
+        "control_variable": "newun",
+        "targets": [
+          "SmuzzySmallDoge.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "Node E1 specifies that only the owner can call the transferOwnership function, establishing a privilege over the ownership of the contract. This means the owner can control address 'newun'.",
+          "Following the transferOwnership call, potentially to any address specified by the owner, the new owner can invoke SmuzzySmallDoge.transfernewun and provide any arbitrary address as 'newun'.",
+          "The transfer function in Node D0 modifies balances: if the transfer occurs from an arbitrary address specified by the owner, it highlights that the owner can drain assets from user accounts, as it allows direct manipulation of balances using external parameters (not limited to the caller's own balance).",
+          "As the owner can set 'newun' to an address of their choice and subsequently invoke a transfer, they can effectively take funds from anyone's balance without equal compensation - classifying this as a leak."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Owned.transferOwnership(address)",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_2",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The path begins with the function Owned.transferOwnership(address), which is a privileged operation restricted to the owner. This indicates that ownership can be transferred, allowing one address (the owner) to control the contract.",
+          "Subsequently, the new owner's address is set to newun in Owned.acceptOwnership(), which means the permissions and controls could change based on who the new owner is.",
+          "The affected target function, TokenBEP20.transferFrom(address,address,uint256), checks the condition where from != address(0) and newun == address(0). This implies that a valid from address must be provided, while newun being address(0) creates a potential scenario where any valid transfer could be restricted.",
+          "Since the ownership transfer impacts the control over transfers and can lead to new scenarios affecting the ability of users to transfer tokens freely, this falls under the 'Limiting Sell' category. If the new owner sets conditions limiting user transactions, normal users may face restrictions."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Owned.transferOwnership(address)",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_3",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.8,
+        "reasoning": [
+          "1. The transferOwnership function in Owned can only be called by the current owner, which is a privileged action [PERM].",
+          "2. Once ownership is transferred, a new owner can potentially call the SmuzzySmallDoge.transfer function with arbitrary addresses and values that can lead to token leakage.",
+          "3. The SmuzzySmallDoge.transfer function modifies the balances state variable, meaning it could decrease the balance of any given address (from parameter) and potentially increase the balance of another address (to parameter) without restriction on who those addresses are, causing leakage of tokens from arbitrary users to the new owner.",
+          "4. Since the source of the balance decrease (the from address) can be any address chosen by the new owner through its permissions, it validates the conditions for a leaking token."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Owned.transferOwnership(address)",
+        "control_variable": "newun",
+        "targets": [
+          "SmuzzySmallDoge.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_24",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.85,
+        "reasoning": [
+          "1. The control source `Owned.acceptOwnership()` indicates that an owner can accept ownership of a contract. This could imply the owner has special rights to manipulate the contract.",
+          "2. The control variable `newun` is checked in the target function `SmuzzySmallDoge.transferFrom(address,address,uint256)`, specifically with the condition `newun == address(0)`. This means that the ability to execute transfers could depend on whether `newun` is in a specific state controlled by the owner.",
+          "3. If the owner sets `newun` to a non-zero address, it could potentially block the transfer by failing the conditional check, effectively limiting the ability of users to execute transfers.",
+          "4. The presence of a dependency on `newun` being `address(0)` to allow transfers gives the owner a direct mechanism to limit transactions for users.",
+          "5. Therefore, the path exhibits limiting behavior as the owner can control the transfer functionality through the state of `newun`."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Owned.acceptOwnership()",
+        "control_variable": "newun",
+        "targets": [
+          "SmuzzySmallDoge.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_25",
+      "path_type": "INDIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "ERROR",
+        "confidence": 0.0,
+        "reasoning": [
+          "{\n \"category\": \"LEAK\",\n \"confidence\": 0.9,\n \"reasoning\": [\n \"The function `Owned.acceptOwnership()` allows the contract owner to take ownership, which can potentially give them control over the `newun` variable that affects the transfer mechanics.\",\n \"Within the `SmuzzySmallDoge.transfernewun(address)`, the variable `newun` is used to determine the recipient address for the transfer, indicating that the owner can dictate where tokens are sent.\",\n \"The `TokenBEP20.transfer(address, uint256)` function modifies balances, specifically allowing the owner to deduct from one address and potentially transfer to another, which constitutes a leak since the owner can specify addresses at will.\",\n \"The control given to the owner to manipulate `newun` means they can execute transfers that directly affect other users' balances, leading to a situation where others' tokens could be redirected to the owner's address without any valid transaction from the user.\"\n ],\n \"key_nodes\": [\n \"E1\", // Accepting ownership gives control over the state\n \"D0\" // The transfer function modifies balances based on user-specified addresses\n ]\n}"
+        ],
+        "key_nodes": []
+      },
+      "overview": {
+        "source": "Owned.acceptOwnership()",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_26",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The control flow starts from the public function Owned.acceptOwnership() at node E1, which implies a control mechanism over the ownership rights.",
+          "The control variable 'newun' can be set by the function SmuzzySmallDoge.transfernewun(address), indicating that this variable is influenced by the owner/privileged accounts.",
+          "The affected target at node IF0 checks a conditional statement involving 'newun'. If 'newun' is equal to address(0), it potentially allows transfers, affecting the transfer logic and enabling or disabling transactions.",
+          "Since the admin can manipulate the 'newun' value, they can control whether transfers happen or not, effectively limiting user transactions.",
+          "Thus, the control from the privileged function allows a direct impact on whether normal users can conduct transfers, which classifies it as a LIMIT type behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Owned.acceptOwnership()",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_27",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path includes the `SmuzzySmallDoge.transfer(address,uint256)` function which modifies the `balances`, potentially allowing the transfer of tokens. The control source is `Owned.acceptOwnership()`, which implies ownership privileges may apply.",
+          "Given the ability to change the variable `newun`, which is used as a recipient address in the transfer function, this indicates that the owner has the capacity to specify arbitrary addresses for token transfers.",
+          "Since the `from` address in the transfer operation is likely not always equal to the owner (caller), this poses a risk where the owner can transfer tokens from arbitrary addresses to themselves, allowing a potential leak of funds.",
+          "Thus, because the owner can directly adjust the recipient address (`newun`) and transfer funds from any address that may not belong to the caller, it meets the definition of Leaking Token."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Owned.acceptOwnership()",
+        "control_variable": "newun",
+        "targets": [
+          "SmuzzySmallDoge.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_48",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `TokenBEP20.transferOwnership(address)` is restricted to the owner by the modifier `onlyOwner`, indicating a privilege control.",
+          "Upon calling `acceptOwnership()`, the owner variable is updated, and this implies that the ownership can be transferred to another address by the owner.",
+          "In the `SmuzzySmallDoge.transferFrom(address,address,uint256)` function, there is a conditional check that depends on `newun`. Specifically, `newun` is required to be address(0) for the transfer to happen, and `newun` is modified by the owner via the function `SmuzzySmallDoge.transfernewun(address)`.",
+          "Since the owner can change `newun` and subsequently control whether transfers are allowed or denied (as the function checks the value of `newun`), this means the owner has the ability to restrict trading for users by changing the value of `newun`, thereby creating a limitation on transferring tokens for any user."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.transferOwnership(address)",
+        "control_variable": "newun",
+        "targets": [
+          "SmuzzySmallDoge.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_49",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.85,
+        "reasoning": [
+          "The path starts with `TokenBEP20.transferOwnership(address)` at node E1, which is controlled by `onlyOwner`. This indicates that only the contract owner can change the ownership.",
+          "Upon transferring ownership, the control variable `newun` can be set to an arbitrary address by the owner as the method `SmuzzySmallDoge.transfernewun(address)` modifies the `newun` variable.",
+          "The method `TokenBEP20.transfer(address, uint256)` at node D0 is where the balance writes occur, and the ability to modify ownership gives the owner control over `newun`, which suggests they can potentially interfere with transfers to/from that address.",
+          "The owner can stop transfers or allow transfers from their own controlled address, thereby limiting users' ability to trade freely based on the state of ownership, leading to 'Limiting Sell' classification."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.transferOwnership(address)",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_50",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'TokenBEP20.transferOwnership(address)' has the 'onlyOwner' modifier, which means only the current owner can call this function and transfer ownership to a new address. This indicates a control over the ownership of the contract, potentially affecting functionality.",
+          "The control variable 'newun' can be set through the 'SmuzzySmallDoge.transfernewun(address)' function, which appears to be callable by the owner as well.",
+          "In the affected target 'TokenBEP20.transferFrom(address,address,uint256)', there is a conditional check on 'newun == address(0)'.",
+          "If the owner sets 'newun' to a non-zero address, it could prevent transfers from occurring for anyone other than that address, effectively limiting the ability of other users to transfer tokens."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.transferOwnership(address)",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_51",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.85,
+        "reasoning": [
+          "1. The path starts from the `TokenBEP20.transferOwnership(address)` which is a privileged function that can change the ownership of the token contract, asserting control over further actions (NodeID: E1).",
+          "2. The use of `onlyOwner` modifier indicates that only the current owner can call this function. This a privilege that allows the owner to control critical parameters.",
+          "3. Following the transfer of ownership, the new owner can execute the function `SmuzzySmallDoge.transfernewun(address)`, which sets a new variable that can directly influence the transfer logic (depth 2).",
+          "4. In the `SmuzzySmallDoge.transfer(address,uint256)` (NodeID: D0), the balances are being modified, but this execution could be subjected to the control of the new owner immediately after ownership transfer.",
+          "5. Since the new owner has the ability to change parameters manipulating transfer controls, this constitutes the ability to limit the transfers of standard users by enabling/disabling transfers or modifying allowances, thus categorizing this path as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.transferOwnership(address)",
+        "control_variable": "newun",
+        "targets": [
+          "SmuzzySmallDoge.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_72",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "1. The control source for the path is the `TokenBEP20.acceptOwnership()` function, which allows an owner to take ownership of the contract.",
+          "2. The control chain shows that the `newun` variable is set to an address, which directly affects the `SmuzzySmallDoge.transferFrom(address,address,uint256)` function.",
+          "3. The `transferFrom` function's conditional check includes `newun == address(0)`, indicating that if `newun` is set by a privileged owner, it could control whether transfers are allowed for the users.",
+          "4. Therefore, this means that once the control source is executed, the owner can define `newun` to limit or control the transfer function behavior, limiting the ability of normal users to make transactions."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.acceptOwnership()",
+        "control_variable": "newun",
+        "targets": [
+          "SmuzzySmallDoge.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_73",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves the function 'TokenBEP20.acceptOwnership()' which allows a new owner to take control.",
+          "2. This owner can subsequently call 'TokenBEP20.transfer(address,uint256)', where the from field can be controlled by arbitrary addresses through 'newun'.",
+          "3. Given that 'newun' allows for any address to be specified by the owner, this enables them to decrease the balance of any user (from) and increase their own balance or transfer to another predetermined address (to).",
+          "4. This behavior aligns with the definition of a Leak as it allows the owner to potentially reduce the balance of others without equivalent compensation."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.acceptOwnership()",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_74",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function TokenBEP20.acceptOwnership() allows a privileged user (the owner) to take ownership, which could change the state variable newun.",
+          "The affected target TokenBEP20.transferFrom(address,address,uint256) checks two conditions: 'from != address(0)' and 'newun == address(0)'.",
+          "If a privileged user sets newun to a valid address, they can block transfers from being executed by changing the state of newun, effectively controlling the ability for normal users to transfer tokens.",
+          "Since the ownership can be acquired and manipulated, the privileges express a limiting behavior on normal transfers."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.acceptOwnership()",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_75",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path ID 'indirect_75' suggests that the function 'TokenBEP20.acceptOwnership()' can be called publicly, which implies potential misuse by a privileged user.",
+          "The control variable 'newun' is modified through 'SmuzzySmallDoge.transfernewun(address)', which indicates that the address to transfer funds to is not fixed and can potentially be manipulated by the privileged caller.",
+          "The 'SmuzzySmallDoge.transfer(address,uint256)' function, which modifies the 'balances', indirectly allows the privileged address to deduct tokens from arbitrary users' balances (if 'newun' refers to a user balance). This matches the behavior of token leakage.",
+          "Given the presence of the ability to specify arbitrary addresses when calling transfer function, this indicates a scenario where someone with ownership privileges could leak tokens from non-caller addresses."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.acceptOwnership()",
+        "control_variable": "newun",
+        "targets": [
+          "SmuzzySmallDoge.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_96",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "In the path, `TokenBEP20.transfernewun(address)` function limit, owner, [PERM] node.",
+          "the functionwill `SmuzzySmallDoge.transferFrom(address,address,uint256)` behavior.",
+          "at `SmuzzySmallDoge.transferFrom` conditionsin, `newun` is `address(0)`, `newun` is its address, then transfer . This means owner can through control `newun` valueto limit user transfer .",
+          "because only owner can `newun`, while this value transfer conditions, shows owner can limit ordinary user transaction, Therefore matches the LIMIT definition."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.transfernewun(address)",
+        "control_variable": "newun",
+        "targets": [
+          "SmuzzySmallDoge.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_97",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'TokenBEP20.transfernewun(address)' can be called only by the owner due to the 'onlyOwner' modifier, allowing them to trigger transfers to any address specified in the argument 'newun'.",
+          "The subsequent call to 'TokenBEP20.transfer(address,uint256)' is responsible for modifying balances of users. If 'newun' is a different address than the caller's address, it could result in the owner reducing the balance of the caller (from the context of the transfer) and transferring funds to an arbitrary address.",
+          "The critical aspect here is the control the owner has over transferring tokens from accounts that are not explicitly the caller's own, which qualifies this as a leak. Thus, this indirect behavior illustrates the ability of the owner to siphon off tokens from arbitrary users by using their unspecified 'newun' address."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.transfernewun(address)",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_98",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The control function 'TokenBEP20.transfernewun(address)' has the modifier 'onlyOwner', meaning only the contract owner can call it.",
+          "This function modifies the variable 'newun'.",
+          "In the affected target 'TokenBEP20.transferFrom(address,address,uint256)', the condition 'newun == address(0)' directly impacts whether transfers can occur.",
+          "Since the owner can set 'newun' to any address, they can control whether transfers from 'from' are allowed or denied based on the state of 'newun'.",
+          "Thus, the owner has the power to limit or enable trading by adjusting 'newun', fulfilling the criteria for a Limit rugpull."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.transfernewun(address)",
+        "control_variable": "newun",
+        "targets": [
+          "TokenBEP20.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_99",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "The control function TokenBEP20.transfernewun(address) is restricted to the owner (onlyOwner modifier), allowing them to potentially specify any address (newun) as the recipient for the transfer of tokens.",
+          "In the affected function SmuzzySmallDoge.transfer(address,uint256), the balances of users can be changed based on arbitrary addresses, meaning that the owner can deduct tokens from any user's balance and potentially direct these to their own address or another specified address.",
+          "Since the owner has full control to deduct from one specified account (newun) and increase their own balance or any other address without requiring that the deducted amount corresponds to their own holdings, this behavior constitutes a leak."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TokenBEP20.transfernewun(address)",
+        "control_variable": "newun",
+        "targets": [
+          "SmuzzySmallDoge.transfer(address,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 12,
+    "LEAK": 7,
+    "EMPTY": 0,
+    "ERROR": 1
+  }
+}

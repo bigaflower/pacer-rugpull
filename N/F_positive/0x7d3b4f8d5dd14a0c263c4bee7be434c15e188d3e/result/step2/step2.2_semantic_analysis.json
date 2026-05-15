@@ -1,0 +1,460 @@
+{
+  "contract_name": "0x7d3b4f8d5dd14a0c263c4bee7be434c15e188d3e",
+  "generated_at": "2026-02-25T12:35:16Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path starts with the Moe.transfer function, which leads to Moe._transferFrom where various permission checks are performed.",
+          "2. Node D0 checks if trading is enabled with the condition 'require(tradingEnabled, Trading not open, yet)'. Since tradingEnabled is initialized to false, this condition will always fail unless changed by a privileged user.",
+          "3. The presence of the tradingEnabled variable, which can be controlled by a privileged user, indicates that they can prevent all transfers by setting it to false, effectively limiting the ability of normal users to trade.",
+          "4. The checks in IF0, IF1, IF2, and D2 further restrict transfers based on whether the sender and recipient are exempt from limits and whether the recipient's balance after the transfer would exceed a maximum wallet amount.",
+          "5. Since the privileged user can control tradingEnabled and the limits on transfers, this path clearly demonstrates limiting behavior."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D0",
+          "IF1",
+          "IF2",
+          "D2"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "Moe.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> IF0[PERM] -> D0[PERM] -> D1 -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> D3[ASSET] -> F1 -> F1",
+        "summary": "Entry Moe.transfer(address,uint256); PermNode: IF0, D0, IF1, IF2, D2; AssetNode: D3"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with a permission check at Node IF0, ensuring that the allowance is not the maximum value, which is a standard check for transfer functions.",
+          "2. At Node D0, the allowance is decreased by the amount being transferred, indicating a valid transfer process.",
+          "3. Node D0 in Moe._transferFrom checks if trading is enabled (tradingEnabled = false), which means that transfers are currently disabled for all users, indicating a control over trading.",
+          "4. The checks at Node IF1 and IF2 ensure that both the sender and recipient are not exempt from limits, further enforcing restrictions on who can trade.",
+          "5. Node D2 imposes a maximum wallet limit, which restricts how much a recipient can hold, thus limiting trading capabilities.",
+          "6. The combination of these checks indicates that the contract has the ability to restrict trading for users based on the tradingEnabled state and wallet limits, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D0",
+          "D2"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "Moe.transferFrom(address,address,uint256)",
+        "trace": "E1 -> IF0[PERM] -> D0[ASSET] -> D1 -> E1 -> IF0[PERM] -> D0[PERM] -> D1 -> IF1[PERM] -> IF2[PERM] -> D2[PERM] -> D3[ASSET] -> F1 -> F1",
+        "summary": "Entry Moe.transferFrom(address,address,uint256); PermNode: IF0, IF0, D0, IF1, IF2, D2; AssetNode: D0, D3"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function 'Ownable.renounceOwnership()' which is controlled by 'onlyOwner'. This indicates that only the owner can call this function, thus controlling the ownership of the contract.",
+          "The function 'Moe.enableTrading()' modifies the variable 'tradingEnabled', which is used in the conditional check within 'Moe._transferFrom(address,address,uint256)'.",
+          "The condition 'require(tradingEnabled, 'Trading not open, yet')' means that if 'tradingEnabled' is set to false, any transfer attempts will fail, effectively limiting the ability of users to trade.",
+          "Since the owner can enable or disable trading at will, this gives them the power to restrict trading for all users, which fits the definition of a LIMIT rugpull."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "tradingEnabled",
+        "targets": [
+          "Moe._transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_2",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'Ownable.renounceOwnership()' allows the owner to renounce ownership, which could lead to the modification of the 'automatedMarketMakerPairs' variable.",
+          "The 'Moe._transferFrom(address,address,uint256)' function checks the condition 'automatedMarketMakerPairs[sender]', which means that if the owner sets this variable to true or false, it directly affects whether transfers can occur for certain addresses.",
+          "This means that the owner can effectively control who can trade by modifying the 'automatedMarketMakerPairs' mapping, thus limiting the ability of ordinary users to execute transfers."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "automatedMarketMakerPairs",
+        "targets": [
+          "Moe._transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_3",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function 'Ownable.renounceOwnership()' which is controlled by 'onlyOwner'. This means that only the owner can call this function, allowing them to remove limits on the '_maxWalletAmount'.",
+          "Once the limits are removed, the function 'Moe._transferFrom(address,address,uint256)' checks if the recipient's balance plus the amount being transferred is less than or equal to '_maxWalletAmount'. If the owner has removed this limit, they can effectively control whether transfers can occur or not.",
+          "This control over '_maxWalletAmount' directly impacts the ability of regular users to transfer tokens, as they may be restricted from doing so if the limit is set to a low value or removed entirely by the owner.",
+          "Thus, the owner has the ability to limit or allow transfers, which fits the definition of a LIMIT rugpull."
+        ],
+        "key_nodes": [
+          "E1",
+          "D2"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "_maxWalletAmount",
+        "targets": [
+          "Moe._transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_4",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function 'Ownable.transferOwnership(address)' which is controlled by 'onlyOwner'. This indicates that only the owner can change the ownership of the contract, which is a privileged action.",
+          "The control chain shows that the owner can call 'Moe.enableTrading()', which modifies the 'tradingEnabled' variable. This variable is then used in the conditional check of the '_transferFrom' function.",
+          "The condition 'require(tradingEnabled, 'Trading not open, yet')' in the '_transferFrom' function means that if 'tradingEnabled' is set to false, the transfer will be blocked for all users except the owner, effectively limiting their ability to trade.",
+          "Since the owner can enable or disable trading at will, this creates a scenario where ordinary users cannot freely trade, thus classifying this path as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "tradingEnabled",
+        "targets": [
+          "Moe._transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_6",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'Ownable.transferOwnership(address)' is marked with 'onlyOwner', indicating that only the owner can call this function. This gives the owner control over the ownership of the contract.",
+          "The function 'Moe.setAutomatedMarketMakerPair(address,bool)' allows the owner to modify the 'automatedMarketMakerPairs' variable, which is used in the '_transferFrom' function as a conditional check.",
+          "In the '_transferFrom' function, the condition 'automatedMarketMakerPairs[sender]' determines whether the transfer can proceed based on whether the sender is part of the automated market maker pairs. If the owner sets this variable to false for certain addresses, it effectively limits those addresses from transferring tokens.",
+          "Thus, the owner has the ability to control who can and cannot trade by modifying the 'automatedMarketMakerPairs', which directly impacts the transfer functionality for users."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "automatedMarketMakerPairs",
+        "targets": [
+          "Moe._transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_7",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'Ownable.transferOwnership(address)' is controlled by 'onlyOwner', allowing the owner to change the ownership of the contract.",
+          "The control chain shows that the owner can call 'Moe.removeLimits()', which modifies the '_maxWalletAmount' variable.",
+          "The '_transferFrom' function checks if the recipient's balance plus the amount being transferred is less than or equal to '_maxWalletAmount'. If the owner sets '_maxWalletAmount' to a low value or removes limits, they can effectively prevent normal users from transferring tokens, thus controlling the trading ability of users.",
+          "This creates a scenario where the owner can limit the ability of users to sell or transfer their tokens, fitting the definition of a LIMIT rugpull."
+        ],
+        "key_nodes": [
+          "E1",
+          "D2"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "_maxWalletAmount",
+        "targets": [
+          "Moe._transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_8",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function Moe.renounceOwnership() is marked with onlyOwner, indicating that only the owner can call this function, which allows them to renounce ownership and potentially affect tradingEnabled.",
+          "2. The function Moe.enableTrading() modifies the tradingEnabled variable, which is checked in the Moe._transferFrom function.",
+          "3. The conditional check in Moe._transferFrom requires tradingEnabled to be true for transfers to proceed. If the owner renounces ownership and disables trading, it would prevent all users from executing transfers.",
+          "4. This means the owner has the ability to control whether trading is enabled or disabled, directly impacting the ability of ordinary users to trade, thus fitting the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Moe.renounceOwnership()",
+        "control_variable": "tradingEnabled",
+        "targets": [
+          "Moe._transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_10",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Moe.renounceOwnership() is marked with onlyOwner, indicating that only the owner can call it, which gives them control over the contract's ownership.",
+          "The control chain shows that the owner can set the automatedMarketMakerPairs variable through Moe.setAutomatedMarketMakerPair(address,bool). This variable is used in the conditional check within Moe._transferFrom(address,address,uint256).",
+          "If the owner sets automatedMarketMakerPairs[sender] to false, it would prevent transfers from that sender, effectively limiting the ability of ordinary users to trade.",
+          "Thus, the owner has the ability to control whether transfers can occur based on the state of automatedMarketMakerPairs, which directly impacts the trading capabilities of users."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Moe.renounceOwnership()",
+        "control_variable": "automatedMarketMakerPairs",
+        "targets": [
+          "Moe._transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_11",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Moe.renounceOwnership() allows the owner to relinquish ownership, which indirectly affects the control variable _maxWalletAmount through Moe.removeLimits().",
+          "The _transferFrom function checks if the recipient's balance plus the amount being transferred does not exceed _maxWalletAmount, unless the recipient is exempt from this limit.",
+          "Since the owner can modify _maxWalletAmount, they can effectively control whether transfers to certain addresses are allowed or not, thus limiting the ability of ordinary users to transact freely.",
+          "This creates a scenario where the owner can prevent users from transferring tokens by adjusting the maximum wallet amount, which fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D2"
+        ]
+      },
+      "overview": {
+        "source": "Moe.renounceOwnership()",
+        "control_variable": "_maxWalletAmount",
+        "targets": [
+          "Moe._transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_12",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Moe.transferOwnership(address) is controlled by onlyOwner, allowing the owner to change the ownership of the contract.",
+          "The control chain shows that the owner can call Moe.enableTrading(), which modifies the tradingEnabled variable.",
+          "The affected target Moe._transferFrom(address,address,uint256) has a conditional check that requires tradingEnabled to be true for transfers to proceed.",
+          "This means that the owner can enable or disable trading at will, effectively controlling whether ordinary users can execute transfers.",
+          "Since the ability to control trading directly impacts the ability of users to trade, this path fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Moe.transferOwnership(address)",
+        "control_variable": "tradingEnabled",
+        "targets": [
+          "Moe._transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_14",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Moe.transferOwnership(address) is controlled by onlyOwner, which means only the owner can change the ownership of the contract.",
+          "The control chain shows that the owner can call Moe.setAutomatedMarketMakerPair(address,bool), which modifies the automatedMarketMakerPairs variable.",
+          "The affected target Moe._transferFrom(address,address,uint256) checks the condition automatedMarketMakerPairs[sender]. If the owner sets this variable to false for certain addresses, it can effectively block those addresses from transferring tokens.",
+          "This means the owner has the ability to limit or control who can trade, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Moe.transferOwnership(address)",
+        "control_variable": "automatedMarketMakerPairs",
+        "targets": [
+          "Moe._transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_15",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Moe.transferOwnership(address) is controlled by onlyOwner, allowing the owner to change the ownership of the contract.",
+          "The control chain shows that the owner can call Moe.removeLimits(), which modifies the _maxWalletAmount variable.",
+          "In the Moe._transferFrom(address,address,uint256) function, there is a conditional check that requires the recipient's balance plus the amount to be less than or equal to _maxWalletAmount, or the recipient must be exempt from the max wallet limit.",
+          "By changing _maxWalletAmount, the owner can effectively control whether transfers to certain addresses are allowed or not, thus limiting the ability of ordinary users to transact freely."
+        ],
+        "key_nodes": [
+          "E1",
+          "D2"
+        ]
+      },
+      "overview": {
+        "source": "Moe.transferOwnership(address)",
+        "control_variable": "_maxWalletAmount",
+        "targets": [
+          "Moe._transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_16",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Moe.enableTrading() is controlled by onlyOwner, which means only the owner can enable or disable trading.",
+          "The conditional check in Moe._transferFrom requires tradingEnabled to be true for transfers to proceed. If the owner sets tradingEnabled to false, normal users cannot execute transfers, effectively limiting their ability to trade.",
+          "This control over the trading state directly impacts the ability of users to conduct transactions, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Moe.enableTrading()",
+        "control_variable": "tradingEnabled",
+        "targets": [
+          "Moe._transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_17",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Moe.removeLimits() is controlled by onlyOwner, which means only the owner can call this function to modify the _maxWalletAmount variable.",
+          "In the Moe._transferFrom function, there is a conditional check that requires the recipient's balance plus the amount being transferred to be less than or equal to _maxWalletAmount, unless the recipient is exempt from this limit.",
+          "By calling Moe.removeLimits(), the owner can effectively change the _maxWalletAmount, which directly impacts whether transfers can occur for regular users.",
+          "This means the owner has the ability to restrict or allow transfers based on their control over the _maxWalletAmount, thus limiting the ability of ordinary users to trade."
+        ],
+        "key_nodes": [
+          "E1",
+          "D2"
+        ]
+      },
+      "overview": {
+        "source": "Moe.removeLimits()",
+        "control_variable": "_maxWalletAmount",
+        "targets": [
+          "Moe._transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_18",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Moe.setAutomatedMarketMakerPair(address,bool) is controlled by onlyOwner, which means only the owner can modify the automatedMarketMakerPairs mapping.",
+          "The _transferFrom function checks if the sender is in the automatedMarketMakerPairs mapping, which directly affects whether a transfer can occur.",
+          "If the owner sets a specific address as an automated market maker pair to true, they can control whether transfers from that address are allowed or not, effectively limiting the ability of users to trade.",
+          "This control over the transfer process by the owner indicates a limiting behavior, as they can prevent normal users from executing transfers based on their discretion."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Moe.setAutomatedMarketMakerPair(address,bool)",
+        "control_variable": "automatedMarketMakerPairs",
+        "targets": [
+          "Moe._transferFrom(address,address,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 17,
+    "LEAK": 0,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

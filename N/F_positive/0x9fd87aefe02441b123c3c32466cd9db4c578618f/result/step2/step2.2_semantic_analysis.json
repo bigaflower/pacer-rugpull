@@ -1,0 +1,121 @@
+{
+  "contract_name": "0x9fd87aefe02441b123c3c32466cd9db4c578618f",
+  "generated_at": "2026-02-25T18:54:40Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The path begins with the transfer function, which is a standard ERC20 token transfer mechanism.",
+          "2. The first asset node (D0) checks the sender's balance and ensures it is sufficient for the transfer. The balance is decreased from the sender and increased for the recipient.",
+          "3. The balance change at node D0 is as follows: _balances[sender] = senderBalance - amount (decrease) and _balances[recipient] += amount (increase).",
+          "4. The sender's balance is reduced by the amount being transferred, and the recipient's balance is increased by the same amount, indicating a normal transfer without any hidden minting or leaking.",
+          "5. There are no conditions that allow the privileged user to mint new tokens or leak tokens from other users' balances.",
+          "6. The checks in place ensure that the sender and recipient addresses are valid and that the sender has enough balance to perform the transfer.",
+          "7. Since the path does not exhibit any rugpull behavior, it is classified as having no risk."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "THGToken.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0[ASSET] -> E1[PERM] -> M1 -> D0 -> F1 -> F1 -> F1",
+        "summary": "Entry THGToken.transfer(address,uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "In the path, node E1 transferFrom function, control at here is check. node D0 reads allowance, ensures sender allowance perform transfer, This indicatesonly at The privileged user control, transfer execute.",
+          "node E1 _beforeTokenTransfer function, this functionin require statementcheck contract is paused . The privileged user can callfunctionto contract, thereby limit ordinary user transfer ability.",
+          "Therefore, The privileged user can modify paused to limit ordinary user transaction, This matches the LIMIT definition."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "THGToken.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0[ASSET] -> E1[PERM] -> M1 -> D0 -> F1 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry THGToken.transferFrom(address,address,uint256); PermNode: E1; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function THGToken.burn(uint256) allows the caller to burn tokens from their own balance.",
+          "2. In Node D0, the balance of the account (msg.sender) is read and checked against the amount to be burned. The line '_balances[account] = accountBalance - amount' indicates that the balance of the caller is decreased by the specified amount.",
+          "3. The account is bound to msg.sender, meaning the caller can only burn their own tokens, which does not constitute a leak by itself.",
+          "4. However, the function _beforeTokenTransfer is called with 'to' set to address(0), which indicates that the tokens are being permanently removed from circulation (burned) rather than transferred to another user. This means that while the caller is burning their own tokens, the overall supply is reduced, which could be interpreted as a form of leakage since the tokens are effectively removed from the ecosystem.",
+          "5. The function does not allow for arbitrary accounts to be specified for burning, which limits the potential for direct leakage to other users, but the act of burning itself can be seen as a loss of tokens from the total supply.",
+          "6. The confidence is high because while the function does not allow arbitrary leakage to other accounts, the burning mechanism does reduce the total supply, which can be viewed as a negative impact on the token holders."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "THGToken.burn(uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0[ASSET] -> E1[PERM] -> M1 -> D0 -> F1 -> F1 -> F1",
+        "summary": "Entry THGToken.burn(uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is THGToken.burnFrom(address,uint256), which allows a spender to burn tokens from an owner's balance based on the allowance set.",
+          "2. The first asset node D0 checks the allowance: require(currentAllowance >= amount, ERC20: burn amount exceeds allowance). This ensures that the spender can only burn tokens up to the allowed amount, which is a permission check.",
+          "3. The second asset node D0 in the _burn function reads the account balance: accountBalance = _balances[account]. This indicates the balance of the account that is being burned from.",
+          "4. The balance is then reduced: _balances[account] = accountBalance - amount. If the accountBalance is 100 and the amount is 50, the new balance would be 50, indicating a decrease.",
+          "5. The key point is that the account from which tokens are burned is specified by the parameter 'account', which can be any address, not just the caller's address. This means the owner can specify any address to burn tokens from, leading to a potential leak of tokens from arbitrary accounts.",
+          "6. Since the function allows the owner to reduce the balance of any account without their consent, this behavior fits the definition of a leak."
+        ],
+        "key_nodes": [
+          "D0",
+          "D0",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "THGToken.burnFrom(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0[ASSET] -> E1[PERM] -> M1 -> D0 -> F1 -> F1 -> F1",
+        "summary": "Entry THGToken.burnFrom(address,uint256); PermNode: E1; AssetNode: D0, D0, D0"
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 1,
+    "LEAK": 2,
+    "EMPTY": 1,
+    "ERROR": 0
+  }
+}

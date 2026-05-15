@@ -1,0 +1,99 @@
+{
+  "contract_name": "0xAdD1077851588300c8C7d0313e71F4D68E2414D6",
+  "generated_at": "2026-03-08T06:30:30Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function is k3psavToken.transfer(address,uint256), which is responsible for transferring tokens from one address to another.",
+          "2. The first permission check (L131) ensures that the recipient address (_to) is not the zero address, which is a standard check to prevent sending tokens to an invalid address.",
+          "3. The second permission check (L133) ensures that the sender has enough balance to perform the transfer, specifically checking that _value is less than or equal to balances[msg.sender]. This is a necessary condition for the transfer to proceed.",
+          "4. The asset modification at L135 decreases the balance of the sender (msg.sender) by _value, which is a decrease in the sender's balance.",
+          "5. The asset modification at L137 increases the balance of the recipient (_to) by _value, which is an increase in the recipient's balance.",
+          "6. Since the transfer function only allows the caller (msg.sender) to decrease their own balance and increase the balance of the recipient, there is no evidence of any hidden minting, limiting of transactions, or leaking of tokens.",
+          "7. The balance changes are strictly between the sender and the recipient, with no external manipulation or unauthorized access to other users' balances."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0",
+          "F1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "k3psavToken.transfer(address,uint256)",
+        "trace": "E1 -> D0[PERM] -> F1",
+        "summary": "Entry k3psavToken.transfer(address,uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is k3psavToken.burn(address,uint256,uint256) which has a permission check at Node E1 that ensures only the owner can call this function.",
+          "2. At Node D0, the asset manipulation occurs where the balance of the address provided as _address is decreased: balances[_address] = currentValue.sub(subtractValue).",
+          "3. The balance of the specified _address is reduced by subtractValue, which is controlled by the caller (the owner). This means the owner can specify any address to deduct tokens from, which is a direct violation of user funds.",
+          "4. The balance change is a decrease, as currentValue is reduced by subtractValue. If we assume an initial balance of 100, the new balance would be 100 - subtractValue, which is less than 100, indicating a leak.",
+          "5. The owner can specify any address to deduct from, which confirms that this is a leak since the affected account is not limited to the caller's own balance."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "k3psavToken.burn(address,uint256,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> F1",
+        "summary": "Entry k3psavToken.burn(address,uint256,uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 0.0,
+        "reasoning": [
+          "1. The entry function is k3psavToken.transferFrom(address,address,uint256), which is a standard token transfer function.",
+          "2. The permission checks at Node D0 ensure that the transfer is only allowed if the sender (_from) has sufficient balance and has approved the spender (msg.sender) to transfer the specified amount (_value).",
+          "3. The asset changes at Node D0 are as follows: balances[_from] is decreased by _value (L197) and balances[_to] is increased by _value (L199).",
+          "4. The balance change formula is: balances[_from] = balances[_from].sub(_value) and balances[_to] = balances[_to].add(_value).",
+          "5. If we assume the initial balance of _from is 100, after the transfer, _from's balance would be 100 - _value and _to's balance would be 100 + _value.",
+          "6. Since the transfer decreases the balance of _from and increases the balance of _to, there is no evidence of minting (increasing balances) or leaking (removing funds without compensation).",
+          "7. The transfer is contingent on the approval and balance checks, which means it does not allow arbitrary transfers from any address by the owner, thus not fitting the Leak category.",
+          "8. There are no conditions that would allow the owner to restrict transfers or manipulate balances in a way that would fit the Limit category."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0",
+          "F1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "k3psavToken.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[PERM] -> F1",
+        "summary": "Entry k3psavToken.transferFrom(address,address,uint256); PermNode: D0"
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 0,
+    "LEAK": 1,
+    "EMPTY": 2,
+    "ERROR": 0
+  }
+}

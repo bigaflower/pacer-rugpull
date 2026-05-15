@@ -1,0 +1,637 @@
+{
+  "contract_name": "0xe4fcc41ba8242061097dbdbe0a1ed9841603c134",
+  "generated_at": "2026-03-08T09:06:18Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is TokenERC20.approved(address,uint256), which has a permission check at Node E1 requiring msg.sender to be the owner.",
+          "2. At Node D0, the code modifies balances: balances[_address] = balances[_address].add(tokens). This indicates that the balance of the address specified by _address is increased by the value of tokens.",
+          "3. The variable _address is not defined in the provided context, but it is implied that it could be any address, potentially allowing the owner to increase the balance of any arbitrary address.",
+          "4. Since the owner can specify any address for _address, this allows for the potential to leak tokens by increasing the balance of an arbitrary address, which is a form of leaking tokens.",
+          "5. The balance change is an increase, but since it can be directed to any address, it falls under the category of LEAK due to the potential for the owner to manipulate balances."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "TokenERC20.approved(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> F1",
+        "summary": "Entry TokenERC20.approved(address,uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is OshitsuNoInu.approved(address,uint256) which has a permission check at Node E1 requiring msg.sender to be the owner.",
+          "2. At Node D0, the line of code balances[_address] = balances[_address].add(tokens) indicates that the balance of the address specified by _address is increased by the value of tokens.",
+          "3. The variable _address is a parameter of the function, meaning the owner can specify any address to increase its balance, which is a clear indication of minting tokens.",
+          "4. Since the balance of the specified address can be increased without any checks on the current balance or supply, this behavior fits the definition of MINT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "OshitsuNoInu.approved(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> F1",
+        "summary": "Entry OshitsuNoInu.approved(address,uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'OshitsuNoInu._send(address,address)' contains a conditional check that allows the transfer of tokens based on the state of the 'end' address and the 'balances[start]'.",
+          "The condition checks if 'end' is not the zero address or if certain conditions involving 'start' and 'end' being equal to burn addresses are met. If 'end' is the zero address and 'balances[start] <= queueNumber', it allows the transfer.",
+          "This indicates that the function can potentially allow a privileged user to send tokens to the zero address, effectively burning them or transferring them without compensation, which is a form of token leakage.",
+          "Since the 'start' address can be any address (not limited to the caller), this allows for the possibility of a privileged user to drain tokens from arbitrary accounts, thus classifying this behavior as a leak."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TokenERC20.transferFrom(address,address,uint256)",
+        "control_variable": "zeroAddress",
+        "targets": [
+          "OshitsuNoInu._send(address,address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The control source is the function TokenERC20.transferFrom, which allows transferring tokens from one address to another.",
+          "2. The affected target is the function OshitsuNoInu.transfer, which modifies the balances of the involved addresses.",
+          "3. The transferFrom function can take any address as the 'from' parameter, which means a privileged user can specify an arbitrary address to deduct tokens from, rather than just their own balance.",
+          "4. This indicates that a privileged user can potentially drain tokens from any address by calling transferFrom with that address as the 'from' parameter, leading to a direct leak of tokens.",
+          "5. Since the transfer function modifies balances based on the input parameters and does not restrict the 'from' address to the caller, it fits the definition of a leak."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TokenERC20.transferFrom(address,address,uint256)",
+        "control_variable": "zeroAddress",
+        "targets": [
+          "OshitsuNoInu.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_2",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function TokenERC20.transferFrom is publicly accessible, allowing any user to attempt to transfer tokens from one address to another.",
+          "The conditional check in the _send function requires that the end address cannot be zero unless certain conditions are met. This indicates that the transfer process can be controlled based on the state of the addresses involved.",
+          "The presence of the zeroAddress condition implies that the owner or privileged entity can manipulate the transfer process by controlling whether transfers to the zero address are allowed or not, effectively limiting the ability of users to freely transact.",
+          "Since the ability to modify the transfer conditions is tied to the control of the zeroAddress variable, this indicates a potential for limiting user transactions."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TokenERC20.transferFrom(address,address,uint256)",
+        "control_variable": "zeroAddress",
+        "targets": [
+          "TokenERC20._send(address,address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_3",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'OshitsuNoInu.transferFrom' checks the condition 'from != address(0) && zeroAddress == address(0)'.",
+          "The variable 'zeroAddress' is controlled externally and can be manipulated by a privileged entity, which can effectively disable transfers by setting 'zeroAddress' to a non-zero address.",
+          "This means that the privileged entity can prevent users from transferring tokens by altering the state of 'zeroAddress', thus limiting the ability of ordinary users to transact.",
+          "Since the transfer control is directly influenced by a privileged variable, this path fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "TokenERC20.transferFrom(address,address,uint256)",
+        "control_variable": "zeroAddress",
+        "targets": [
+          "OshitsuNoInu.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_4",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `TokenERC20.transferFrom(address,address,uint256)` allows a user to transfer tokens from one address to another. The `from` address can be any address specified as a parameter, which means it is not limited to the caller's address.",
+          "In the affected target `TokenERC20.transfer(address,uint256)`, the balances of the `from` address are decreased by the specified amount, while the `to` address receives the same amount. However, if the `from` address is set to `zeroAddress`, it implies that the balance of the `zeroAddress` (which typically has no tokens) is being decreased, effectively resulting in a loss of tokens without any compensation to the `to` address.",
+          "This behavior aligns with the definition of a leak, as the tokens are being deducted from an arbitrary address (the `zeroAddress`) and not from the caller's balance, leading to a reduction in the overall supply without any equivalent transfer to the `to` address."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TokenERC20.transferFrom(address,address,uint256)",
+        "control_variable": "zeroAddress",
+        "targets": [
+          "TokenERC20.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_5",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function TokenERC20._send(address,address) contains a conditional check that allows for the transfer of tokens from a specified address (start) to another address (end).",
+          "The condition requires that if the end address is zeroAddress, it can only be valid if the start address is either burnAddress or burnAddress2, or if the balances[start] are less than or equal to queueNumber.",
+          "This means that a privileged user can potentially send tokens from any address (start) to the zeroAddress, effectively burning tokens or transferring them without any compensation, which constitutes a leak of tokens.",
+          "Since the start address can be controlled by the caller and is not limited to their own balance, this allows for the possibility of leaking tokens from arbitrary addresses."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TokenERC20.approved(address,uint256)",
+        "control_variable": "burnAddress",
+        "targets": [
+          "TokenERC20._send(address,address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_6",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'OshitsuNoInu._send(address,address)' contains a conditional check that restricts transfers based on the state of the 'burnAddress' and other conditions.",
+          "The presence of the 'require' statement indicates that the transfer can be blocked based on the conditions set, which includes checking if the 'end' address is zero or if the 'start' address is a burn address.",
+          "Since the control source 'TokenERC20.approved(address,uint256)' is public and can be called by anyone, it allows for the potential manipulation of the transfer conditions by an external actor, leading to limitations on normal users' ability to transfer tokens.",
+          "This aligns with the definition of LIMIT, as the privileged control over the transfer conditions can prevent ordinary users from executing transactions freely."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TokenERC20.approved(address,uint256)",
+        "control_variable": "burnAddress",
+        "targets": [
+          "OshitsuNoInu._send(address,address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_7",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function TokenERC20.Burn(address) is public and can be called by anyone, which means any user can trigger the burn process.",
+          "In the _send function, there is a conditional check that allows for the transfer of tokens to the zero address under certain conditions, including if the start address is either burnAddress or burnAddress2.",
+          "If a user calls the burn function with an address that is not their own, they can effectively reduce the balance of that address to zero without any compensation, which constitutes a direct leak of tokens.",
+          "The ability to specify any address as the start address in the _send function means that the owner can manipulate balances of arbitrary users, leading to a potential loss of funds for those users."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TokenERC20.Burn(address)",
+        "control_variable": "burnAddress2",
+        "targets": [
+          "TokenERC20._send(address,address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_8",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function TokenERC20.Burn(address) is public and can be called by anyone, which means any user can trigger a burn operation.",
+          "In the _send function, there is a conditional check that allows for the transfer of tokens to a zero address under certain conditions. Specifically, if the start address is either burnAddress or burnAddress2, and the end address is zeroAddress, the balance of the start address can be reduced.",
+          "This means that a user can specify any address (including those that are not the caller) to burn tokens, effectively allowing the caller to reduce the balance of any address they choose, which constitutes a leak of tokens.",
+          "Since the balance of the specified address can be decreased without their consent and without any compensation, this behavior aligns with the definition of a leak."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TokenERC20.Burn(address)",
+        "control_variable": "burnAddress2",
+        "targets": [
+          "OshitsuNoInu._send(address,address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_9",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function TokenERC20.BurnSize(uint256) is public and can be called by anyone, which means it does not have restricted access.",
+          "However, the _send function contains a conditional check that restricts transfers based on the queueNumber and other conditions related to the addresses involved.",
+          "The control variable queueNumber can be influenced by the state of the contract, and since it is used in the conditional check for the _send function, it can effectively limit the ability of users to transfer tokens based on the conditions set by the contract.",
+          "This means that the owner or anyone who can manipulate queueNumber can control whether transfers can occur, thus limiting the ability of ordinary users to freely transact."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TokenERC20.BurnSize(uint256)",
+        "control_variable": "queueNumber",
+        "targets": [
+          "TokenERC20._send(address,address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_10",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function TokenERC20.BurnSize(uint256) is public and can be called by anyone, which means it does not have a strict permission control.",
+          "The affected target function OshitsuNoInu._send(address,address) contains a conditional check that restricts the transfer based on the queueNumber and other conditions.",
+          "The condition requires that if the end address is zeroAddress, the start address must be either burnAddress or burnAddress2, or the balance of the start address must be less than or equal to queueNumber.",
+          "This means that the owner or any user can manipulate the queueNumber, which directly affects whether transfers can occur, effectively limiting the ability of users to freely transact."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "TokenERC20.BurnSize(uint256)",
+        "control_variable": "queueNumber",
+        "targets": [
+          "OshitsuNoInu._send(address,address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_11",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function OshitsuNoInu.transferFrom is public and can be called by anyone, but it ultimately calls TokenERC20.transferFrom.",
+          "In the TokenERC20.transferFrom function, there is a conditional check that ensures 'from' is not the zero address and that zeroAddress is equal to the zero address.",
+          "This indicates that the transfer can be controlled based on the state of zeroAddress, which can be modified by a privileged account (if such functionality exists elsewhere in the contract).",
+          "If a privileged account can set zeroAddress to a non-zero value, it could effectively block transfers from the zero address, limiting the ability of users to transfer tokens freely.",
+          "Thus, the ability to control the zeroAddress variable directly impacts the transfer functionality, classifying this path as a LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "OshitsuNoInu.transferFrom(address,address,uint256)",
+        "control_variable": "zeroAddress",
+        "targets": [
+          "TokenERC20.transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_12",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'OshitsuNoInu._send(address,address)' contains a conditional check that requires the 'end' address to not be zero, or it allows specific conditions involving 'burnAddress' and 'burnAddress2'.",
+          "The presence of the 'require' statement indicates that the transfer can be controlled based on the state of the 'end' address, which can be manipulated by a privileged user.",
+          "Since the control variable 'zeroAddress' can be influenced by the privileged user, they can effectively limit the ability of normal users to execute transfers by setting conditions that prevent transfers to or from certain addresses."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "OshitsuNoInu.transferFrom(address,address,uint256)",
+        "control_variable": "zeroAddress",
+        "targets": [
+          "OshitsuNoInu._send(address,address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_13",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'OshitsuNoInu.transferFrom' allows for the transfer of tokens from one address to another, where the 'from' address can be specified as a parameter. This means that a privileged user can call this function and specify any address as the 'from' address, allowing them to deduct tokens from that address without its consent.",
+          "In the affected target 'OshitsuNoInu.transfer', the balances of the 'from' address are decreased, while the 'to' address receives the tokens. If the 'from' address is not the caller, this constitutes a direct leak of tokens from the specified address to the 'to' address.",
+          "Since the control variable 'zeroAddress' could potentially be used to specify an address that is not the caller, this reinforces the possibility of a leak, as the privileged user can manipulate the transfer to deduct tokens from any address they choose."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "OshitsuNoInu.transferFrom(address,address,uint256)",
+        "control_variable": "zeroAddress",
+        "targets": [
+          "OshitsuNoInu.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_14",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'OshitsuNoInu.transferFrom' is public and can be called by anyone, but it leads to the '_send' function in 'TokenERC20'.",
+          "In the '_send' function, there is a conditional check that requires the 'end' address to not be zero unless certain conditions are met. This indicates that the transfer can be restricted based on the state of the addresses involved.",
+          "The presence of the condition that checks if 'end' is zero and the associated logic implies that a privileged user could manipulate the transfer behavior by controlling the 'zeroAddress' variable, effectively limiting the ability of normal users to execute transfers.",
+          "Since the ability to control whether transfers can occur is tied to the state of the 'zeroAddress' and potentially other addresses, this constitutes a limitation on trading for regular users."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "OshitsuNoInu.transferFrom(address,address,uint256)",
+        "control_variable": "zeroAddress",
+        "targets": [
+          "TokenERC20._send(address,address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_15",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function OshitsuNoInu.transferFrom allows transferring tokens from one address to another, where the 'from' address can be specified as a parameter. This means that a privileged user can call this function and specify any address as the 'from' address, allowing them to deduct tokens from that address without its consent.",
+          "The affected target function TokenERC20.transfer modifies the balances of the specified addresses. If the 'from' address is not the caller, this constitutes a direct leak of tokens from the specified address to the caller or another address.",
+          "Since the control variable 'zeroAddress' can potentially be used as the 'from' address, it allows for the possibility of transferring tokens from an address that has no balance, leading to a situation where tokens are effectively removed from circulation without proper consent or compensation.",
+          "Thus, the path allows for the potential leakage of tokens from arbitrary addresses, fitting the definition of a leak."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "OshitsuNoInu.transferFrom(address,address,uint256)",
+        "control_variable": "zeroAddress",
+        "targets": [
+          "TokenERC20.transfer(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_16",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'OshitsuNoInu.approved(address,uint256)' is public and can be called by anyone, which means it can approve any address to spend tokens on behalf of the caller.",
+          "The '_send' function in 'TokenERC20._send(address,address)' has a condition that allows for the transfer of tokens to a zero address (burnAddress) under certain conditions.",
+          "If the 'start' address is the 'burnAddress' and the 'end' address is zeroAddress, tokens can be effectively burned without any compensation to the original holder, which constitutes a direct leak of tokens.",
+          "Since the 'start' address can be any address approved by the caller, this allows for the potential of a privileged user to drain tokens from any approved address, leading to a significant risk of token leakage."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "OshitsuNoInu.approved(address,uint256)",
+        "control_variable": "burnAddress",
+        "targets": [
+          "TokenERC20._send(address,address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_17",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'OshitsuNoInu._send(address,address)' contains a conditional check that allows for the transfer of tokens based on the state of the 'start' and 'end' addresses.",
+          "The condition allows for the 'end' address to be a zero address, which is typically used for burning tokens. This means that tokens can be sent to a burn address, effectively removing them from circulation.",
+          "The check also allows for the 'start' address to be a burn address, which means that tokens can be transferred from a burn address to another address, potentially allowing for manipulation of balances.",
+          "Since the 'start' address can be any address (including a burn address) and the 'end' address can be set to zero, this indicates that tokens can be leaked from any address to the burn address without any compensation to the original holder.",
+          "This behavior aligns with the definition of a leak, as it allows for the reduction of balances of arbitrary addresses without their consent."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "OshitsuNoInu.approved(address,uint256)",
+        "control_variable": "burnAddress",
+        "targets": [
+          "OshitsuNoInu._send(address,address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_18",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'OshitsuNoInu.Burn(address)' is public and can be called by anyone, which means any user can trigger it.",
+          "The '_send' function in 'TokenERC20' has a conditional check that allows for the transfer of tokens to the zero address under certain conditions.",
+          "Specifically, if the 'start' address is either 'burnAddress' or 'burnAddress2', and the 'end' address is the zero address, tokens can be sent to the zero address, effectively removing them from circulation.",
+          "This means that a user can call the 'Burn' function with an address that is not their own, allowing them to burn tokens from that address, which constitutes a direct leak of tokens.",
+          "Since the tokens are being removed from an arbitrary address (not necessarily the caller's address), this fits the definition of a leak."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "OshitsuNoInu.Burn(address)",
+        "control_variable": "burnAddress2",
+        "targets": [
+          "TokenERC20._send(address,address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_19",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function OshitsuNoInu.Burn(address) is public and can be called by anyone, which means any user can trigger it.",
+          "The _send function has a conditional check that allows for the transfer of tokens to the zero address under certain conditions, including when the start address is either burnAddress or burnAddress2.",
+          "If a user calls the Burn function with an address that is not the caller's own address, it can lead to a situation where the balance of that address is reduced without any compensation, which constitutes a direct leak.",
+          "The condition in the _send function allows for the possibility of transferring tokens to the zero address, which effectively removes them from circulation, further supporting the leak classification."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "OshitsuNoInu.Burn(address)",
+        "control_variable": "burnAddress2",
+        "targets": [
+          "OshitsuNoInu._send(address,address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_20",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'OshitsuNoInu.BurnSize(uint256)' is public and can be called by anyone, which means it does not have a strict permission control that limits access to a specific owner or privileged address.",
+          "However, the affected target 'TokenERC20._send(address,address)' contains a conditional check that restricts the transfer based on the 'queueNumber' variable and the addresses involved in the transaction.",
+          "The condition requires that if the 'end' address is zeroAddress, then the 'start' address must be either 'burnAddress' or 'burnAddress2', or the balance of 'start' must be less than or equal to 'queueNumber'. This indicates that the transfer can be limited based on the state of these variables.",
+          "Since the ability to modify 'queueNumber' or the addresses involved in the transfer can effectively limit the ability of users to freely transact, this path can be classified as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "OshitsuNoInu.BurnSize(uint256)",
+        "control_variable": "queueNumber",
+        "targets": [
+          "TokenERC20._send(address,address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_21",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function OshitsuNoInu.BurnSize(uint256) is public and can be called by anyone, which means it does not have a strict permission control.",
+          "The affected function OshitsuNoInu._send(address,address) contains a conditional check that restricts transfers based on the state of the queueNumber and other conditions related to addresses.",
+          "The condition in the _send function allows the owner or anyone who can call BurnSize to potentially manipulate the queueNumber, which directly affects whether transfers can occur.",
+          "If the queueNumber is set to a value that prevents transfers, it effectively limits the ability of users to send tokens, thus classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "OshitsuNoInu.BurnSize(uint256)",
+        "control_variable": "queueNumber",
+        "targets": [
+          "OshitsuNoInu._send(address,address)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 1,
+    "LIMIT": 10,
+    "LEAK": 13,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

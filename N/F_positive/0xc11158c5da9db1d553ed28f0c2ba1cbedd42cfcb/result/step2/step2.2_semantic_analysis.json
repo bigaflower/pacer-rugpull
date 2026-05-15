@@ -1,0 +1,333 @@
+{
+  "contract_name": "0xc11158c5da9db1d553ed28f0c2ba1cbedd42cfcb",
+  "generated_at": "2026-02-27T19:14:14Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the transfer function, which checks for valid addresses and amount before proceeding to the internal _transfer function.",
+          "2. The permission nodes IF1 and IF3 indicate that certain addresses can be excluded from fees, which can affect the transfer process.",
+          "3. The presence of the condition 'contractTokenBalance >= thresholdAmountToSendTax' in IF0 suggests that there is a threshold that can limit transfers based on the contract's balance.",
+          "4. The ability of the owner to modify the _isExcludedFromFees mapping and the lpPairs mapping means they can control who is subject to fees and who is not, effectively limiting the ability of regular users to trade freely.",
+          "5. Since the owner can manipulate these conditions, it creates a scenario where normal users may be restricted from transferring tokens, thus classifying this path as LIMIT."
+        ],
+        "key_nodes": [
+          "IF1",
+          "IF3",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "wPAW.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> IF0 -> D1 -> D2 -> IF1[PERM] -> D3 -> IF2 -> D4 -> IF3[PERM] -> D5 -> D6 -> IF4 -> D7 -> D8 -> F1 -> F1",
+        "summary": "Entry wPAW.transfer(address,uint256); PermNode: IF1, IF3; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function wPAW.transferFrom, which involves transferring tokens from one address to another.",
+          "2. The first asset node D0 reads the allowance of the sender, which is a prerequisite for the transfer. This does not indicate any minting behavior.",
+          "3. The transfer logic in wPAW._transfer checks various conditions (e.g., zero address checks, amount greater than zero) but does not directly increase any balances.",
+          "4. The key permission nodes IF1 and IF3 check if the sender or recipient is excluded from fees, which can affect the transfer process.",
+          "5. The fee logic is triggered based on the conditions in IF2 and IF4, where fees are deducted from the transfer amount. The fees are directed to a treasury wallet, which is controlled by the owner.",
+          "6. The asset nodes D0 and D0 indicate that the balances are being read, but the actual transfer logic in D7 and D8 shows that the amount transferred is less than the original amount due to fees being taken.",
+          "7. The owner can manipulate the fee structure, leading to a situation where a portion of the transferred tokens is redirected to the owner's address, which constitutes a leak.",
+          "8. The presence of the permission checks and the ability to set fees indicates that the owner can control the flow of tokens, leading to potential exploitation."
+        ],
+        "key_nodes": [
+          "D0",
+          "IF1",
+          "IF3",
+          "D7",
+          "D8"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "wPAW.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> IF0 -> D1 -> D2 -> IF1[PERM] -> D3 -> IF2 -> D4 -> IF3[PERM] -> D5 -> D6 -> IF4 -> D7 -> D8 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry wPAW.transferFrom(address,address,uint256); PermNode: IF1, IF3; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'wPAW.transferOwner(address)' is controlled by 'onlyOwner', which means only the owner can call this function.",
+          "This function modifies the state of '_isExcludedFromFees', which is used in the '_transfer' function to determine if the transfer fees apply to the 'from' or 'to' addresses.",
+          "In the '_transfer' function, the condition '_isExcludedFromFees[from] || _isExcludedFromFees[to]' directly affects whether a transfer can occur with or without fees.",
+          "If the owner sets '_isExcludedFromFees' to true for certain addresses, they can effectively control whether those addresses can trade freely or are subject to fees, thus limiting the ability of regular users to transact."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "wPAW.transferOwner(address)",
+        "control_variable": "_isExcludedFromFees",
+        "targets": [
+          "wPAW._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_2",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'wPAW.transferOwner(address)' is controlled by 'onlyOwner', which means only the owner can call this function.",
+          "This function modifies the 'lpPairs' variable, which is used in the conditional check of the '_transfer' function.",
+          "The condition 'lpPairs[from]' in the '_transfer' function determines whether a transfer can proceed based on the state of 'lpPairs'.",
+          "If the owner sets 'lpPairs' to false for a specific address, that address will be unable to transfer tokens, effectively limiting their ability to trade.",
+          "Thus, the owner has the ability to control trading by modifying 'lpPairs', which directly impacts the transfer functionality for users."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF3"
+        ]
+      },
+      "overview": {
+        "source": "wPAW.transferOwner(address)",
+        "control_variable": "lpPairs",
+        "targets": [
+          "wPAW._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_3",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'wPAW.transferOwner(address)' is restricted by the 'onlyOwner' modifier, indicating that only the owner can call this function. This gives the owner control over the 'thresholdAmountToSendTax' variable.",
+          "The 'thresholdAmountToSendTax' variable is used in the conditional check within the '_transfer' function, specifically in the condition 'contractTokenBalance >= thresholdAmountToSendTax'.",
+          "By modifying 'thresholdAmountToSendTax', the owner can effectively control whether transfers can occur based on the contract's token balance. If the owner sets this threshold to a value higher than the current balance, it would prevent any transfers from happening, thus limiting the ability of regular users to transact.",
+          "This ability to manipulate the transfer conditions directly correlates with the definition of LIMIT, as it allows the owner to restrict or enable transfers at will."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "wPAW.transferOwner(address)",
+        "control_variable": "thresholdAmountToSendTax",
+        "targets": [
+          "wPAW._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_6",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function wPAW.renounceOwnership() is marked with onlyOwner, meaning only the owner can call it. This function modifies the _isExcludedFromFees variable.",
+          "The _transfer function checks the _isExcludedFromFees status for both the from and to addresses. If either address is excluded from fees, the transfer may proceed without fees.",
+          "By renouncing ownership, the owner can effectively change the status of _isExcludedFromFees, which directly impacts the ability of other users to transfer tokens without incurring fees.",
+          "This creates a scenario where the owner can limit or control the transferability of tokens for other users, thus classifying it as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "wPAW.renounceOwnership()",
+        "control_variable": "_isExcludedFromFees",
+        "targets": [
+          "wPAW._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_8",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function wPAW.renounceOwnership() allows the owner to relinquish ownership, which could potentially lead to the lpPairs variable being modified by the owner through the setLpPair function.",
+          "The lpPairs variable is used as a conditional check in the _transfer function, specifically in the condition lpPairs[from]. This means that if the owner modifies lpPairs, they can effectively control whether transfers from certain addresses are allowed or not.",
+          "Since the owner can change the state of lpPairs, this gives them the ability to limit or restrict transfers for users, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF3"
+        ]
+      },
+      "overview": {
+        "source": "wPAW.renounceOwnership()",
+        "control_variable": "lpPairs",
+        "targets": [
+          "wPAW._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_9",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function `wPAW.renounceOwnership()` is marked with `onlyOwner`, indicating that only the owner can call this function, which allows them to renounce ownership and potentially affect the control variable `thresholdAmountToSendTax`.",
+          "The `thresholdAmountToSendTax` variable is used in the `_transfer` function as a conditional check: `contractTokenBalance >= thresholdAmountToSendTax`. This means that if the owner sets this threshold to a high value or modifies it, they can effectively control whether transfers can occur or not.",
+          "Since the owner can change the threshold, they can prevent normal users from executing transfers by setting the threshold above the contract's token balance, thus limiting the ability of users to trade.",
+          "This behavior aligns with the definition of LIMIT, as the owner has the power to control the transfer process based on the threshold they set."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "wPAW.renounceOwnership()",
+        "control_variable": "thresholdAmountToSendTax",
+        "targets": [
+          "wPAW._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_12",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'wPAW.setLpPair(address,bool)' is controlled by 'onlyOwner', which means only the owner can modify the 'lpPairs' mapping.",
+          "The 'lpPairs' mapping is used in the '_transfer' function as a conditional check: 'lpPairs[from]'.",
+          "If the owner sets 'lpPairs[from]' to false, it will prevent transfers from that address, effectively limiting the ability of users to trade.",
+          "This control over the 'lpPairs' directly impacts the transfer functionality for users, thus classifying it as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF3"
+        ]
+      },
+      "overview": {
+        "source": "wPAW.setLpPair(address,bool)",
+        "control_variable": "lpPairs",
+        "targets": [
+          "wPAW._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_13",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'wPAW.excludeFromFee(address)' is controlled by 'onlyOwner', which means only the owner can call this function to modify the '_isExcludedFromFees' mapping.",
+          "The '_transfer' function checks the '_isExcludedFromFees' status for both the 'from' and 'to' addresses. If either address is excluded from fees, it can affect the transfer process.",
+          "Since the owner can change the fee exclusion status, they can effectively control whether transfers can incur fees or not, thereby limiting the ability of regular users to trade freely.",
+          "This control over the fee structure directly impacts the transfer behavior, making it a clear case of limiting user transactions."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "wPAW.excludeFromFee(address)",
+        "control_variable": "_isExcludedFromFees",
+        "targets": [
+          "wPAW._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_14",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'wPAW.includeInFee(address)' is controlled by 'onlyOwner', which means only the owner can modify the '_isExcludedFromFees' status.",
+          "The '_transfer' function checks the '_isExcludedFromFees' status for both 'from' and 'to' addresses. If either address is excluded from fees, the transfer may proceed without fees.",
+          "This creates a scenario where the owner can control whether certain addresses are subject to fees or not, effectively limiting the ability of regular users to trade freely based on the owner's decisions.",
+          "Since the owner can toggle this exclusion, they can prevent normal users from transferring tokens by setting their addresses to be included in fees, thus limiting their ability to sell."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "wPAW.includeInFee(address)",
+        "control_variable": "_isExcludedFromFees",
+        "targets": [
+          "wPAW._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_15",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'wPAW.setThresholdToSendTax(uint256)' is controlled by 'onlyOwner', which means only the owner can modify the 'thresholdAmountToSendTax'.",
+          "The '_transfer' function checks if 'contractTokenBalance >= thresholdAmountToSendTax' before allowing a transfer to proceed.",
+          "This means that if the owner sets 'thresholdAmountToSendTax' to a high value, it could effectively block all transfers for regular users if 'contractTokenBalance' is below that threshold.",
+          "Thus, the owner has the ability to limit the ability of users to transfer tokens by adjusting this threshold, which fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "wPAW.setThresholdToSendTax(uint256)",
+        "control_variable": "thresholdAmountToSendTax",
+        "targets": [
+          "wPAW._transfer(address,address,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 11,
+    "LEAK": 1,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

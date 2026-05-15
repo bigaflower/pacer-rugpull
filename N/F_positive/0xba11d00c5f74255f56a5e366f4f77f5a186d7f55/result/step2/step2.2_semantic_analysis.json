@@ -1,0 +1,680 @@
+{
+  "contract_name": "0xba11d00c5f74255f56a5e366f4f77f5a186d7f55",
+  "generated_at": "2026-02-25T22:57:38Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function is ERC20Base.mint(address,uint256), which has a permission check at Node E1 that requires the caller to be a minter.",
+          "2. At Node D0, the asset operation occurs where the balance of the account specified by the 'to' parameter is increased by the value specified in the 'value' parameter.",
+          "3. The line of code at Node D0 is '_balances[account] = _balances[account].add(value)', which indicates that the balance of the account is being increased by 'value'.",
+          "4. The 'account' is bound to the 'to' parameter, which can be any address provided by the caller, thus allowing the minter to mint tokens to any address.",
+          "5. Since the balance of the specified account is increased without any restrictions on the address, this clearly falls under the definition of MINT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "ERC20Base.mint(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry ERC20Base.mint(address,uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is ERC20Base.burn(address,uint256), which requires the caller to be a minter (Node E1). This indicates that only authorized addresses can call this function.",
+          "2. The asset node (Node D0) shows that the balance of the account specified by the parameter 'from' is decreased by the value specified in the parameter 'value'. The line of code is: '_balances[account] = _balances[account].sub(value)'.",
+          "3. The balance change formula indicates that the balance of the account is reduced by the specified value, which means the balance is decreasing.",
+          "4. The account from which the balance is being deducted is determined by the parameter 'from', which can be any address specified by the caller, not just the caller's own address. This means that the minter can choose any address to deduct tokens from, which qualifies as a leak.",
+          "5. Since the function allows the minter to specify any address to burn tokens from, it directly leads to a situation where the minter can reduce the balance of any arbitrary account, thus leaking tokens."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "ERC20Base.burn(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry ERC20Base.burn(address,uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function is SnapshotToken.mint(address,uint256), which requires the caller to be a minter (Node E1). This is a permission check that restricts access to certain addresses.",
+          "2. The mint function calls _mint, which binds the parameters 'account' and 'amount' to the input values (Node E1, depth=1).",
+          "3. The _mint function does not directly show any asset changes, but it leads to the _changeVotingPower function (Node E1, depth=2).",
+          "4. In the _changeVotingPower function (Node D0, depth=2), the votingPowerChangeCount for the account is updated, which is an asset operation (Node D0, depth=2). However, the key asset operation occurs in the _mint function, which is not fully detailed here but is implied to increase the balance of the specified account.",
+          "5. The balance of the account is increased when minting tokens, as the mint function typically creates new tokens and assigns them to the specified address.",
+          "6. Since the minting process allows the minter to increase the balance of any address without any checks on the current balance, it fits the definition of MINT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "SnapshotToken.mint(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0 -> E1 -> D0[ASSET] -> E1 -> D0[ASSET] -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry SnapshotToken.mint(address,uint256); PermNode: E1; AssetNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is SnapshotToken.burn(address,uint256), which requires the caller to be a minter (Node E1). This indicates a permission check for who can execute the burn function.",
+          "2. The burn function calls _burn, which is responsible for reducing the balance of the specified account (Node D0). The account to be burned is determined by the parameter 'from', which is bound to the input parameter.",
+          "3. In Node D0 (depth=1), the balance of the account is reduced by the amount specified in the 'value' parameter. This is a direct asset manipulation: _balances[account] -= amount.",
+          "4. The balance change is clearly a decrease, as it deducts the specified amount from the account's balance. If we assume the initial balance is 100, after the burn, the balance would be 100 - amount, which is less than 100, indicating a leak.",
+          "5. The account from which the balance is deducted is not necessarily the caller, as it is specified by the parameter 'from'. This means that the minter can choose any address to burn tokens from, which constitutes a direct leak of tokens.",
+          "6. The function _changeVotingPower is also called, which modifies the voting power of the account, but this does not affect the classification as it does not involve minting or limiting transactions."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "SnapshotToken.burn(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0 -> E1 -> D0[ASSET] -> E1 -> D0[ASSET] -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry SnapshotToken.burn(address,uint256); PermNode: E1; AssetNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_4",
+      "path_type": "DIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function is BandToken.mint(address,uint256) which has a permission check at Node E1 that requires the caller to be a minter.",
+          "2. At Node D0, the asset operation occurs where the balance of the account specified by the parameter 'to' is increased by the value specified by the parameter 'value'. The line of code is: '_balances[account] = _balances[account].add(value)'.",
+          "3. The balance change formula indicates that the balance of the specified account is increased, which is a clear indication of minting new tokens.",
+          "4. The parameters 'account' and 'value' are bound to the function parameters, meaning the minter can specify any address to receive the minted tokens and any amount to mint, thus allowing for arbitrary increases in balance.",
+          "5. Since the function allows the minter to increase the balance of any address without any restrictions on the amount, this behavior fits the definition of a hidden mint."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_4",
+        "function_signature": "BandToken.mint(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry BandToken.mint(address,uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_5",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is BandToken.burn(address,uint256), which requires the caller to be a minter (Node E1). This indicates that only privileged accounts can call this function.",
+          "2. The asset node (Node D0) shows that the balance of the account specified by the 'from' parameter is decreased: _balances[account] = _balances[account].sub(value). This means that the balance of the specified account is reduced by the value provided.",
+          "3. The 'from' parameter is bound to the input parameter of the burn function, which means the account whose balance is being reduced is not necessarily the caller. This allows the privileged account to specify any address to burn tokens from, leading to a potential leak of tokens from arbitrary accounts.",
+          "4. The simulation shows that if the initial balance of the account is 100 and the value to burn is 50, the new balance would be 50, which is a decrease. This confirms that the function can reduce the balance of any specified account, which aligns with the definition of a leak.",
+          "5. Since the privileged account can specify any address to burn tokens from, this constitutes a direct leak of tokens from the specified account to the total supply."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_5",
+        "function_signature": "BandToken.burn(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry BandToken.burn(address,uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function SnapshotToken._transfer can potentially modify the state of voting power through the _changeVotingPower function, which is called within the transfer process.",
+          "The control variable votingPowerChangeNonce is not explicitly shown to be modified in the provided context, but the ability to change voting power based on transfers indicates that the owner or privileged entity can influence the voting power of any address.",
+          "This means that the privileged entity can effectively limit or control the voting power of users based on their transfer activities, which aligns with the definition of LIMIT.",
+          "Since the transfer process can be controlled by a privileged entity, it can lead to scenarios where normal users are unable to freely participate in governance or voting due to the manipulation of their voting power."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "SnapshotToken._transfer(address,address,uint256)",
+        "control_variable": "votingPowerChangeNonce",
+        "targets": [
+          "SnapshotToken._changeVotingPower(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "1. The control source is the function SnapshotToken._transfer, which is internal and can be triggered by privileged accounts.",
+          "2. The control chain indicates that the _votingPower variable can be changed by the privileged function SnapshotToken._changeVotingPower(address).",
+          "3. The affected target BandToken.historicalVotingPowerAtIndex has a conditional check that requires the index to be less than or equal to votingPowerChangeCount[owner]. This means that the privileged account can control the voting power changes, effectively limiting the ability of other users to influence voting power.",
+          "4. Since the privileged account can modify the voting power and potentially restrict the ability of other users to participate in governance or transactions, this fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "SnapshotToken._transfer(address,address,uint256)",
+        "control_variable": "_votingPower",
+        "targets": [
+          "BandToken.historicalVotingPowerAtIndex(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_2",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function SnapshotToken._transfer can indirectly affect the _votingPower variable through the _changeVotingPower function, which is controlled by the owner.",
+          "The condition in historicalVotingPowerAtIndex requires that the index is less than or equal to votingPowerChangeCount[owner], which indicates that the owner has control over the voting power changes.",
+          "This means that the owner can effectively limit the ability of other users to transfer their voting power by manipulating the votingPowerChangeCount, thus controlling the transfer process indirectly."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "SnapshotToken._transfer(address,address,uint256)",
+        "control_variable": "_votingPower",
+        "targets": [
+          "SnapshotToken.historicalVotingPowerAtIndex(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_3",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.8,
+        "reasoning": [
+          "The control source is the function SnapshotToken._transfer, which is internal and does not have any modifiers that restrict access based on ownership or permissions.",
+          "The affected target is BandToken._changeVotingPower, which modifies the state variables _votingPower and votingPowerChangeCount.",
+          "Since the _transfer function can be called with arbitrary addresses as parameters, it allows the potential for a privileged user to change the voting power of any address, not just their own.",
+          "This indicates that a privileged user can effectively leak voting power from one address to another without any checks on the source of the transfer, which aligns with the definition of a Leak."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "SnapshotToken._transfer(address,address,uint256)",
+        "control_variable": "votingPowerChangeNonce",
+        "targets": [
+          "BandToken._changeVotingPower(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_6",
+      "path_type": "INDIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 0.0,
+        "reasoning": [
+          "The path involves the function SnapshotToken._transfer, which does not directly manipulate any balances or asset values. Instead, it checks the voting power change nonce against a control variable.",
+          "The affected target, BandToken.historicalVotingPowerAtNonce, only performs a conditional check based on the nonce and does not involve any asset transfer or modification.",
+          "There are no indications of privilege manipulation that would allow for minting, limiting, or leaking tokens. The control chain is empty, suggesting no direct asset manipulation occurs.",
+          "Since there are no asset changes or risks identified in the path, it is classified as having no risk."
+        ],
+        "key_nodes": []
+      },
+      "overview": {
+        "source": "SnapshotToken._transfer(address,address,uint256)",
+        "control_variable": "votingPowerChangeNonce",
+        "targets": [
+          "BandToken.historicalVotingPowerAtNonce(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_7",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function SnapshotToken._transfer is controlled by the internal modifier, which indicates that only certain privileged accounts can execute it.",
+          "The affected target, SnapshotToken.historicalVotingPowerAtNonce, includes a conditional check that requires the nonce to be less than or equal to votingPowerChangeNonce. This means that the privileged account can control the voting power based on the nonce, effectively limiting the ability of other users to transfer their voting power.",
+          "Since the control variable votingPowerChangeNonce can be manipulated by a privileged account, it directly impacts the ability of ordinary users to execute transfers, thus classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "SnapshotToken._transfer(address,address,uint256)",
+        "control_variable": "votingPowerChangeNonce",
+        "targets": [
+          "SnapshotToken.historicalVotingPowerAtNonce(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_8",
+      "path_type": "INDIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function SnapshotToken._mint(address,uint256) which is an internal function that can be controlled by a privileged identity (not specified in the provided details but typically would be an owner or admin).",
+          "The _mint function allows for the creation of new tokens, which directly increases the balance of the specified address without any checks on the current balance or supply limits.",
+          "This indicates that a privileged user can mint tokens at will, thus fulfilling the criteria for a Hidden Mint.",
+          "The affected target, SnapshotToken._changeVotingPower(address), modifies the state variables _votingPower and votingPowerChangeCount, which are likely tied to the minted tokens, further supporting the notion of privilege manipulation."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "SnapshotToken._mint(address,uint256)",
+        "control_variable": "votingPowerChangeNonce",
+        "targets": [
+          "SnapshotToken._changeVotingPower(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_9",
+      "path_type": "INDIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function SnapshotToken._mint(address,uint256) which is an internal function that can be controlled by privileged accounts.",
+          "2. The _mint function allows for the creation of new tokens, which directly increases the balance of the specified address without any checks on the current balance of that address.",
+          "3. The control chain indicates that the _votingPower variable is modified as a result of the minting process, which suggests that the privileged account can increase the voting power of any address arbitrarily.",
+          "4. Since the minting process allows for the addition of tokens to any address without restrictions, this qualifies as a Hidden Mint behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "SnapshotToken._mint(address,uint256)",
+        "control_variable": "_votingPower",
+        "targets": [
+          "BandToken.historicalVotingPowerAtIndex(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_10",
+      "path_type": "INDIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function SnapshotToken._mint(address,uint256) which is an internal function that can be controlled by privileged identities (e.g., onlyOwner).",
+          "This function allows for the minting of tokens to any address without requiring a balance check, indicating that the privileged identity can increase the balance of any address arbitrarily.",
+          "The control variable _votingPower is also manipulated through the _changeVotingPower function, which is linked to the minting process, further supporting the notion of hidden minting.",
+          "Since the minting process directly affects the historical voting power at a specified index, it demonstrates that the privileged identity can create tokens and influence voting power without restrictions."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "SnapshotToken._mint(address,uint256)",
+        "control_variable": "_votingPower",
+        "targets": [
+          "SnapshotToken.historicalVotingPowerAtIndex(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_11",
+      "path_type": "INDIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function SnapshotToken._mint(address,uint256) which is an internal function that can be controlled by privileged identities. This function allows for the minting of tokens to any address without requiring a balance check.",
+          "The affected target BandToken._changeVotingPower(address) modifies the state variables _votingPower and votingPowerChangeCount, which indicates that the minting process directly influences the voting power of the specified address.",
+          "Since the minting can increase the balance of any address specified by the privileged identity, it falls under the category of Hidden Mint."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "SnapshotToken._mint(address,uint256)",
+        "control_variable": "votingPowerChangeNonce",
+        "targets": [
+          "BandToken._changeVotingPower(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_14",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function SnapshotToken._mint(address,uint256) is internal and can only be called by privileged accounts, which indicates a potential for hidden minting.",
+          "The affected target BandToken.historicalVotingPowerAtNonce(address,uint256) includes a conditional check that requires the nonce to be less than or equal to votingPowerChangeNonce. This implies that the privileged account can control the voting power based on the nonce, effectively limiting the ability of other users to influence voting power.",
+          "Since the control variable votingPowerChangeNonce can be manipulated by the privileged account, it can restrict the voting power changes for other users, thus limiting their ability to participate freely."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "SnapshotToken._mint(address,uint256)",
+        "control_variable": "votingPowerChangeNonce",
+        "targets": [
+          "BandToken.historicalVotingPowerAtNonce(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_15",
+      "path_type": "INDIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function SnapshotToken._mint(address,uint256) allows for the minting of tokens to any specified address without any checks on the balance of the address being minted to. This indicates that a privileged entity can increase the balance of any address arbitrarily.",
+          "The affected target, SnapshotToken.historicalVotingPowerAtNonce(address,uint256), includes a condition that checks the nonce against votingPowerChangeNonce, but this does not prevent the minting action itself from occurring.",
+          "Since the minting function is internal and can be controlled by a privileged user, it aligns with the definition of Hidden Mint, where a privileged identity can create tokens at will."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "SnapshotToken._mint(address,uint256)",
+        "control_variable": "votingPowerChangeNonce",
+        "targets": [
+          "SnapshotToken.historicalVotingPowerAtNonce(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_16",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function SnapshotToken._burn(address,uint256) allows for the burning of tokens, which can indirectly affect the voting power of an address through the SnapshotToken._changeVotingPower(address) function.",
+          "The _changeVotingPower function modifies the _votingPower and votingPowerChangeCount, which indicates that the voting power can be manipulated based on the burning of tokens.",
+          "If the address being burned is not the caller's address, this constitutes a direct leak of tokens, as the caller can reduce the balance of any address and potentially redirect the voting power to themselves or others.",
+          "Since the control source (the burning function) can affect arbitrary addresses, it aligns with the definition of a leak where the privileged entity can manipulate balances of others."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "SnapshotToken._burn(address,uint256)",
+        "control_variable": "votingPowerChangeNonce",
+        "targets": [
+          "SnapshotToken._changeVotingPower(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_17",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.8,
+        "reasoning": [
+          "1. The function SnapshotToken._burn(address,uint256) allows for the burning of tokens, which indirectly affects the _votingPower variable.",
+          "2. The control chain indicates that the _changeVotingPower function modifies the _votingPower based on the burning action, which is a direct manipulation of the voting power associated with an address.",
+          "3. The affected target BandToken.historicalVotingPowerAtIndex(address,uint256) checks the voting power change count for the owner, which implies that the owner can manipulate the voting power without direct checks on the balance of the tokens being burned.",
+          "4. Since the _burn function can be called with any address as a parameter, it allows the owner to reduce the voting power of any user, which constitutes a leak of their voting power.",
+          "5. The ability to burn tokens from any address and affect their voting power without their consent aligns with the definition of leaking tokens."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "SnapshotToken._burn(address,uint256)",
+        "control_variable": "_votingPower",
+        "targets": [
+          "BandToken.historicalVotingPowerAtIndex(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_18",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function SnapshotToken._burn(address,uint256) allows for the burning of tokens, which can indirectly affect the voting power of an address.",
+          "2. The control chain indicates that the _votingPower variable is modified based on the burning action, which is controlled by the owner.",
+          "3. The affected target historicalVotingPowerAtIndex(address,uint256) checks if the index is less than or equal to votingPowerChangeCount[owner], implying that the owner can manipulate voting power based on their actions.",
+          "4. Since the owner can burn tokens from any address (not limited to themselves), this constitutes a potential leak of voting power from other users to the owner.",
+          "5. The ability to change voting power without the consent of the token holders indicates that the owner can effectively reduce the voting power of others, which aligns with the definition of a leak."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "SnapshotToken._burn(address,uint256)",
+        "control_variable": "_votingPower",
+        "targets": [
+          "SnapshotToken.historicalVotingPowerAtIndex(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_19",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function SnapshotToken._burn(address,uint256) allows for the burning of tokens, which can indirectly affect the voting power of an address through BandToken._changeVotingPower(address).",
+          "The control source does not specify any restrictions on who can call _burn, meaning it could be called by any address, potentially allowing for the manipulation of voting power for any arbitrary address.",
+          "The affected target BandToken._changeVotingPower(address) modifies the _votingPower and votingPowerChangeCount, which indicates that the voting power can be altered based on the burning of tokens.",
+          "Since the burning of tokens can be controlled by any address, it allows for the potential leakage of voting power from one address to another, especially if the burning is done on behalf of another address."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "SnapshotToken._burn(address,uint256)",
+        "control_variable": "votingPowerChangeNonce",
+        "targets": [
+          "BandToken._changeVotingPower(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_22",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function SnapshotToken._burn is internal and can be controlled by privileged accounts, which means that only certain addresses can trigger it.",
+          "The affected target BandToken.historicalVotingPowerAtNonce has a conditional check that requires the nonce to be less than or equal to votingPowerChangeNonce.",
+          "If a privileged account can manipulate votingPowerChangeNonce, they can effectively control whether the historical voting power can be accessed or not, limiting the ability of regular users to interact with the voting power system."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "SnapshotToken._burn(address,uint256)",
+        "control_variable": "votingPowerChangeNonce",
+        "targets": [
+          "BandToken.historicalVotingPowerAtNonce(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_23",
+      "path_type": "INDIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 0.0,
+        "reasoning": [
+          "The function SnapshotToken._burn(address,uint256) does not directly manipulate any balances or supply in a way that would allow for minting tokens. It is an internal function and does not have any modifiers that would indicate special permissions affecting asset balances.",
+          "The affected target, SnapshotToken.historicalVotingPowerAtNonce(address,uint256), is used for a conditional check that requires nonce to be less than or equal to votingPowerChangeNonce. This does not imply any asset manipulation or leakage.",
+          "There are no indications of any transfer control variables being modified that would limit user transactions, nor is there any evidence of token leakage as the balances are not being reduced or redirected to an unauthorized address.",
+          "Since there are no asset changes or control over transactions that could be classified under the defined rugpull behaviors, the category is determined to be empty."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "SnapshotToken._burn(address,uint256)",
+        "control_variable": "votingPowerChangeNonce",
+        "targets": [
+          "SnapshotToken.historicalVotingPowerAtNonce(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_24",
+      "path_type": "INDIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 0.0,
+        "reasoning": [
+          "The function SnapshotToken._changeVotingPower(address) does not directly manipulate any asset balances or supply. It only changes the voting power, which is not classified under the defined rugpull behaviors.",
+          "The affected target BandToken.historicalVotingPowerAtIndex(address,uint256) checks a condition based on votingPowerChangeCount[owner], but this does not involve any asset transfer or manipulation of balances.",
+          "There are no indications of a privileged entity being able to mint tokens, limit transactions, or leak tokens through this path. The control variable _votingPower does not affect any asset directly."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "SnapshotToken._changeVotingPower(address)",
+        "control_variable": "_votingPower",
+        "targets": [
+          "BandToken.historicalVotingPowerAtIndex(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_25",
+      "path_type": "INDIRECT",
+      "category": "",
+      "llm_result": {
+        "category": "",
+        "confidence": 0.0,
+        "reasoning": [
+          "The function SnapshotToken._changeVotingPower(address) does not directly manipulate any asset balances or supply. It only changes the voting power, which is not classified under the defined rugpull behaviors.",
+          "The affected target SnapshotToken.historicalVotingPowerAtIndex(address,uint256) checks a condition based on votingPowerChangeCount[owner], but this does not involve any asset transfer or manipulation of balances.",
+          "There are no indications of a privileged entity being able to mint tokens, limit transactions, or leak tokens through this path. The control chain does not show any asset-related operations that would fall under the definitions of MINT, LIMIT, or LEAK."
+        ],
+        "key_nodes": []
+      },
+      "overview": {
+        "source": "SnapshotToken._changeVotingPower(address)",
+        "control_variable": "_votingPower",
+        "targets": [
+          "SnapshotToken.historicalVotingPowerAtIndex(address,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 8,
+    "LIMIT": 6,
+    "LEAK": 8,
+    "EMPTY": 4,
+    "ERROR": 0
+  }
+}

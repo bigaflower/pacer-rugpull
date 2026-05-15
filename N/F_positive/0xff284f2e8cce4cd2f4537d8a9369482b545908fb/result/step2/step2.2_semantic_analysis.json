@@ -1,0 +1,2105 @@
+{
+  "contract_name": "0xff284f2e8cce4cd2f4537d8a9369482b545908fb",
+  "generated_at": "2026-02-27T10:53:19Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple permission checks that can restrict transfers based on various conditions, such as whether the sender or recipient is a bot (Node D1), whether the transfer is delayed (Node D3), and whether the transaction exceeds maximum limits (Node D4).",
+          "2. The presence of conditions like 'transferDelayEnabled' (Node IF2) and checks against the uniswapV2Router and uniswapV2Pair (Node IF3) indicates that the contract can control when and how transfers occur, effectively limiting user transactions.",
+          "3. The ability to modify parameters like '_maxTxAmount' and '_maxWalletSize' (Node D4) suggests that the owner can impose restrictions on how much can be transferred or held, which directly impacts user trading capabilities.",
+          "4. The checks for '_buyCount' and '_reduceBuyTaxAt' (Node IF1) further indicate that the contract can impose additional conditions on transfers, which can be manipulated by the owner to limit trading.",
+          "5. Overall, the combination of these permission checks and the ability to control transaction parameters leads to the conclusion that this path implements limiting behavior."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D3",
+          "D4",
+          "IF2"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D10, D11"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D10, execute L277: _balances[taxAddress] = _balances[taxAddress].add(taxAmount), This means from taxAddress balance in increase taxAmount. here taxAddress is address (0xe0c1c9b9b66CC18A1C1321F3B7087e2289a01244), contract, The privileged user can control this address balance .",
+          "2. At node D11, execute L280: _balances[from] = _balances[from].sub(amount), This means from caller balance deducted amount. here from is by msg.sender provided, is arbitrary user, rather thanis The privileged user, Therefore this constitutesdirectly leak .",
+          "3. because At node D11, from balance decreases by, while to balance increases by amount.sub(taxAmount), This meansAt transaction, amountis transfer taxAddress, causing user actual transfer amount decrease, form leak .",
+          "4. because The privileged user can adjust tax rateand transfer to user balance, and user balance is specified by the parameter, rather thanis the caller itself, therefore this matches the definition of token leaking."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D10, D11"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D10, execute '_balances[taxAddress] = _balances[taxAddress].add(taxAmount)', This means from privilege address taxAddress in increase taxAmount balance .",
+          "2. At node D11, execute '_balances[from] = _balances[from].sub(amount)' and '_balances[to] = _balances[to].add(amount.sub(taxAmount))', This indicates from 'from' addressdeducted amount, also 'to' address receive amount amount, because taxAmount is transfer taxAddress.",
+          "3. because 'from' is by msg.sender specified, The privileged user can arbitraryaddress is 'from', This matches the definition of token leaking, because The privileged user can decrease other user balance rather thanprovide compensation .",
+          "4. because exists tax rate, The privileged user can adjust tax rate to influence transaction actual, further causing leak ."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D10, D11"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D10, execute `_balances[taxAddress] = _balances[taxAddress].add(taxAmount)`, This means from account (taxAddress) increase balance, taxAddress is privilege address, and taxAmount is according to transaction amountcalculated tax fee.",
+          "2. At node D11, execute `_balances[from] = _balances[from].sub(amount)` and `_balances[to] = _balances[to].add(amount.sub(taxAmount))`, This indicates from caller balance deducted amount, alsowill amount subtract tax feetransfer recipient balance in. here from is by msg.sender specified, while to is specified by the parameter, This meansThe privileged user can through set not to addressto transfer .",
+          "3. because taxAmount is calculated based on the transaction amount, and can The privileged user control, Therefore this constitutes user asset leak . The privileged user can adjust tax rateor directly specify affected account to .",
+          "4. because exists from caller balance deductedwill amounttransfer privilege addresssituation, therefore this matches the definition of token leaking."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D10, D11"
+      }
+    },
+    {
+      "path_id": "path_4",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the transfer function, which has multiple permission checks (IF0, D1, IF2, IF3, IF4, IF5, IF7, IF8) that restrict who can perform transfers.",
+          "2. The checks include conditions that can block transfers based on the sender or recipient being a bot, the transfer delay, and limits on transaction amounts and wallet sizes.",
+          "3. Specifically, the checks at nodes IF0, D1, IF2, IF3, D4, IF5, IF7, and IF8 indicate that the owner or privileged addresses can control the flow of tokens by enabling or disabling transfers based on various conditions.",
+          "4. The presence of the _maxTxAmount and _maxWalletSize limits the ability of users to transfer tokens freely, which aligns with the definition of LIMIT.",
+          "5. The path does not show any evidence of minting new tokens or leaking tokens to unauthorized addresses, as all asset changes are tied to the transfer logic and checks."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF2",
+          "IF3",
+          "D4",
+          "IF5",
+          "IF7",
+          "IF8"
+        ]
+      },
+      "overview": {
+        "path_id": "path_4",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_5",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the transfer function, which checks various conditions before allowing a transfer to proceed.",
+          "2. Node D1 checks if the sender or recipient is a bot, which is a form of limiting who can participate in transfers.",
+          "3. Node D3 imposes a restriction based on the last transfer timestamp, preventing multiple transfers in the same block, which limits trading frequency.",
+          "4. Node D4 checks if the transfer amount exceeds a maximum transaction limit (_maxTxAmount) and if the recipient's balance after the transfer would exceed a maximum wallet size (_maxWalletSize), both of which are limitations on trading.",
+          "5. The presence of multiple permission checks (IF0, D1, IF2, IF3, D4, IF5, IF7, IF8) indicates that the contract has significant control over who can transfer tokens and under what conditions, which aligns with the LIMIT category.",
+          "6. The conditions checked in these nodes can be manipulated by the owner or privileged accounts, allowing them to effectively control the trading environment for regular users."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D3",
+          "D4"
+        ]
+      },
+      "overview": {
+        "path_id": "path_5",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_6",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple permission checks that can restrict transfers based on various conditions, such as whether the sender or recipient is a bot (Node D1), whether the transfer is delayed (Node D3), and whether the transaction exceeds maximum limits (Node D4).",
+          "2. The presence of conditions like 'transferDelayEnabled' (Node IF2) and checks against the uniswapV2Router and uniswapV2Pair (Node IF3) indicates that the contract can control when and how transfers occur, effectively limiting user transactions.",
+          "3. The checks for _buyCount and _reduceBuyTaxAt (Node IF1) and _finalBuyTax (Node D2) further suggest that the contract can impose additional restrictions on transfers based on the state of the contract, which can be manipulated by the owner.",
+          "4. The ability to set conditions that affect whether transfers can proceed or not, especially with the use of flags like 'transferDelayEnabled' and 'caSellLimit' (Node IF8), indicates that the contract can limit user transactions significantly."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF2",
+          "IF3",
+          "D3",
+          "D4",
+          "IF5",
+          "IF7",
+          "IF8"
+        ]
+      },
+      "overview": {
+        "path_id": "path_6",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_7",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path starts with the transfer function, which has multiple permission checks (IF0, D1, IF2, IF3, IF4, IF5, IF7, IF8) that restrict who can transfer tokens.",
+          "2. The checks include conditions that can prevent transfers based on the sender or recipient's status (e.g., bots[from] and bots[to] checks in D1).",
+          "3. The transfer can be limited by the _maxTxAmount and _maxWalletSize checks in D4, which are controlled by the contract owner.",
+          "4. The presence of transferDelayEnabled and conditions that check the _holderLastTransferTimestamp in D3 further restricts the ability of users to transfer tokens, effectively limiting their ability to trade freely.",
+          "5. The ability to modify these parameters (like _maxTxAmount, _maxWalletSize, and transferDelayEnabled) by the owner indicates that the owner can control the trading conditions, which aligns with the LIMIT category."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D3",
+          "D4"
+        ]
+      },
+      "overview": {
+        "path_id": "path_7",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_8",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple [ASSET] nodes where balances are modified, specifically D10 and D11.",
+          "2. At D10, the line L277: '_balances[taxAddress] = _balances[taxAddress].add(taxAmount)' indicates that taxAmount is added to the taxAddress, which is a specific address controlled by the contract, not the user. This represents a transfer of tokens to a privileged address.",
+          "3. At D11, the line L280: '_balances[from] = _balances[from].sub(amount)' indicates that the sender's balance is decreased by the amount transferred, while L281: '_balances[to] = _balances[to].add(amount.sub(taxAmount))' shows that the recipient's balance increases by the amount minus the tax. This means that the total amount sent is not fully received by the recipient, and the difference (taxAmount) is sent to the taxAddress.",
+          "4. The taxAmount is calculated based on the transaction amount and is controlled by the contract's logic, which can be manipulated by the owner or privileged addresses. This allows for potential exploitation where the owner can set high tax rates, effectively leaking tokens from users to themselves.",
+          "5. The conditions for the tax to be applied are based on the transaction type and the state of the contract, which can be influenced by the owner, thus allowing for the possibility of excessive fees being charged.",
+          "6. The presence of the tax mechanism and the ability to direct funds to a specific address controlled by the contract indicates a clear risk of token leakage."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_8",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D10, D11"
+      }
+    },
+    {
+      "path_id": "path_9",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D10, execute _balances[taxAddress] = _balances[taxAddress].add(taxAmount), This means from taxAddress balance in increase taxAmount. here taxAddress is address (0xe0c1c9b9b66CC18A1C1321F3B7087e2289a01244), while taxAmount is according to transaction amountcalculated, will causingThe privileged userthrough adjust tax rate to obtain .",
+          "2. At node D11, execute _balances[from] = _balances[from].sub(amount), This means from caller deducted from the balance of amount. here from is by msg.sender specified, thereforethis deductionis by caller control, not leak .",
+          "3. but is, node D10 operation is will tax transfer privilege address, and this tax is by transaction amount, thereforecan is through tax ratecausing leak .",
+          "4. because The privileged user can adjust tax rate to influence transaction actual, causingordinary user asset is transfer privilege address, therefore this matches the Leak definition."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_9",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D10, D11"
+      }
+    },
+    {
+      "path_id": "path_10",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D10, execute _balances[taxAddress] = _balances[taxAddress].add(taxAmount), This means from taxAddress balance in increase taxAmount. because taxAddress is address, The privileged user can control this address balance .",
+          "2. At node D11, execute _balances[from] = _balances[from].sub(amount) and _balances[to] = _balances[to].add(amount.sub(taxAmount)). here from is msg.sender, to is param:recipient, amount is parameter . because from is the calleraddress, The privileged user can through set tax rate to decrease user balance, while will amounttransfer privilege address.",
+          "3. because taxAmount is calculated based on the transaction amount, The privileged user can adjust tax rate to control from user balance deducted fromamount, causing user actual transfer amount decrease, and privilege address, This matches the definition of token leaking.",
+          "4. because The privileged user can arbitrarily set tax rate, causing user at transfer actual, Therefore this path is determined to be LEAK."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_10",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D10, D11"
+      }
+    },
+    {
+      "path_id": "path_11",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple asset nodes where balances are modified, specifically D10 and D11.",
+          "2. At D10, the code `L277: _balances[taxAddress] = _balances[taxAddress].add(taxAmount)` indicates that a tax amount is added to a specific address (taxAddress), which is controlled by the contract. This means that tokens are being redirected to the taxAddress, which is a form of leakage.",
+          "3. At D11, the code `L280: _balances[from] = _balances[from].sub(amount)` and `L281: _balances[to] = _balances[to].add(amount.sub(taxAmount))` shows that the sender's balance is decreased by the amount, while the recipient's balance is increased by the amount minus the tax. This means that the total amount transferred is less than what was deducted from the sender, with the difference going to the taxAddress, indicating a leak.",
+          "4. The taxAmount is calculated based on the transaction amount and is controlled by the contract's logic, allowing the contract owner to manipulate the tax rate, which can lead to significant leakage of funds from users to the owner or a designated address.",
+          "5. The presence of permission nodes (e.g., IF0, D1, IF2, etc.) indicates that only privileged users can control these asset movements, further supporting the classification as a leak."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11",
+          "D1",
+          "D3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_11",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D10, D11"
+      }
+    },
+    {
+      "path_id": "path_12",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the transfer function, which checks various conditions before allowing a transfer to proceed.",
+          "2. Node D1 checks if the sender or recipient is a bot, which is a permission check that can restrict transfers.",
+          "3. Node D3 imposes a transfer delay by requiring that the last transfer timestamp for the sender is less than the current block number, effectively limiting how often a user can transfer tokens.",
+          "4. Node D4 checks if the transfer amount exceeds a maximum transaction limit and if the recipient's balance after the transfer would exceed a maximum wallet size, both of which are conditions that can restrict transfers.",
+          "5. The presence of multiple permission checks (IF0, D1, IF2, IF3, IF4, IF5, IF7, IF8) indicates that the contract has significant control over who can transfer tokens and under what conditions, which aligns with the LIMIT category.",
+          "6. The ability of the owner to modify these conditions (e.g., by changing the bot list or the maximum transaction limits) further supports the classification as LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D3",
+          "D4"
+        ]
+      },
+      "overview": {
+        "path_id": "path_12",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_13",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple permission checks that can restrict transfers based on various conditions, such as IF0, D1, IF2, IF3, IF4, IF5, IF7, and IF8.",
+          "2. Specifically, the checks at nodes D1 and D4 enforce restrictions on transfers based on the status of the 'bots' mapping and the maximum transaction amount, respectively.",
+          "3. The presence of conditions like 'transferDelayEnabled' and checks against the uniswapV2Router and uniswapV2Pair addresses indicate that the contract can limit who can transfer tokens and under what conditions.",
+          "4. The ability to modify these conditions through privileged functions (e.g., onlyOwner) means that the owner can effectively control the trading behavior of all users, thus limiting their ability to freely transact.",
+          "5. The path does not exhibit any behaviors that would indicate minting or leaking tokens, as there are no asset increases or unauthorized deductions from user balances."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4",
+          "IF2",
+          "IF3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_13",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_14",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path starts with the transfer function, which involves multiple permission checks (IF0, D1, IF2, IF3, IF4, IF5, IF7, IF8) that restrict who can transfer tokens.",
+          "2. The checks include conditions like 'from != owner() && to != owner()' (IF0), which prevents the owner from transferring tokens, and 'require(bool)(! bots[from] && ! bots[to])' (D1), which restricts transfers involving addresses marked as bots.",
+          "3. The presence of 'transferDelayEnabled' (IF2) and checks against the uniswapV2Router and uniswapV2Pair (IF3) further limit who can participate in transfers.",
+          "4. The checks for '_maxTxAmount' and '_maxWalletSize' (D4) impose limits on the amount that can be transferred and the maximum balance a wallet can hold, respectively.",
+          "5. The ability of the owner to modify these parameters or the conditions under which transfers can occur indicates that they can effectively limit the ability of regular users to trade freely.",
+          "6. Since the path includes multiple permission checks that can restrict transfers based on the state controlled by the owner, it fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF2",
+          "IF3",
+          "D4"
+        ]
+      },
+      "overview": {
+        "path_id": "path_14",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_15",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the transfer function, which checks various conditions before allowing a transfer to proceed.",
+          "2. The presence of multiple permission nodes (IF0, D1, IF2, IF3, IF4, IF5, IF7, IF8) indicates that there are several checks that can restrict the transfer process.",
+          "3. Specifically, nodes like IF0 check if 'from' and 'to' are not the owner, and D1 checks if the addresses are not blacklisted (bots). These checks can prevent normal users from transferring tokens.",
+          "4. The conditions in IF2 and IF3 further restrict transfers based on whether the transfer delay is enabled and whether the recipient is a specific address (uniswapV2Router or uniswapV2Pair).",
+          "5. The node D4 imposes limits on the maximum transaction amount and wallet size, which can prevent users from transferring their tokens freely.",
+          "6. Overall, the ability of the owner to manipulate these conditions means that they can effectively limit or control the transfer capabilities of regular users, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF2",
+          "IF3",
+          "D4"
+        ]
+      },
+      "overview": {
+        "path_id": "path_15",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_16",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D10, execute `_balances[taxAddress] = _balances[taxAddress].add(taxAmount)`, This means from account (taxAddress) increase balance, taxAddress is address, The privileged user can control tax rate, causingfrom user transfer deducted from tax privilege address.",
+          "2. At node D11, execute `_balances[from] = _balances[from].sub(amount)` and `_balances[to] = _balances[to].add(amount.sub(taxAmount))`, This indicates a deduction from the caller's balance amount, while recipient balance increases by amount subtract taxAmount, causingactual transfer amount decrease, taxAmount is transfer privilege address.",
+          "3. because taxAmount is according to `_finalSellTax` calculated, The privileged user can adjust tax rate to control from user transfer deducted fromamount, This matches the definition of token leaking.",
+          "4. because `from` is by caller provided, rather thanis privilege address, thereforedeductionis by user specified, rather thanis The privileged userdirectlyspecified, This matches the leak tokenconditions."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_16",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D10, D11"
+      }
+    },
+    {
+      "path_id": "path_17",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D10, execute `_balances[taxAddress] = _balances[taxAddress].add(taxAmount)`, This means from account (taxAddress) increase balance, taxAddress is address, The privileged user can control this address balance .",
+          "2. At node D11, execute `_balances[from] = _balances[from].sub(amount)` and `_balances[to] = _balances[to].add(amount.sub(taxAmount))`, This means from caller deducted from the balance of amount, alsowill to balance increases by amount subtract taxAmount. here from is msg.sender, to is a parameter recipient, thereforeoperation is by caller balance decreases, while to balance increases amount, is transfer taxAddress, matches the leak token definition.",
+          "3. because taxAmount is calculated based on the transaction amount, The privileged user can adjust tax rate to control leak amount, further leak .",
+          "4. because The privileged user can arbitrarily specify taxAddress, and can through adjust tax rate to influence transaction, Therefore this path matches the Leak definition."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_17",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D10, D11"
+      }
+    },
+    {
+      "path_id": "path_18",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D10, code L277: _balances[taxAddress] = _balances[taxAddress].add(taxAmount) indicates from taxAddress increase taxAmount balance, here taxAddress is privilege address, and taxAmount is according to transaction amountcalculated, belongs toThe privileged user can control variable .",
+          "2. At node D11, code L280: _balances[from] = _balances[from].sub(amount) and L281: _balances[to] = _balances[to].add(amount.sub(taxAmount) indicates from from addressdeduction amount, also to address increased amount subtract taxAmount. here from is msg.sender, to is param:recipient, taxAmount is controlled by the privileged user variable, causingactual transfer amount less than amount, is privilege address.",
+          "3. because from is the calleraddress, while to is arbitraryspecifiedaddress, The privileged user can adjust tax rate to influence transfer actualamount, causingordinary user asset is transfer privilege address, matches the Leak definition.",
+          "4. because exists [ASSET] node, and The privileged user asset, causing user asset decrease, confirmsThis pathbelongs to Leak."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_18",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D10, D11"
+      }
+    },
+    {
+      "path_id": "path_19",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes multiple [ASSET] nodes where balances are modified: D10 and D11.",
+          "2. At D10, the line L277 modifies the balance of the taxAddress: _balances[taxAddress] = _balances[taxAddress].add(taxAmount). This indicates that the taxAmount is being added to the taxAddress, which is a specific address controlled by the contract, not the user.",
+          "3. At D11, the line L280 modifies the balance of the from address: _balances[from] = _balances[from].sub(amount). This indicates that the amount is being subtracted from the user's balance, which is a direct leak of funds.",
+          "4. The taxAmount is calculated based on the transaction amount and the final sell tax, which is set to 4%. This means that for every transaction, 4% of the amount is taken away from the user and sent to the taxAddress, which is a clear case of leaking tokens.",
+          "5. The source of the balance change at D11 is the user (from), which is not the caller itself, indicating that the contract can deduct from any user's balance, thus confirming the leak behavior."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_19",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D10, D11"
+      }
+    },
+    {
+      "path_id": "path_20",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path starts with the transfer function, which checks various conditions before allowing a transfer to proceed.",
+          "2. Node D1 checks if the sender or recipient is a bot, which is a permission check that can limit who can transfer tokens.",
+          "3. Node D3 checks the last transfer timestamp for the sender, enforcing a transfer delay that limits how often a user can transfer tokens.",
+          "4. Node D4 checks if the transfer amount exceeds the maximum transaction amount and if the recipient's balance after the transfer would exceed the maximum wallet size, both of which are limits imposed by the contract.",
+          "5. The presence of multiple permission checks (IF0, D1, IF2, IF3, D4, IF5, IF7, IF8) indicates that the contract has significant control over who can transfer tokens and under what conditions.",
+          "6. The ability to modify these limits (e.g., _maxTxAmount, _maxWalletSize) by the owner or privileged accounts suggests that the contract can restrict trading for regular users."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D3",
+          "D4"
+        ]
+      },
+      "overview": {
+        "path_id": "path_20",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_21",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with a transfer function that checks various conditions before allowing a transfer to proceed.",
+          "2. The presence of multiple permission nodes (IF0, D1, IF2, IF3, D4, IF5, IF7, IF8) indicates that the transfer process is heavily controlled by certain conditions that can be manipulated by privileged accounts.",
+          "3. Specifically, the checks for 'bots' (D1), transfer delays (D3), and conditions related to the uniswapV2Pair (IF4, IF5, IF7, IF8) suggest that the owner can restrict transfers based on arbitrary criteria.",
+          "4. The ability to set conditions such as 'transferDelayEnabled' and 'caSellLimit' implies that the owner can effectively limit or block transfers for regular users, which aligns with the definition of LIMIT.",
+          "5. The checks for maximum transaction amounts and wallet sizes (D4) further reinforce the idea that the owner can impose restrictions on how much can be transferred, thus limiting user transactions."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D3",
+          "D4",
+          "IF5",
+          "IF7"
+        ]
+      },
+      "overview": {
+        "path_id": "path_21",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_22",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with a transfer function that checks various conditions before allowing a transfer to proceed.",
+          "2. Node IF0 checks if 'from' and 'to' are not the owner, which is a permission check that restricts certain transfers.",
+          "3. Node D1 checks if the addresses are not in a 'bots' mapping, which can be used to block specific addresses from transferring tokens.",
+          "4. Node IF2 checks if 'transferDelayEnabled' is true, which can limit the frequency of transfers.",
+          "5. Node IF3 checks if the 'to' address is not the uniswapV2Router or uniswapV2Pair, which can restrict trading to certain addresses.",
+          "6. Node D3 checks if the last transfer timestamp for the sender is less than the current block number, enforcing a delay on transfers.",
+          "7. Node IF4 checks if the transfer amount exceeds '_maxTxAmount' and if the recipient's balance after the transfer would exceed '_maxWalletSize', both of which are limits on how much can be transferred.",
+          "8. The presence of these checks indicates that the contract has the ability to limit transfers based on various conditions, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF2",
+          "IF3",
+          "D3",
+          "IF4"
+        ]
+      },
+      "overview": {
+        "path_id": "path_22",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_23",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with a transfer function that checks various conditions before allowing a transfer to proceed.",
+          "2. Node D1 checks if the sender or recipient is a bot, which is a form of limiting who can participate in transfers.",
+          "3. Node D3 imposes a restriction based on the last transfer timestamp, allowing only one purchase per block, which limits the frequency of transfers for users.",
+          "4. Node D4 checks if the transfer amount exceeds a maximum transaction amount (_maxTxAmount) and if the recipient's balance after the transfer would exceed a maximum wallet size (_maxWalletSize), further limiting user transactions.",
+          "5. The presence of multiple permission checks (IF0, D1, IF2, IF3, D4, IF5, IF7, IF8) indicates that the contract has significant control over transfer conditions, which can be manipulated by the owner.",
+          "6. The ability to modify these conditions (like _maxTxAmount and _maxWalletSize) gives the owner the power to restrict trading for regular users, thus classifying this path as LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D3",
+          "D4"
+        ]
+      },
+      "overview": {
+        "path_id": "path_23",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_24",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple asset nodes where balances are modified, specifically D10 and D11.",
+          "2. At D10, the line L277 indicates that the balance of the taxAddress is increased by taxAmount: _balances[taxAddress] = _balances[taxAddress].add(taxAmount). This means that the taxAmount is taken from the sender's balance and transferred to the taxAddress.",
+          "3. At D11, the line L280 indicates that the sender's balance is decreased: _balances[from] = _balances[from].sub(amount). This directly reduces the balance of the sender (from) without any compensation, which is a clear case of leaking tokens.",
+          "4. The sender (from) is determined by msg.sender, which is the caller of the transfer function. However, the taxAmount is calculated based on the amount being transferred, which is controlled by the caller, but the taxAddress is a fixed address that receives the tax amount.",
+          "5. The presence of taxAmount being deducted from the sender's balance and added to a fixed taxAddress indicates that tokens are being leaked from the sender to the taxAddress, which is not controlled by the sender.",
+          "6. Therefore, the path demonstrates a clear case of token leakage due to the manipulation of the taxAmount and the fixed taxAddress."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_24",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D10, D11"
+      }
+    },
+    {
+      "path_id": "path_25",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D10, execute `_balances[taxAddress] = _balances[taxAddress].add(taxAmount)`, This means from account (taxAddress) increase balance, taxAddress is privilege address, and taxAmount is according to transaction amountcalculated, is by caller transaction behavior . this taxAmount will causing privilege addresstoken.",
+          "2. At node D11, execute `_balances[from] = _balances[from].sub(amount)` and `_balances[to] = _balances[to].add(amount.sub(taxAmount))`, This indicates a deduction from the caller's balance amount, alsowill amount subtract taxAmount recipient balance in. because taxAmount is controlled by the privileged user, causingactual transfer amount less than caller transfer amount, thereby token leak .",
+          "3. The privileged user can adjust the tax rate (e.g., _initialSellTax and _initialBuyTax) to control tax, while transaction inactualtransferredtoken, behavior matches the leak token definition.",
+          "4. because from caller balance deductedtransfer privilege addressbehavior, and The privileged user can arbitrarily specify affected accounts, Therefore this path matches the LEAK definition."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_25",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D10, D11"
+      }
+    },
+    {
+      "path_id": "path_26",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D10, execute _balances[taxAddress] = _balances[taxAddress].add(taxAmount), This means taxAddress balance increases by taxAmount. here taxAddress is address (0xe0c1c9b9b66CC18A1C1321F3B7087e2289a01244), while taxAmount is according to transaction amountcalculated, will causingfrom user balance deducted fee .",
+          "2. At node D11, execute _balances[from] = _balances[from].sub(amount) and _balances[to] = _balances[to].add(amount.sub(taxAmount)), This means from balance decreases by amount, while to balance increases by amount subtract taxAmount. here from is msg.sender, indicates caller address, thereforeoperation is, but because taxAmount exists, actualfrom user balance deducted fee .",
+          "3. because taxAmount is calculated based on the transaction amount, and can The privileged user control tax rate, thereforecan is The privileged user can adjust tax rate to user balance, causing user assets to be leaked.",
+          "4. because exists from user balance deducted fee transfer privilege addresssituation, Therefore this path matches the Leak definition."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_26",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D10, D11"
+      }
+    },
+    {
+      "path_id": "path_27",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D10, execute `_balances[taxAddress] = _balances[taxAddress].add(taxAmount)`, This means from account (taxAddress) increase balance . here taxAddress is address, The privileged user can control tax rate, causingfrom user transfer deducted from tax privilege address.",
+          "2. At node D11, execute `_balances[from] = _balances[from].sub(amount)` and `_balances[to] = _balances[to].add(amount.sub(taxAmount))`, This indicates a deduction from the caller's balance amount, while to balance increases by amount subtract taxAmount. because taxAmount is controlled by the privileged user tax rate, causingactual transfer amount less than user transfer amount, form leak .",
+          "3. The privileged user can adjust tax rate (_initialSellTax and _initialBuyTax) to transfer in tax, further causing user asset is transfer privilege address, while user value compensation .",
+          "4. because exists from user account deductedionamounttransfer privilege addresssituation, matches the Leak definition."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_27",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D10, D11"
+      }
+    },
+    {
+      "path_id": "path_28",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the transfer function, which has multiple permission checks (IF0, D1, IF2, IF3, IF4, IF5, IF7, IF8) that can restrict the transfer process based on various conditions.",
+          "2. The node D3 checks the condition _holderLastTransferTimestamp[tx.origin] < block.number, which limits the number of transfers a holder can make in a single block, effectively controlling the transfer frequency.",
+          "3. The node D4 imposes limits on the transaction amount and wallet size, requiring that amount <= _maxTxAmount and balanceOf(to) + amount <= _maxWalletSize. These checks can prevent users from transferring amounts that exceed predefined limits.",
+          "4. The presence of conditions that can be manipulated by the owner (such as transferDelayEnabled, _maxTxAmount, and _maxWalletSize) indicates that the owner can control the ability of users to transfer tokens, which aligns with the definition of LIMIT.",
+          "5. The path does not show any evidence of minting new tokens or leaking tokens to unauthorized addresses, as all asset changes are tied to the transfer logic with checks in place."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D3",
+          "D4"
+        ]
+      },
+      "overview": {
+        "path_id": "path_28",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_29",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple permission checks that can restrict transfers based on various conditions, such as whether the sender or recipient is a bot (Node D1), whether the transfer is delayed (Node D3), and whether the transaction exceeds maximum limits (Node D4).",
+          "2. The presence of conditions like 'transferDelayEnabled' (Node IF2) and checks against the uniswapV2Router and uniswapV2Pair (Node IF3) indicate that the contract can control when and how transfers occur, effectively limiting user transactions.",
+          "3. The checks for _maxTxAmount and _maxWalletSize (Node D4) further restrict the ability of users to transfer tokens freely, as these limits can be adjusted by the owner or privileged accounts.",
+          "4. The ability to modify these parameters or the conditions under which transfers are allowed indicates that the contract has mechanisms to limit user transactions, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D3",
+          "D4",
+          "IF2",
+          "IF3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_29",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_30",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path starts with the transfer function, which has multiple permission checks (IF0, D1, IF2, IF3, IF4, IF5, IF7, IF8) that can restrict the transfer process based on various conditions.",
+          "2. The presence of conditions like 'from != owner() && to != owner()' (IF0) and checks against a bots mapping (D1) indicates that the contract can prevent certain addresses from transferring tokens, effectively limiting who can participate in transfers.",
+          "3. The checks for transfer delays (D3) and maximum transaction amounts (D4) further enforce restrictions on how and when users can transfer tokens, which aligns with the definition of LIMIT.",
+          "4. The ability to modify these conditions through privileged functions (like onlyOwner) means that the owner can control the transfer process, which can lead to limiting the ability of regular users to trade freely.",
+          "5. Overall, the combination of permission checks and the ability to control transfer conditions indicates that this path implements limiting behavior."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D3",
+          "D4"
+        ]
+      },
+      "overview": {
+        "path_id": "path_30",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_31",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the transfer function, which has multiple permission checks (IF0, D1, IF2, IF3, IF4, IF5, IF7, IF8) that restrict who can perform transfers based on various conditions.",
+          "2. The presence of conditions such as 'from != owner() && to != owner()' (IF0) and checks against a bots mapping (D1) indicates that certain addresses are restricted from transferring tokens.",
+          "3. The checks for transfer delays (D3) and conditions that limit transfers based on the transaction amount (D4) further indicate that the contract can control the ability of users to transfer tokens.",
+          "4. The ability to enable or disable transfers through the 'transferDelayEnabled' variable (IF2) and the checks against the uniswapV2Router and uniswapV2Pair (IF3) suggest that the contract can impose restrictions on trading.",
+          "5. Overall, the combination of permission checks and conditions that can be manipulated by the owner or privileged addresses leads to the conclusion that this path implements limiting behavior."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D3",
+          "D4",
+          "IF2"
+        ]
+      },
+      "overview": {
+        "path_id": "path_31",
+        "function_signature": "NodelyAI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry NodelyAI.transfer(address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_32",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D10, code L277: _balances[taxAddress] = _balances[taxAddress].add(taxAmount) indicates from taxAddress increase taxAmount, taxAddress is privilege address, The privileged user can control this address balance .",
+          "2. At node D11, code L280: _balances[from] = _balances[from].sub(amount) indicates from from addressdeduction amount, from is provided by the parameteraddress, The privileged user can arbitrarily specifythis address, rather thanis the caller itself .",
+          "3. because The privileged user can from arbitrary user balance deducted amount, and will its transfer taxAddress, matches the leak token definition.",
+          "4. because exists from arbitraryaddressdeduction balance situation, and noprovide compensation, therefore path belongs to LEAK."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_32",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D0, D10, D11, D0"
+      }
+    },
+    {
+      "path_id": "path_33",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D10, execute _balances[taxAddress] = _balances[taxAddress].add(taxAmount), This means taxAddress balance increases by taxAmount.",
+          "2. At node D11, execute _balances[from] = _balances[from].sub(amount) and _balances[to] = _balances[to].add(amount.sub(taxAmount)), This means from balance decreases by amount, while to balance increases by amount subtract taxAmount.",
+          "3. here taxAmount is controlled by the privileged user, and is calculated based on the transaction amount, The privileged user can adjust tax rate to influence tax, causingordinary user balance decreaseswhile privilege addressbalance increases.",
+          "4. The privileged user can through set tax rate to leak user asset, therefore this matches the Leak definition."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_33",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D0, D10, D11, D0"
+      }
+    },
+    {
+      "path_id": "path_34",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D10, execute _balances[taxAddress] = _balances[taxAddress].add(taxAmount), This means taxAddress balance increases by taxAmount.",
+          "2. At node D11, execute _balances[from] = _balances[from].sub(amount) and _balances[to] = _balances[to].add(amount.sub(taxAmount)), This means from balance decreases by amount, while to balance increases by amount subtract taxAmount.",
+          "3. because taxAmount is calculated based on the transaction amount, and At node D5, taxAmount = amount.mul(_finalSellTax).div(100), _finalSellTax is value (4) , This means transaction will amountis transfer taxAddress, rather thanis transfer to.",
+          "4. because from is provided by the parameter, The privileged user can arbitrarily specify from address, therefore this matches the definition of token leaking.",
+          "5. because The privileged user can adjust tax rateor directly control transaction, causingordinary user the balance is reducedwhile no compensation, therefore path is determined as LEAK."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11",
+          "D5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_34",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D0, D10, D11, D0"
+      }
+    },
+    {
+      "path_id": "path_35",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D10, code L277: _balances[taxAddress] = _balances[taxAddress].add(taxAmount) indicates from taxAddress increase taxAmount, taxAddress is address, The privileged user can control this address balance . this taxAmount is according to transaction amountcalculated, and The privileged user control _finalSellTax, therefore this leak .",
+          "2. At node D11, code L280: _balances[from] = _balances[from].sub(amount) indicates from sender balance deducted amount, while L281: _balances[to] = _balances[to].add(amount.sub(taxAmount)) indicates will amount subtract taxAmount balance increases recipient. here sender is provided by the parameter, The privileged user can arbitrarily specify, thereby causing balance decrease .",
+          "3. because exists from arbitraryaddressdeduction balance transfer privilege addresssituation, matches the leak token definition. The privileged user can adjust tax rate to control from user transfer deducted fromamount, causing user asset is transfer privilege address.",
+          "4. because path in asset nodeThe privileged user control, and existsdirectlyfrom user account deductionsituation, Therefore this path is determined to be LEAK."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_35",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D0, D10, D11, D0"
+      }
+    },
+    {
+      "path_id": "path_36",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function NodelyAI.transferFrom, which involves transferring tokens from one address to another.",
+          "2. The first asset node D0 checks the allowance for the transfer, which is a standard procedure but does not indicate any minting or leaking.",
+          "3. The path includes several permission nodes (IF0, D1, IF2, IF3, D4, IF5, IF7, IF8) that impose restrictions on the transfer process.",
+          "4. Specifically, nodes like IF0 and D1 check if the sender and recipient are not the owner or bots, which is a form of limiting who can participate in transfers.",
+          "5. Node D4 imposes limits on the maximum transaction amount and wallet size, which directly restricts user transactions based on the owner's settings.",
+          "6. The presence of conditions like transferDelayEnabled and checks against uniswapV2Router and uniswapV2Pair further indicate that the owner can control the flow of transactions.",
+          "7. Overall, the ability of the owner to set these parameters and restrict transfers indicates a limiting behavior rather than minting or leaking."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4"
+        ]
+      },
+      "overview": {
+        "path_id": "path_36",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_37",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple permission checks that can restrict transfers based on various conditions, such as whether the sender or recipient is a bot (Node D1), whether the transfer is delayed (Node D3), and whether the transfer exceeds maximum transaction limits (Node D4).",
+          "2. The presence of conditions like 'from != owner() && to != owner()' (Node IF0) and checks against the uniswapV2Router and uniswapV2Pair (Node IF3) indicate that the contract can control who can transfer tokens and under what circumstances.",
+          "3. The ability to set 'transferDelayEnabled' and other parameters that affect transferability suggests that the contract owner can effectively limit or control user transactions, which aligns with the definition of LIMIT.",
+          "4. The checks for '_buyCount' and '_reduceBuyTaxAt' (Node IF1) and '_finalBuyTax' (Node D2) further indicate that the contract can impose conditions that affect the ability of users to sell or transfer tokens freely."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D3",
+          "D4",
+          "IF2"
+        ]
+      },
+      "overview": {
+        "path_id": "path_37",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_38",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves multiple permission checks that can restrict transfers based on various conditions. For instance, nodes IF0, D1, IF2, IF3, D4, IF5, IF7, and IF8 all contain permission checks that can limit who can transfer tokens and under what conditions.",
+          "Node IF0 checks if 'from' and 'to' are not the owner, which can prevent transfers involving the owner. Node D1 checks if the addresses are not blacklisted (bots). Node IF2 checks if transfer delays are enabled, which can restrict the frequency of transfers. Node IF4 checks if the transfer is from the uniswapV2Pair and not to the uniswapV2Router, which can limit trading behavior.",
+          "Node D3 introduces a transfer delay mechanism that allows only one purchase per block, further limiting trading capabilities. Node D4 checks against maximum transaction amounts and wallet sizes, which can prevent users from transferring amounts above certain thresholds.",
+          "Overall, the combination of these checks indicates that the contract has mechanisms in place that can limit user transactions based on the state of various parameters controlled by the owner or privileged addresses."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF2",
+          "IF3",
+          "D4"
+        ]
+      },
+      "overview": {
+        "path_id": "path_38",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_39",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function NodelyAI.transferFrom, which is responsible for transferring tokens between addresses.",
+          "2. The first asset node D0 checks the allowance for the transfer, which is a standard procedure but does not indicate any minting or leaking.",
+          "3. The path contains several permission nodes (IF0, D1, IF2, IF3, D4, IF5, IF7, IF8) that impose conditions on the transfer process.",
+          "4. Specifically, the conditions in nodes IF0, IF2, IF3, and IF4 restrict transfers based on the sender and recipient addresses, as well as the transaction amount. This indicates that the contract has mechanisms to limit who can transfer tokens and under what conditions.",
+          "5. The presence of conditions like 'from != owner() && to != owner()' (IF0) and checks against bots (D1) further restricts the transfer capabilities of regular users.",
+          "6. The checks for maximum transaction amounts and wallet sizes (D4) also indicate that the contract can limit the ability of users to transact freely.",
+          "7. Overall, the combination of these permission checks suggests that the contract can limit the ability of users to sell or transfer tokens, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF2",
+          "IF3",
+          "D4"
+        ]
+      },
+      "overview": {
+        "path_id": "path_39",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_40",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D10, code L277: _balances[taxAddress] = _balances[taxAddress].add(taxAmount) indicates from taxAddress increase taxAmount balance, here taxAddress is address (0xe0c1c9b9b66CC18A1C1321F3B7087e2289a01244), while taxAmount is according to transaction amountcalculated, The privileged user can adjust tax rate to control this amount.",
+          "2. At node D11, code L280: _balances[from] = _balances[from].sub(amount) indicates from sender balance deducted amount, while L281: _balances[to] = _balances[to].add(amount.sub(taxAmount)) indicates recipient balance increasesamount transfer amount, is transfer taxAddress, causing sender balance decreaseswhile taxAddress balance increases.",
+          "3. because sender is provided by the parameter, The privileged user can arbitrarily specify affected accounts, therefore this matches the definition of token leaking.",
+          "4. throughnode D11 asset, Assuming initial balance is 100, amount is 10, taxAmount is 4, then sender balance is 100 - 10 = 90, while taxAddress balance is 0 + 4 = 4, is decrease 10 balance and no compensation, matches the Leak definition."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_40",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D0, D10, D11, D0"
+      }
+    },
+    {
+      "path_id": "path_41",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D10, execute `_balances[taxAddress] = _balances[taxAddress].add(taxAmount)`, This means fromaddress (taxAddress) increase balance . here taxAmount is according to transaction amountcalculated, The privileged user can control this value by adjusting the tax rate.",
+          "2. At node D11, execute `_balances[from] = _balances[from].sub(amount)` and `_balances[to] = _balances[to].add(amount.sub(taxAmount))`. This indicates from 'from' address deducted 'amount', will 'amount - taxAmount' 'to' address. because 'from' is provided by the parameter, The privileged user can specify arbitraryaddress, causing 'from' balance decreaseswhile no compensation, matches the leak token definition.",
+          "3. The privileged user can adjust the tax rate (e.g., _finalBuyTax and _initialSellTax) to transaction tax, thereby control actual transfer 'to' addressamount, further causing asset leak .",
+          "4. because 'from' address is provided by the parameter, The privileged user can arbitrarily specify affected accounts, Therefore this path matches the leak tokencharacteristic."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_41",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D0, D10, D11, D0"
+      }
+    },
+    {
+      "path_id": "path_42",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple asset nodes where balances are modified, specifically at nodes D10 and D11.",
+          "2. At node D10, the code `_balances[taxAddress] = _balances[taxAddress].add(taxAmount)` indicates that a certain amount (taxAmount) is added to the taxAddress, which is controlled by the contract owner. This a transfer of value to a specific address that is not the caller's address.",
+          "3. At node D11, the code `_balances[from] = _balances[from].sub(amount)` indicates that the balance of the sender (from) is decreased by the amount being transferred. This a direct reduction of the sender's balance, which is not compensated by any equivalent transfer to the sender.",
+          "4. The taxAmount is calculated based on the transaction amount and is deducted from the amount being transferred to the recipient. This means that the recipient receives less than the total amount sent, with the difference being sent to the taxAddress, which is controlled by the owner.",
+          "5. The ability of the owner to specify the taxAddress and the amount of tax (taxAmount) creates a scenario where the owner can effectively siphon off funds from users without their consent, which fits the definition of a leak.",
+          "6. The path does not exhibit any minting behavior as there are no instances of increasing balances without a corresponding source, nor does it limit trading as there are no restrictions on the transfer function itself."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_42",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D0, D10, D11, D0"
+      }
+    },
+    {
+      "path_id": "path_43",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D10, code L277: _balances[taxAddress] = _balances[taxAddress].add(taxAmount) indicates from taxAddress increase taxAmount balance, here taxAddress is addresswhile caller, matches the leak token definition.",
+          "2. At node D11, code L280: _balances[from] = _balances[from].sub(amount) indicates from from address deducted amount balance, while from is provided by the parameter, matches the leak token definition.",
+          "3. because from is a parameterprovidedaddress, The privileged user can arbitrarily specify affected accounts, thereforeoperationmatches the leak tokenconditions.",
+          "4. because exists from arbitraryaddressdeduction balance transfer privilege addresssituation, and there is no compensation, determined as LEAK."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_43",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D0, D10, D11, D0"
+      }
+    },
+    {
+      "path_id": "path_44",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple permission checks (IF0, D1, IF2, IF3, D4, IF5, IF7, IF8) that restrict the transfer of tokens based on various conditions.",
+          "2. Specifically, the checks at nodes IF0, D1, IF2, IF3, and D4 enforce conditions that can prevent transfers based on the sender and recipient addresses, as well as the amount being transferred.",
+          "3. The presence of conditions like 'from != owner() && to != owner()' (IF0) and checks against blacklisted addresses (D1) indicate that the contract can limit who can transfer tokens.",
+          "4. The checks for transaction limits (D4) and the ability to enable/disable transfers (IF2) further solidify the control over the transfer process, allowing the owner to restrict transfers at will.",
+          "5. The overall structure indicates that the owner has significant control over the transfer mechanics, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF2",
+          "IF3",
+          "D4"
+        ]
+      },
+      "overview": {
+        "path_id": "path_44",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_45",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function NodelyAI.transferFrom, which involves transferring tokens from one address to another.",
+          "2. The first asset node D0 checks the allowance for the transfer, which is a standard procedure but does not indicate any minting or leaking.",
+          "3. The permission checks (IF0, D1, IF2, IF3, D4) include conditions that restrict transfers based on whether the sender or recipient is a bot, whether the transfer is from the owner, and whether certain limits are exceeded.",
+          "4. Specifically, the checks at nodes IF0 and D1 restrict transfers based on the sender and recipient's status (not being the owner or a bot), which indicates that the contract can limit who can transfer tokens.",
+          "5. The node D3 introduces a transfer delay mechanism, which allows the contract to control the timing of transfers, further indicating a limitation on user transactions.",
+          "6. The conditions at nodes IF4 and D4 enforce maximum transaction amounts and wallet sizes, which are additional restrictions on user transactions.",
+          "7. Overall, the presence of multiple permission checks that can prevent transfers based on various conditions indicates that the contract has the ability to limit user transactions."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D3",
+          "D4"
+        ]
+      },
+      "overview": {
+        "path_id": "path_45",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_46",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function NodelyAI.transferFrom, which involves transferring tokens from one address to another.",
+          "2. The first asset node D0 checks the allowance for the transfer, which is a standard procedure in ERC20 tokens.",
+          "3. The path contains several permission nodes (IF0, D1, IF2, IF3, D4, IF5, IF7, IF8) that impose restrictions on who can transfer tokens and under what conditions.",
+          "4. Specifically, nodes like IF0 and D1 check if the sender and recipient are not the owner or bots, which indicates that the owner has the ability to control who can transfer tokens.",
+          "5. Node D4 imposes limits on the maximum transaction amount and wallet size, which are controlled by the owner, indicating that the owner can restrict transactions.",
+          "6. The presence of conditions like transferDelayEnabled and checks against uniswapV2Router and uniswapV2Pair further indicate that the owner can manipulate trading conditions.",
+          "7. Overall, the ability of the owner to control transaction parameters and impose restrictions on transfers aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4",
+          "IF5",
+          "IF7"
+        ]
+      },
+      "overview": {
+        "path_id": "path_46",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_47",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves multiple permission checks that restrict the transfer of tokens based on various conditions. Specifically, nodes IF0, D1, IF2, IF3, IF4, IF5, IF7, and IF8 impose restrictions on who can transfer tokens and under what circumstances.",
+          "Node IF0 checks if the sender and recipient are not the owner, which can limit transfers to/from the owner. Node D1 checks if the sender or recipient is not a bot, which can further limit who can participate in transfers.",
+          "Node IF2 checks if transfer delays are enabled, which can restrict the frequency of transfers. Node IF3 checks if the recipient is not the uniswapV2Router or uniswapV2Pair, which can limit trading on these platforms.",
+          "Node D3 imposes a restriction based on the last transfer timestamp, allowing only one purchase per block, which limits trading activity.",
+          "Node IF4 checks if the transfer is coming from the uniswapV2Pair and if the recipient is not excluded from fees, which can limit trading for certain addresses.",
+          "Node D4 checks if the transfer amount exceeds the maximum transaction amount and if the recipient's balance after the transfer would exceed the maximum wallet size, further limiting trading capabilities.",
+          "Overall, the combination of these permission checks indicates that the contract has the ability to limit trading for users based on various conditions, which aligns with the LIMIT category."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF2",
+          "IF3",
+          "D3",
+          "IF4",
+          "D5",
+          "D6"
+        ]
+      },
+      "overview": {
+        "path_id": "path_47",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D2 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_48",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D10, execute `_balances[taxAddress] = _balances[taxAddress].add(taxAmount)`, This means from account (taxAddress) increase balance, taxAddress is privilege address, and its balance is by transaction tax (taxAmount) .",
+          "2. At node D11, execute `_balances[from] = _balances[from].sub(amount)` and `_balances[to] = _balances[to].add(amount.sub(taxAmount))`, This means from 'from' address deducted 'amount', will 'amount - taxAmount' transfer 'to' address. here 'from' is by caller provided, while 'to' is specified by the parameter, and 'taxAmount' is by contract calculated.",
+          "3. because 'from' is the calleraddress, 'to' is arbitraryaddress (is privilege address) , This matches the definition of token leaking, because The privileged user can through set tax rate to decrease ordinary user balance will its transfer privilege address.",
+          "4. because exists tax rate (taxAmount) and privilege address (taxAddress) , make ordinary user at transaction will asset, causing asset leak ."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_48",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D0, D10, D11, D0"
+      }
+    },
+    {
+      "path_id": "path_49",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D10, execute _balances[taxAddress] = _balances[taxAddress].add(taxAmount), This means from account (taxAddress) increase balance, taxAddress is privilege address.",
+          "2. At node D11, execute _balances[from] = _balances[from].sub(amount) and _balances[to] = _balances[to].add(amount.sub(taxAmount)), This means from 'from' address deducted amount, will amount subtract taxAmount 'to' address.",
+          "3. here 'from' is provided by the parameter, rather thanis the caller itself, therefore this matches the definition of token leaking, because The privileged user can from arbitrary user balance deductedamount, rather than compensation .",
+          "4. because exists tax rate (taxAmount) and is controlled by the privileged user, make At transaction, The privileged user can adjust tax rate to transfer actualamount, further causingtoken leak ."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_49",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D0, D10, D11, D0"
+      }
+    },
+    {
+      "path_id": "path_50",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D10, execute `_balances[taxAddress] = _balances[taxAddress].add(taxAmount)`, This means from account (taxAddress) increase balance, taxAddress is privilege address, and contract .",
+          "2. At node D11, execute `_balances[from] = _balances[from].sub(amount)` and `_balances[to] = _balances[to].add(amount.sub(taxAmount))`, This indicates from `from` address deducted `amount`, will `amount - taxAmount` transfer `to` address. here `from` is provided by the parameter, is arbitrary user, while `to` is contract address.",
+          "3. because `from` can is arbitrary user, and `amount` is by user specified, This matches the definition of token leaking, because The privileged user can through set tax ratewill tokentransfer privilege address, while user value compensation .",
+          "4. because `taxAmount` is according to `amount` calculated, and `taxAmount` valuecan contract variable ( such `_finalSellTax`) control, The privileged user can adjust variable to transfer, further leak risk ."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_50",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D0, D10, D11, D0"
+      }
+    },
+    {
+      "path_id": "path_51",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple asset nodes where balances are modified. Specifically, at Node D10, the code `_balances[taxAddress] = _balances[taxAddress].add(taxAmount)` indicates that a certain amount (taxAmount) is added to the taxAddress, which is controlled by the contract owner.",
+          "2. At Node D11, the code `_balances[from] = _balances[from].sub(amount)` and `_balances[to] = _balances[to].add(amount.sub(taxAmount))` shows that the sender's balance is decreased by 'amount', while the recipient's balance is increased by 'amount - taxAmount'. This means that the taxAmount is effectively taken from the sender's balance and sent to the taxAddress, which is controlled by the owner.",
+          "3. The taxAmount is calculated based on the final sell tax, which is set to 4% at Node D5. This means that for every transaction, 4% of the amount is redirected to the taxAddress, resulting in a leak of tokens from the sender to the owner.",
+          "4. The sender (from) can be any address, not just the caller, which allows the owner to specify any address to deduct tokens from, thus fulfilling the criteria for a leak.",
+          "5. The presence of permission checks (e.g., `require(!bots[from] && !bots[to])`) does not prevent the leak, as they do not restrict the owner's ability to manipulate balances."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11",
+          "D5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_51",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D0, D10, D11, D0"
+      }
+    },
+    {
+      "path_id": "path_52",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function NodelyAI.transferFrom, which involves transferring tokens from one address to another.",
+          "2. The first asset node D0 checks the allowance for the transfer, which is a standard ERC20 operation and does not indicate any risk.",
+          "3. The path includes several permission nodes (IF0, D1, IF2, IF3, D4, IF5, IF7, IF8) that impose restrictions on who can transfer tokens and under what conditions.",
+          "4. Specifically, nodes like IF0 and D1 check if the sender and recipient are not the owner or bots, which indicates a limitation on who can participate in transfers.",
+          "5. Node D4 imposes limits on the maximum transaction amount and wallet size, which further restricts user transactions.",
+          "6. The presence of conditions like transferDelayEnabled and checks against uniswapV2Router and uniswapV2Pair in nodes IF2 and IF3 also indicate that the contract can limit trading activities based on the state of these variables.",
+          "7. Overall, the ability of the contract to control transfer conditions and impose limits on transactions suggests that it can restrict user trading, classifying this path as LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4",
+          "IF2",
+          "IF3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_52",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_53",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function NodelyAI.transferFrom, which involves transferring tokens from one address to another.",
+          "2. The first asset node D0 checks the allowance for the transfer, which is a standard procedure in ERC20 tokens.",
+          "3. The path contains several permission nodes (IF0, D1, IF2, IF3, D4, IF5, IF7, IF8) that impose restrictions on the transfer process.",
+          "4. Specifically, nodes like IF0 and D1 check if the sender and recipient are not the owner or bots, which indicates that the contract has mechanisms to limit who can transfer tokens.",
+          "5. Node D3 introduces a transfer delay mechanism, which restricts users to only one purchase per block, further limiting trading capabilities.",
+          "6. The presence of conditions like 'transferDelayEnabled' and checks against the uniswapV2Router and uniswapV2Pair in nodes IF2 and IF3 indicate that the contract can control trading behavior based on the state of these variables.",
+          "7. The checks for maximum transaction amounts and wallet sizes in node D4 also suggest that the contract can limit how much can be transferred or held by users.",
+          "8. Overall, the combination of these permission checks and restrictions on transfers indicates that the contract has the ability to limit user transactions significantly."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D3",
+          "D4"
+        ]
+      },
+      "overview": {
+        "path_id": "path_53",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_54",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path starts with the function NodelyAI.transferFrom, which involves transferring tokens from one address to another.",
+          "2. The first asset node D0 checks the allowance for the transfer, which is a standard procedure but does not indicate any minting or leaking.",
+          "3. The path includes several permission nodes (IF0, D1, IF2, IF3, D4, IF5, IF7, IF8) that control various aspects of the transfer process.",
+          "4. Specifically, nodes IF0, D1, IF2, IF3, D4, IF5, IF7, and IF8 impose restrictions on who can transfer tokens and under what conditions, indicating that the owner can control the transfer process.",
+          "5. For example, IF0 checks if the sender and recipient are not the owner, and D1 checks if the sender and recipient are not bots, which are conditions that can limit who can participate in transfers.",
+          "6. Additionally, IF4 and D4 impose limits on the maximum transaction amount and wallet size, which further restricts user transactions.",
+          "7. The presence of these permission checks indicates that the owner can effectively limit or control the transfer of tokens, which aligns with the definition of LIMIT behavior."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF2",
+          "IF3",
+          "D4"
+        ]
+      },
+      "overview": {
+        "path_id": "path_54",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_55",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path starts with the function NodelyAI.transferFrom, which involves transferring tokens from one address to another.",
+          "2. There are multiple permission checks (IF0, D1, IF2, IF3, IF4, IF5, IF7, IF8) that restrict the transfer process based on various conditions.",
+          "3. Specifically, the checks in nodes IF0, D1, IF2, IF3, and IF4 impose restrictions on who can transfer tokens and under what conditions, such as checking if the sender or recipient is a bot, if the transfer is delayed, and if the transfer amount exceeds certain limits.",
+          "4. The presence of conditions like 'transferDelayEnabled' and checks against the uniswapV2Router and uniswapV2Pair indicate that the contract can limit trading activities based on the state of these variables.",
+          "5. The ability to modify these conditions by a privileged account (notably the owner) means that they can effectively control whether or not transfers can occur, thus limiting the ability of regular users to trade freely.",
+          "6. Therefore, the path exhibits characteristics of a limiting behavior, as the privileged account can manipulate the transfer conditions."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "IF2",
+          "IF3",
+          "IF4"
+        ]
+      },
+      "overview": {
+        "path_id": "path_55",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D5 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_56",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D10, execute _balances[taxAddress] = _balances[taxAddress].add(taxAmount), This means from account (taxAddress) increase balance, taxAddress is privilege address, The privileged user can control this address balance .",
+          "2. At node D11, execute _balances[from] = _balances[from].sub(amount) and _balances[to] = _balances[to].add(amount.sub(taxAmount)), This means from 'from' address deducted amount, also 'to' address increase amount - taxAmount, taxAmount is controlled by the privileged user tax ratecalculated, amountis transfer taxAddress.",
+          "3. because 'from' address is provided by the parameter, rather thanis the caller itself, therefore this matches the definition of token leaking, The privileged user can adjust tax rate to transfer in, causingordinary user asset is transfer privilege address.",
+          "4. because exists from arbitraryaddressdeduction balance transfer privilege addresssituation, Therefore this path is determined to be LEAK."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_56",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D0, D10, D11, D0"
+      }
+    },
+    {
+      "path_id": "path_57",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple asset nodes where balances are modified, specifically at nodes D10 and D11.",
+          "2. At node D10, the line '_balances[taxAddress] = _balances[taxAddress].add(taxAmount)' indicates that a certain amount (taxAmount) is being added to the balance of a specific address (taxAddress), which is controlled by the contract owner.",
+          "3. At node D11, the line '_balances[from] = _balances[from].sub(amount)' indicates that the balance of the 'from' address is being decreased by 'amount', while the line '_balances[to] = _balances[to].add(amount.sub(taxAmount))' indicates that the recipient's balance is increased by the amount minus the tax amount.",
+          "4. The 'from' address is determined by the function parameters, which means the owner can specify any address to deduct from, thus allowing for arbitrary balance reductions.",
+          "5. The presence of taxAmount being directed to a specific address (taxAddress) without any compensation to the 'from' address indicates a leakage of tokens.",
+          "6. The conditions for the transfer and tax application are controlled by the owner, allowing them to manipulate the transaction outcomes significantly."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_57",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D0, D10, D11, D0"
+      }
+    },
+    {
+      "path_id": "path_58",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D10, execute _balances[taxAddress] = _balances[taxAddress].add(taxAmount), This means taxAddress balance increases by taxAmount.",
+          "2. At node D11, execute _balances[from] = _balances[from].sub(amount) and _balances[to] = _balances[to].add(amount.sub(taxAmount)), This means from balance decreases by amount, while to balance increases by amount subtract taxAmount.",
+          "3. here from is provided by the parameter, is arbitrary user, while to is by contract, is privilege address (taxAddress) . Therefore, The privileged user can adjust taxAmount to control from arbitrary user account deducted fromamount, will its transfer privilege address, This matches the definition of token leaking.",
+          "4. because taxAmount is calculated based on the transaction amount, The privileged user can through set tax rate to, further causing user asset is transfer privilege address.",
+          "5. In summary, This path matches the leak tokencharacteristic, The privileged user can decrease balance will its transfer privilege address."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_58",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D0, D10, D11, D0"
+      }
+    },
+    {
+      "path_id": "path_59",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D10, execute _balances[taxAddress] = _balances[taxAddress].add(taxAmount), This means from account (taxAddress) increase balance, taxAddress is address, The privileged user can control this address balance .",
+          "2. At node D11, execute _balances[from] = _balances[from].sub(amount) and _balances[to] = _balances[to].add(amount.sub(taxAmount)), This indicates from 'from' address deducted amount, also 'to' address increased amount subtract taxAmount. here 'from' is specified by the parameter, is arbitrary user, while 'to' is privilege address, therefore this matches the definition of token leaking.",
+          "3. because 'from' is provided by the parameter, The privileged user can arbitrarily specify affected accounts, Therefore this constitutes a leaktokenbehavior.",
+          "4. because exists from arbitrary user addressdeduction balance transfer privilege addresssituation, and there is no compensation, This matches the Leak definition."
+        ],
+        "key_nodes": [
+          "D10",
+          "D11"
+        ]
+      },
+      "overview": {
+        "path_id": "path_59",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> IF9[PERM] -> D7 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF10 -> D8 -> E1 -> D0 -> F1 -> D9 -> IF11 -> D10[ASSET] -> D11[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8, IF9; AssetNode: D0, D0, D0, D0, D10, D11, D0"
+      }
+    },
+    {
+      "path_id": "path_60",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function NodelyAI.transferFrom, which involves transferring tokens from one address to another.",
+          "2. The first asset node D0 checks the allowance for the transfer, which is a standard procedure but does not indicate any risk.",
+          "3. The path contains multiple permission nodes (IF0, D1, IF2, IF3, D4, IF5, IF7, IF8) that impose conditions on the transfer process.",
+          "4. Specifically, nodes like IF0 and D1 restrict transfers based on whether the sender or recipient is the owner or a bot, which can limit who can participate in transfers.",
+          "5. Node D4 imposes limits on the maximum transaction amount and wallet size, which can restrict normal users from transferring their tokens freely.",
+          "6. The presence of these permission checks indicates that the contract can control the transfer process, effectively limiting the ability of regular users to trade their tokens.",
+          "7. The conditions set by the contract can be manipulated by the owner or privileged addresses, leading to a scenario where normal users cannot execute transfers as they wish."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4"
+        ]
+      },
+      "overview": {
+        "path_id": "path_60",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_61",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function NodelyAI.transferFrom, which involves transferring tokens between addresses.",
+          "2. The first asset node D0 checks the allowance for the transfer, which is a standard ERC20 operation and does not indicate any rugpull behavior.",
+          "3. The path includes several permission nodes (IF0, D1, IF2, IF3, D4, IF5, IF7, IF8) that impose restrictions on the transfer process.",
+          "4. Specifically, nodes like IF0 and D1 check if the sender and recipient are not the owner or bots, which indicates that certain addresses are restricted from transferring tokens.",
+          "5. Node D4 imposes limits on the maximum transaction amount (_maxTxAmount) and the maximum wallet size (_maxWalletSize), which can prevent normal users from transferring tokens freely.",
+          "6. The presence of these checks indicates that the contract has the ability to limit transactions based on the sender and recipient addresses, which aligns with the LIMIT category.",
+          "7. The path does not show any evidence of minting new tokens or leaking tokens to unauthorized addresses, as all asset changes are related to the transfer process."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4"
+        ]
+      },
+      "overview": {
+        "path_id": "path_61",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_62",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path starts with the function NodelyAI.transferFrom, which involves transferring tokens from one address to another.",
+          "2. The first asset node D0 checks the allowance for the transfer, which is a standard procedure in ERC20 tokens.",
+          "3. The path contains several permission nodes (IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8) that impose restrictions on the transfer process.",
+          "4. Specifically, nodes like IF0 and D1 check if the sender and recipient are not the owner or bots, which can limit who can participate in transfers.",
+          "5. Node D3 introduces a transfer delay mechanism, which restricts the frequency of transfers by checking the last transfer timestamp for the sender, effectively limiting trading activity.",
+          "6. Node D4 imposes limits on the maximum transaction amount and wallet size, further restricting user transactions.",
+          "7. The presence of these checks indicates that the contract has the ability to control and limit user transactions based on various conditions, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D3",
+          "D4"
+        ]
+      },
+      "overview": {
+        "path_id": "path_62",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D0 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_63",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function NodelyAI.transferFrom, which involves transferring tokens from one address to another.",
+          "2. The first asset node D0 checks the allowance for the transfer, which is a standard procedure but does not indicate any minting or leaking.",
+          "3. The path contains several permission nodes (IF0, D1, IF2, IF3, D4, IF5, IF7, IF8) that impose restrictions on the transfer process.",
+          "4. Specifically, nodes like IF0 and D1 check if the sender and recipient are not the owner or bots, which can limit who can participate in transfers.",
+          "5. Node D4 imposes limits on the maximum transaction amount and wallet size, which are controlled by the contract's state variables (_maxTxAmount and _maxWalletSize). This indicates that the owner can restrict transfers based on these parameters.",
+          "6. The presence of conditions like transferDelayEnabled and checks against uniswapV2Router and uniswapV2Pair further indicate that the owner can control the flow of transactions, effectively limiting user interactions.",
+          "7. Overall, the ability of the owner to modify transaction limits and the presence of various checks that can block transfers for regular users strongly suggest that this path implements limiting behavior."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D1",
+          "D4",
+          "IF2",
+          "IF3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_63",
+        "function_signature": "NodelyAI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1 -> D15 -> IF2[PERM] -> IF3[PERM] -> D3[PERM] -> IF4[PERM] -> D4 -> E1 -> D0[ASSET] -> F1 -> IF5[PERM] -> IF6 -> D14 -> D6 -> E1 -> D0[ASSET] -> F1 -> IF7[PERM] -> IF8[PERM] -> D12 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> E1 -> IF0 -> D1 -> F1 -> IF12 -> D13 -> E1 -> D0 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry NodelyAI.transferFrom(address,address,uint256); PermNode: IF0, D1, IF2, IF3, D3, IF4, IF5, IF7, IF8; AssetNode: D0, D0, D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_64",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function NodelyAI.openTrading() checks if the caller is the owner with the require statement at Node E1, which is a permission check.",
+          "2. At Node D0, there is another require statement that checks if trading is already open. If tradingOpen is false, it allows the function to proceed, indicating that the owner can control whether trading is enabled or disabled.",
+          "3. The ability to change the trading state (tradingOpen) directly affects whether users can trade or not, which aligns with the definition of LIMIT as the owner can restrict trading.",
+          "4. There are no asset changes that indicate a minting or leaking behavior in the asset nodes, as the only asset-related operations are approvals and balance checks."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_64",
+        "function_signature": "NodelyAI.openTrading()",
+        "trace": "E1[PERM] -> M1 -> D0[PERM] -> E1 -> D0[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry NodelyAI.openTrading(); PermNode: E1, D0; AssetNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "path_65",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function NodelyAI.manualSwap() requires the caller to be the _taxWallet, which is set to the address of the caller. This means only the address that calls this function can execute it, but it does not prevent the function from affecting other addresses.",
+          "2. The function checks if tokenBalance > 0 before proceeding, ensuring that there are tokens available for swapping.",
+          "3. The function calls swapTokensForEth(uint256), which involves approving the uniswapV2Router to spend tokens on behalf of the contract. The approval is done in the _approve function, where the allowance is set to tokenAmount, which is derived from local:tokenBalance. This means the contract can allow the router to spend its tokens.",
+          "4. The sendETHToFee(uint256) function is called after checking if ethBalance > 0. This function transfers ETH to the _taxWallet, which is controlled by the caller. Since the amount is derived from local:ethBalance, it indicates that the ETH is being sent to the _taxWallet, which is the caller's address.",
+          "5. The key point here is that the function allows the caller (who is also the _taxWallet) to send ETH to themselves, effectively leaking funds from the contract to the caller's address without any compensation to other token holders.",
+          "6. Therefore, the path exhibits behavior consistent with LEAK, as the caller can manipulate the contract to transfer ETH to themselves, reducing the overall balance of the contract."
+        ],
+        "key_nodes": [
+          "D0",
+          "D0",
+          "D3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_65",
+        "function_signature": "NodelyAI.manualSwap()",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0[ASSET] -> F1 -> IF0 -> D1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> D2 -> IF1 -> D3 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry NodelyAI.manualSwap(); PermNode: D0; AssetNode: D0, D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function `Ownable.renounceOwnership()`, which is controlled by the `onlyOwner` modifier (Node E1). This indicates that only the owner can call this function.",
+          "2. The `renounceOwnership()` function leads to the `NodelyAI.removeLimits()` function, which modifies the `_maxTxAmount` variable. This variable is likely used to control the maximum transaction amount allowed in the `_transfer` function.",
+          "3. By renouncing ownership, the owner can remove limits on transactions, which directly affects the ability of ordinary users to trade freely. This creates a scenario where the owner can enable or disable transaction limits at will.",
+          "4. The `_transfer` function (Node D4) is affected by the `_maxTxAmount` variable, meaning that if the owner sets this to a very low value or removes it entirely, they can control the flow of transactions for all users.",
+          "5. Since the owner can manipulate the transaction limits, this fits the definition of a LIMIT rugpull behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D4"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "_maxTxAmount",
+        "targets": [
+          "NodelyAI._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The control source is `Ownable.renounceOwnership()`, which is a privileged function that can only be called by the owner. This indicates that the owner has control over the contract's ownership.",
+          "2. The control chain shows that the function `NodelyAI.removeLimits()` can modify the `_maxTxAmount`, which is a transaction control variable. This means the owner can change the limits on transactions.",
+          "3. The `_transfer` function checks the condition `(_buyCount > _reduceBuyTaxAt)`, which implies that the owner can manipulate `_buyCount` and potentially affect the transfer conditions for users.",
+          "4. Since the owner can change transaction limits and potentially restrict or allow transfers based on their discretion, this path exhibits behavior consistent with limiting user transactions."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "_buyCount",
+        "targets": [
+          "NodelyAI._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_3",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function 'Ownable.renounceOwnership()' which is controlled by 'onlyOwner'. This indicates that only the owner can execute this function, which can affect the state of the contract.",
+          "The function 'NodelyAI.removeLimits()' modifies the variable '_maxTxAmount', which is likely a transaction limit variable. This means the owner can change the maximum transaction amount, directly impacting the ability of users to transact freely.",
+          "The '_transfer' function checks the condition 'caLatestBlock < block.number', which implies that if the owner modifies 'caLatestBlock', they can control whether transfers can occur or not. This gives the owner the ability to limit or enable transfers at will.",
+          "Since the owner can manipulate transaction limits and control the transfer conditions, this path fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF9"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "caLatestBlock",
+        "targets": [
+          "NodelyAI._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_5",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The control source is 'Ownable.renounceOwnership()', which is a privileged function that can only be called by the owner (E1).",
+          "2. This function leads to the removal of limits by calling 'NodelyAI.removeLimits()', which modifies the '_maxWalletSize' variable.",
+          "3. The '_maxWalletSize' variable directly affects the transfer function 'NodelyAI._transfer(address,address,uint256)' (D4), which means that once the limits are removed, the owner can control the maximum wallet size, impacting the ability of users to transfer tokens freely.",
+          "4. Since the owner can disable or enable the wallet size limit, this creates a scenario where the owner can restrict or allow transfers, thus classifying it as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D4"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "_maxWalletSize",
+        "targets": [
+          "NodelyAI._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_10",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'NodelyAI.openTrading()' modifies the state variables 'swapEnabled', 'tradingOpen', and 'uniswapV2Router', which are crucial for controlling trading activities.",
+          "The control source 'Ownable.renounceOwnership()' indicates that the ownership can be renounced, potentially allowing the contract to be controlled by an address that may not be the original owner.",
+          "Once ownership is renounced, the ability to open trading can be manipulated by the new owner or any address that gains control, effectively limiting the ability of regular users to trade freely.",
+          "This creates a scenario where the privileged entity can enable or disable trading at will, thus restricting normal users' ability to execute trades."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "uniswapV2Router",
+        "targets": [
+          "NodelyAI.openTrading()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_55",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'Ownable.renounceOwnership()' allows the owner to relinquish ownership, which means that the control over the contract can be lost. However, before this function is called, the owner has the ability to call 'NodelyAI.openTrading()'.",
+          "The 'NodelyAI.openTrading()' function modifies the state variables 'swapEnabled', 'tradingOpen', 'uniswapV2Pair', and 'uniswapV2Router'.",
+          "By modifying 'swapEnabled' and 'tradingOpen', the owner can control whether trading is allowed or not, effectively limiting the ability of ordinary users to trade.",
+          "This control over trading status directly impacts the ability of users to execute transfers, thus classifying this path as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "uniswapV2Pair",
+        "targets": [
+          "NodelyAI.openTrading()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_28",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'Ownable.renounceOwnership()' is marked with 'onlyOwner', indicating that only the owner can call this function. This function allows the owner to renounce ownership, which could lead to the ability to manipulate trading states.",
+          "The function 'NodelyAI.openTrading()' modifies the state variables 'tradingOpen' and 'swapEnabled', which directly control whether trading is allowed or not.",
+          "Since the owner can call 'openTrading()' after renouncing ownership, they can effectively control the trading state, preventing ordinary users from trading by setting 'tradingOpen' to false.",
+          "This behavior aligns with the definition of LIMIT, as the owner can restrict trading for all users."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "tradingOpen",
+        "targets": [
+          "NodelyAI.openTrading()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_45",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'Ownable.renounceOwnership()' allows the owner to renounce ownership, which can lead to the variable 'swapEnabled' being controlled by the owner.",
+          "The 'NodelyAI._transfer' function checks the condition '! inSwap && to == uniswapV2Pair && swapEnabled && contractTokenBalance > _taxSwapThreshold && _buyCount > _preventSwapBefore'.",
+          "If 'swapEnabled' is set to false by the owner, it directly limits the ability of users to trade, as the transfer will not proceed if this condition is not met.",
+          "Thus, the owner can effectively control whether users can sell their tokens, which fits the definition of a LIMIT rugpull."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF7"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "swapEnabled",
+        "targets": [
+          "NodelyAI._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_95",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The control source is 'Ownable.renounceOwnership()', which is a privileged function that can only be called by the owner. This indicates that the owner has control over certain functionalities.",
+          "The control chain shows that the owner can modify the 'uniswapV2Pair' variable through the 'NodelyAI.openTrading()' function. This variable is used in the conditional check within the '_transfer' function.",
+          "In the '_transfer' function, there is a condition that checks if the 'to' address is not equal to 'uniswapV2Router' and 'uniswapV2Pair'. If the owner can change 'uniswapV2Pair', they can effectively control whether transfers to certain addresses are allowed or not.",
+          "This means that the owner can limit trading by modifying the 'uniswapV2Pair', preventing users from transferring tokens to specific addresses, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF3"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "uniswapV2Pair",
+        "targets": [
+          "NodelyAI._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_50",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The control source is the function Ownable.renounceOwnership() which is protected by onlyOwner, allowing only the owner to call it. This indicates that the owner has the ability to change the state of the contract.",
+          "The control chain shows that the function NodelyAI.openTrading() modifies the variable uniswapV2Router, which is used in the conditional check of the _transfer function.",
+          "In the _transfer function, there is a condition that checks if the 'to' address is not equal to the uniswapV2Router or uniswapV2Pair. If the owner can modify the uniswapV2Router, they can effectively control whether transfers to certain addresses are allowed or not.",
+          "This means that the owner can limit trading by changing the state of uniswapV2Router, preventing users from transferring tokens to certain addresses, which fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF3"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "uniswapV2Router",
+        "targets": [
+          "NodelyAI._transfer(address,address,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 44,
+    "LEAK": 32,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

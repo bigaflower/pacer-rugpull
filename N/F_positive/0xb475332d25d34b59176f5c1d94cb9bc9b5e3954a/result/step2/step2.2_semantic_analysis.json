@@ -1,0 +1,586 @@
+{
+  "contract_name": "0xb475332d25d34b59176f5c1d94cb9bc9b5e3954a",
+  "generated_at": "2026-02-25T22:06:15Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D3, execute `_balances[sender] -= amount`, This means the caller's balance decreases `amount`, while `sender` is `msg.sender`, caller, therefore does not leak .",
+          "2. At node D4, execute `_balances[address(this)] += _taxAmount`, This indicates contract balance increases by `taxAmount`, while `taxAmount` is through `_calculateTax` functioncalculated, is transaction amountand tax rate.",
+          "3. At node D5, execute `_balances[recipient] += _transferAmount`, This indicates recipient balance increases by `transferAmount`, while `transferAmount` is at `_calculateTax` incalculated, will The privileged user control .",
+          "4. at `_calculateTax` functionin, The privileged user can through `_noFees` and `_isLP` to is tax fee, causingordinary user at transaction is deduct fee, and fee contract or privilege address.",
+          "5. Therefore, althoughno directly balance leak, but because The privileged user can tax rateand fee, causing user at transaction inwill asset, This matches the Leak definition."
+        ],
+        "key_nodes": [
+          "D3",
+          "D4",
+          "D5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "HobbesV2.transfer(address,uint256)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> D2 -> F1 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> D2[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> IF0[PERM] -> IF1[PERM] -> D1[PERM] -> D2 -> E1 -> D0 -> E1 -> IF0[PERM] -> D0[ASSET] -> F1 -> F1 -> IF2 -> D3 -> F1 -> D3[ASSET] -> E1 -> IF0[PERM] -> IF1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1 -> D2 -> F1 -> D1 -> F1 -> IF2 -> D4[ASSET] -> E1 -> IF0[PERM] -> D0 -> F1 -> D5[ASSET] -> F1 -> F1",
+        "summary": "Entry HobbesV2.transfer(address,uint256); PermNode: D0, IF0, D1, IF0, D1, IF1, D2, IF0, IF1, D1, IF0, IF0, IF0, IF0; AssetNode: D0, D0, D3, D4, D5"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple asset nodes where balances are modified: specifically, the balance of the sender is decreased and the balance of the contract itself is increased.",
+          "2. At Node D3, the line '_balances[sender] -= amount' indicates that the sender's balance is reduced by the amount specified in the transfer. This a direct decrease of the sender's balance.",
+          "3. At Node D4, the line '_balances[address(this)] += _taxAmount' indicates that the contract's balance is increased by the tax amount calculated. This tax amount is derived from the transfer amount, which means that a portion of the sender's funds is being redirected to the contract.",
+          "4. The sender's balance is decreased while the contract's balance is increased, which indicates that tokens are being leaked from the sender to the contract without any compensation to the sender.",
+          "5. The presence of the tax mechanism allows the contract to take a portion of the transferred amount, which can be seen as a form of leakage, especially since the sender is not in control of how much is taken as tax.",
+          "6. The conditions for the tax to be applied are controlled by the contract, which means that the contract can effectively decide how much of the sender's balance is taken as tax, leading to potential exploitation."
+        ],
+        "key_nodes": [
+          "D3",
+          "D4"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "HobbesV2.transfer(address,uint256)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> D2 -> F1 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> D2[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> IF0[PERM] -> IF1[PERM] -> D1[PERM] -> D2 -> E1 -> D0 -> E1 -> IF0[PERM] -> D0[ASSET] -> F1 -> F1 -> IF2 -> D3 -> F1 -> D3[ASSET] -> E1 -> IF0[PERM] -> IF1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D3 -> D2 -> F1 -> D1 -> F1 -> IF2 -> D4[ASSET] -> E1 -> IF0[PERM] -> D0 -> F1 -> D5[ASSET] -> F1 -> F1",
+        "summary": "Entry HobbesV2.transfer(address,uint256); PermNode: D0, IF0, D1, IF0, D1, IF1, D2, IF0, IF1, D1, IF0, IF0, IF0, IF0; AssetNode: D0, D0, D3, D4, D5"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with a permission check at node D0, which verifies if trading is open using the _checkTradingOpen function. This a critical control point that can restrict trading based on the _tradingOpen variable.",
+          "2. The presence of multiple permission checks (e.g., IF0, D1, IF1) throughout the transfer process indicates that the ability to execute transfers is heavily gated by the state of trading being open or closed.",
+          "3. The function _checkTradingOpen checks the state of _tradingOpen, which is a boolean variable that can be controlled by a privileged account (likely the owner). If trading is not open, the transfer cannot proceed, effectively limiting the ability of users to trade.",
+          "4. The ability to set _tradingOpen to false or true by a privileged account directly impacts whether normal users can execute transfers, which aligns with the definition of LIMIT.",
+          "5. The path does not exhibit any behavior that would indicate MINT or LEAK, as there are no instances of unauthorized balance increases or unauthorized balance reductions from arbitrary accounts."
+        ],
+        "key_nodes": [
+          "D0",
+          "IF0",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "HobbesV2.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> D2 -> F1 -> IF0[PERM] -> D1[ASSET] -> D2 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> D2[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> IF0[PERM] -> IF1[PERM] -> D1[PERM] -> D2 -> E1 -> D0 -> E1 -> IF0[PERM] -> D0[ASSET] -> F1 -> F1 -> IF2 -> D3 -> F1 -> D3[ASSET] -> E1 -> IF0[PERM] -> IF1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1 -> D2 -> F1 -> D1 -> F1 -> IF2 -> D4[ASSET] -> E1 -> IF0[PERM] -> D0 -> F1 -> D5[ASSET] -> F1 -> F1",
+        "summary": "Entry HobbesV2.transferFrom(address,address,uint256); PermNode: D0, IF0, D1, IF0, IF0, D1, IF1, D2, IF0, IF1, D1, IF0, IF0, IF0, IF0; AssetNode: D1, D0, D0, D3, D4, D5"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with a permission check at Node D0, which verifies if trading is open using the condition _checkTradingOpen(sender). If trading is not open, the transfer cannot proceed.",
+          "2. The function transferFrom has multiple permission checks (Node IF0, D1, D2) that ensure the allowances are valid and trading conditions are met before any asset changes occur.",
+          "3. The presence of the variable _tradingOpen, which can be controlled by a privileged account, directly influences whether transfers can occur. If _tradingOpen is set to false, it effectively limits the ability of users to trade.",
+          "4. The function _swapTaxAndLiquify() also contains conditions that depend on _tradingOpen, further reinforcing the control over trading activities.",
+          "5. Since the privileged account can toggle the trading state, it can prevent users from executing transfers, thus classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "D0",
+          "IF0",
+          "D1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "HobbesV2.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> D2 -> F1 -> IF0[PERM] -> D1[ASSET] -> D2 -> E1 -> D0 -> IF0[PERM] -> D1[PERM] -> IF1[PERM] -> D2[PERM] -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> IF0[PERM] -> IF1[PERM] -> D1[PERM] -> D2 -> E1 -> D0 -> E1 -> IF0[PERM] -> D0[ASSET] -> F1 -> F1 -> IF2 -> D3 -> F1 -> D3[ASSET] -> E1 -> IF0[PERM] -> IF1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D3 -> D2 -> F1 -> D1 -> F1 -> IF2 -> D4[ASSET] -> E1 -> IF0[PERM] -> D0 -> F1 -> D5[ASSET] -> F1 -> F1",
+        "summary": "Entry HobbesV2.transferFrom(address,address,uint256); PermNode: D0, IF0, D1, IF0, IF0, D1, IF1, D2, IF0, IF1, D1, IF0, IF0, IF0, IF0; AssetNode: D1, D0, D0, D3, D4, D5"
+      }
+    },
+    {
+      "path_id": "path_4",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is HobbesV2.addLiquidity(), which is restricted to the owner (Node E1). This indicates that only the owner can call this function, which is a permission check.",
+          "2. Node D0 contains several permission checks, including whether trading is open (_tradingOpen) and whether there are tokens in the contract (_balances[address(this)] > 0). If trading is open, the owner can prevent liquidity addition, effectively limiting trading for others.",
+          "3. The function _addLiquidity is called with the current balance of the contract and the contract's ETH balance, which are both controlled by the owner. This means the owner can control when and how liquidity is added, impacting the ability of regular users to trade.",
+          "4. The permission checks in Node D0 and the ability to control the trading state indicate that the owner can limit the trading capabilities of regular users, thus classifying this path as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_4",
+        "function_signature": "HobbesV2.addLiquidity()",
+        "trace": "E1[PERM] -> M1 -> M2 -> D0[PERM] -> E1 -> D0 -> E1 -> IF0[PERM] -> D0[ASSET] -> F1 -> F1 -> F1",
+        "summary": "Entry HobbesV2.addLiquidity(); PermNode: E1, D0, IF0; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The control source is `Auth.renounceOwnership()`, which is restricted to the owner (onlyOwner). This means only the owner can call this function.",
+          "The control variable `_tradingOpen` is modified in the `HobbesV2.addLiquidity()` function, which indicates that the owner can change the trading state.",
+          "By renouncing ownership, the owner can effectively disable or enable trading, which directly impacts the ability of regular users to trade.",
+          "Since the ability to modify `_tradingOpen` is controlled by the owner, this creates a scenario where the owner can limit trading for all users, thus classifying this path as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Auth.renounceOwnership()",
+        "control_variable": "_tradingOpen",
+        "targets": [
+          "HobbesV2.addLiquidity()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_9",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function `Auth.renounceOwnership()` is marked with `onlyOwner`, indicating that only the owner can call this function. This function allows the owner to renounce ownership, which could potentially lead to the `_primaryLP` variable being manipulated.",
+          "The `HobbesV2.addLiquidity()` function modifies several state variables, including `_primaryLP`, which is affected by the control from the ownership renouncement. If the owner renounces ownership, they could potentially manipulate the liquidity settings, affecting trading conditions.",
+          "Since `_primaryLP` is a control variable that can influence whether trading is open or closed, the ability for the owner to change this state directly impacts the ability of regular users to trade, thus classifying this as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Auth.renounceOwnership()",
+        "control_variable": "_primaryLP",
+        "targets": [
+          "HobbesV2.addLiquidity()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_18",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The path involves the function Auth.renounceOwnership() which is controlled by onlyOwner, indicating that only the owner can trigger this function (Node E1).",
+          "The variable _isLP is modified in the function HobbesV2.addLiquidity(), which is likely controlled by the owner as well, allowing them to dictate which addresses are considered liquidity providers.",
+          "In the _transfer function (Node IF1), there is a conditional check on _isLP[recipient]. If the owner renounces ownership and modifies _isLP, they can effectively control whether transfers to certain addresses are allowed or not.",
+          "This means that the owner can limit the ability of users to transfer tokens based on their liquidity provider status, thus restricting trading capabilities for regular users."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Auth.renounceOwnership()",
+        "control_variable": "_isLP",
+        "targets": [
+          "HobbesV2._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_19",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The control source is `Auth.renounceOwnership()`, which is restricted to the owner (node E1). This indicates that only the owner can trigger this function.",
+          "The control variable `_inTaxSwap` is modified in the `HobbesV2.addLiquidity()` function, which can be called by the owner. This variable is then used in the `_transfer` function (node IF1) as a conditional check.",
+          "The condition `! _inTaxSwap && _isLP[recipient]` in the `_transfer` function means that if `_inTaxSwap` is set to true by the owner, it can prevent transfers to liquidity provider addresses (`_isLP[recipient]`). This gives the owner the ability to control whether transfers can occur or not, effectively limiting the ability of regular users to trade.",
+          "Since the owner can change the state of `_inTaxSwap`, it directly impacts the transfer functionality for all users, thus classifying this path as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Auth.renounceOwnership()",
+        "control_variable": "_inTaxSwap",
+        "targets": [
+          "HobbesV2._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_6",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The control source is Auth.renounceOwnership(), which is restricted to the owner (onlyOwner). This function can change the state of _tradingOpen.",
+          "The affected target is HobbesV2._transfer(address,address,uint256), which checks the condition '! _tradingOpen'.",
+          "If the owner renounces ownership, they can potentially set _tradingOpen to false, thereby preventing all transfers for ordinary users.",
+          "This means that the owner has the ability to limit trading by controlling the state of _tradingOpen, which directly affects the ability of users to transfer tokens."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Auth.renounceOwnership()",
+        "control_variable": "_tradingOpen",
+        "targets": [
+          "HobbesV2._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_7",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The control source is `Auth.renounceOwnership()`, which is restricted to the owner (onlyOwner). This means that only the owner can call this function.",
+          "The control variable `_tradingOpen` is affected by the owner through the `HobbesV2.addLiquidity()` function, which can potentially change the state of `_tradingOpen`.",
+          "The affected target `HobbesV2._swapTaxAndLiquify()` has a conditional check that depends on `_tradingOpen`. If `_tradingOpen` is set to false by the owner, it would prevent any swaps or liquidity actions from occurring, effectively limiting the ability of normal users to trade.",
+          "Since the owner can control the trading state, this constitutes a limitation on trading for regular users, thus categorizing this path as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Auth.renounceOwnership()",
+        "control_variable": "_tradingOpen",
+        "targets": [
+          "HobbesV2._swapTaxAndLiquify()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_20",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `HobbesV2.renounceOwnership()` is marked with `onlyOwner`, indicating that only the owner can call this function. This function modifies the `_tradingOpen` variable, which is used in `HobbesV2.addLiquidity()`.",
+          "The modification of `_tradingOpen` directly affects whether trading can occur, as it is a control variable for trading status. If the owner sets `_tradingOpen` to false, it would prevent all users from trading.",
+          "This ability to control the trading status through `_tradingOpen` constitutes a limiting behavior, as it restricts normal users' ability to trade based on the owner's discretion."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "HobbesV2.renounceOwnership()",
+        "control_variable": "_tradingOpen",
+        "targets": [
+          "HobbesV2.addLiquidity()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_29",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `HobbesV2.renounceOwnership()` is marked with `onlyOwner`, indicating that only the owner can call this function. This function affects the `_primaryLP` variable, which is used in the `HobbesV2.addLiquidity()` function.",
+          "The `addLiquidity()` function modifies several state variables, including `_isLP`, `_primaryLP`, `_tradeCount`, and `_tradingOpen`. The ability to change `_primaryLP` implies that the owner can control liquidity parameters.",
+          "Since the owner can renounce ownership and potentially change the state of `_primaryLP`, this could lead to a situation where the owner can restrict or enable trading by manipulating the liquidity settings, thus limiting the ability of regular users to trade freely."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "HobbesV2.renounceOwnership()",
+        "control_variable": "_primaryLP",
+        "targets": [
+          "HobbesV2.addLiquidity()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_38",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function `HobbesV2.renounceOwnership()` is marked with `onlyOwner`, indicating that only the owner can call this function. This function modifies the `_isLP` variable, which is used in the `_transfer` function.",
+          "In the `_transfer` function, there is a conditional check `! _inTaxSwap && _isLP[recipient]`. If `_isLP[recipient]` is false, the transfer will not proceed, effectively limiting the ability of non-LP addresses to transfer tokens.",
+          "Since the owner can control the `_isLP` status, they can prevent ordinary users from transferring their tokens by setting `_isLP` to false for their addresses, thus restricting their ability to trade.",
+          "This behavior aligns with the definition of LIMIT, as the owner can manipulate the transfer conditions, directly impacting the ability of regular users to transact."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "HobbesV2.renounceOwnership()",
+        "control_variable": "_isLP",
+        "targets": [
+          "HobbesV2._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_39",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `HobbesV2.renounceOwnership()` is controlled by `onlyOwner`, allowing the owner to change the ownership status.",
+          "This function affects the `_inTaxSwap` variable, which is used in the `_transfer` function as a conditional check: `! _inTaxSwap && _isLP[recipient]`.",
+          "If the owner sets `_inTaxSwap` to true, it will prevent transfers to liquidity provider addresses (`_isLP[recipient]`), effectively limiting the ability of regular users to trade.",
+          "Thus, the owner can control whether transfers can occur based on the state of `_inTaxSwap`, which directly impacts the trading capabilities of users."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "HobbesV2.renounceOwnership()",
+        "control_variable": "_inTaxSwap",
+        "targets": [
+          "HobbesV2._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_26",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `HobbesV2.renounceOwnership()` is marked with `onlyOwner`, indicating that only the owner can call it, which gives them control over the `_tradingOpen` variable.",
+          "The `_tradingOpen` variable is used in the `_transfer` function as a conditional check (`! _tradingOpen`). If `_tradingOpen` is false, transfers cannot occur.",
+          "This means that the owner can effectively disable trading by calling `renounceOwnership()` and setting `_tradingOpen` to false, preventing all users from executing transfers.",
+          "Since the ability to control the trading state directly affects the ability of ordinary users to trade, this constitutes a Limiting Sell behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "HobbesV2.renounceOwnership()",
+        "control_variable": "_tradingOpen",
+        "targets": [
+          "HobbesV2._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_27",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function `HobbesV2.renounceOwnership()` is marked with `onlyOwner`, indicating that only the owner can call this function. This function modifies the `_tradingOpen` variable, which is used in the conditional check of `_swapTaxAndLiquify()`.",
+          "The condition `_tradingOpen` directly affects whether the swap and liquify process can occur, meaning that the owner can enable or disable trading at will. This gives the owner control over the trading state, effectively limiting the ability of regular users to trade.",
+          "Since the owner can change the state of `_tradingOpen`, it restricts normal users from executing trades, which fits the definition of a LIMIT rugpull."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "HobbesV2.renounceOwnership()",
+        "control_variable": "_tradingOpen",
+        "targets": [
+          "HobbesV2._swapTaxAndLiquify()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_40",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function HobbesV2.addLiquidity() is controlled by the onlyOwner modifier, which means only the owner can call this function.",
+          "This function modifies the control variable _tradingOpen, which is used in the conditional check of the _transfer function.",
+          "If _tradingOpen is set to false, the transfer function will not allow any transfers to occur, effectively limiting the ability of regular users to trade.",
+          "Since the owner can toggle the trading state, this creates a scenario where the owner can prevent users from trading, thus classifying it as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "HobbesV2.addLiquidity()",
+        "control_variable": "_tradingOpen",
+        "targets": [
+          "HobbesV2._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_41",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function HobbesV2.addLiquidity() is marked with the modifier onlyOwner, which means only the owner can call this function. This gives the owner control over the liquidity addition process.",
+          "The control variable _tradingOpen is checked in the function HobbesV2._swapTaxAndLiquify(). If _tradingOpen is false, the function will not execute, effectively limiting trading capabilities.",
+          "Since the owner can modify the state of _tradingOpen through addLiquidity(), they can enable or disable trading at will, which directly impacts the ability of regular users to trade.",
+          "Thus, the owner has the ability to restrict trading, which fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "HobbesV2.addLiquidity()",
+        "control_variable": "_tradingOpen",
+        "targets": [
+          "HobbesV2._swapTaxAndLiquify()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_44",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function HobbesV2.addLiquidity() is controlled by the onlyOwner modifier, which means only the owner can execute it. This function modifies the control variable _inTaxSwap.",
+          "The affected target, HobbesV2._transfer(address,address,uint256), has a conditional check that depends on the state of _inTaxSwap. If _inTaxSwap is true, the transfer will not proceed.",
+          "Since the owner can toggle _inTaxSwap, they can effectively control whether transfers can occur or not, limiting the ability of regular users to trade.",
+          "This behavior aligns with the definition of LIMIT, as the owner can restrict trading by changing the state of _inTaxSwap."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "HobbesV2.addLiquidity()",
+        "control_variable": "_inTaxSwap",
+        "targets": [
+          "HobbesV2._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_43",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function HobbesV2.addLiquidity() is controlled by onlyOwner, which means only the owner can call this function and modify the state of _isLP.",
+          "The _transfer function checks the condition '! _inTaxSwap && _isLP[recipient]', meaning that if _isLP is set to true for a recipient, the transfer can proceed.",
+          "Since the owner can control the _isLP variable, they can effectively limit or allow transfers to specific addresses, thus controlling who can trade.",
+          "This creates a scenario where the owner can restrict trading for regular users by manipulating the _isLP state, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "HobbesV2.addLiquidity()",
+        "control_variable": "_isLP",
+        "targets": [
+          "HobbesV2._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_45",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function HobbesV2._swapTaxAndLiquify() is private and can only be called by privileged accounts, which means it can control the state of the variable _inTaxSwap.",
+          "The conditional check in HobbesV2._transfer(address,address,uint256) uses the variable _inTaxSwap to determine if transfers can occur. If _inTaxSwap is true, transfers to liquidity providers (_isLP[recipient]) are blocked.",
+          "Since the privileged account can modify _inTaxSwap, they can effectively limit or disable transfers for regular users, thus controlling the trading state."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "HobbesV2._swapTaxAndLiquify()",
+        "control_variable": "_inTaxSwap",
+        "targets": [
+          "HobbesV2._transfer(address,address,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 20,
+    "LEAK": 2,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

@@ -1,0 +1,220 @@
+{
+  "contract_name": "0xf94e7d0710709388bce3161c32b4eea56d3f91cc",
+  "generated_at": "2026-02-26T01:19:13Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is DestraNetwork.transferFrom(address,address,uint256), which involves transferring tokens from one address to another.",
+          "2. The permission check at node IF0 ensures that the allowance for the sender is not the maximum value, allowing the function to proceed if the allowance is less than the maximum.",
+          "3. At node D0, the allowance is decreased by the amount specified: _allowances[sender][msg.sender] = _allowances[sender][msg.sender] - amount. This indicates that the allowance for the sender is being reduced.",
+          "4. The asset change is a decrease in the allowance, which does not directly affect the balances of the sender or recipient in this context, but it does imply that the sender's ability to transfer tokens is being limited.",
+          "5. The allowance is controlled by the sender and the caller (msg.sender), which means that the caller can reduce the allowance of the sender without their consent, leading to a potential leak of tokens if the allowance is manipulated.",
+          "6. Since the allowance is being reduced and can be manipulated by the caller, this fits the definition of a leak where the caller can control the allowance of another address."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "DestraNetwork.transferFrom(address,address,uint256)",
+        "trace": "E1 -> IF0[PERM] -> D0[ASSET] -> D1 -> F1",
+        "summary": "Entry DestraNetwork.transferFrom(address,address,uint256); PermNode: IF0; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DestraNetwork.setTeamMember(address,bool) is controlled by onlyOwner, allowing the owner to modify the isTradingEnabled variable.",
+          "The isTradingEnabled variable directly affects the _transferFrom function, which checks the condition '!isTradingEnabled'.",
+          "If the owner sets isTradingEnabled to false, it will prevent all transfers from occurring, effectively limiting the ability of regular users to trade.",
+          "This control over the trading state by the owner constitutes a Limiting Sell behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "DestraNetwork.setTeamMember(address,bool)",
+        "control_variable": "isTradingEnabled",
+        "targets": [
+          "DestraNetwork._transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DestraNetwork.openTrading() is controlled by the modifier onlyTeam, which means only a privileged group can enable trading.",
+          "The variable isTradingEnabled directly affects the conditional check in the _transferFrom function, where transfers are only allowed if isTradingEnabled is true.",
+          "This means that once the privileged team disables trading, ordinary users will be unable to execute transfers, effectively limiting their ability to trade.",
+          "Thus, the ability of the privileged team to control the trading state leads to a Limiting Sell behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "DestraNetwork.openTrading()",
+        "control_variable": "isTradingEnabled",
+        "targets": [
+          "DestraNetwork._transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_2",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DestraNetwork.addLiquidityPool(address,bool) is controlled by onlyOwner, which means only the owner can modify the liquidityPools mapping.",
+          "The _transferFrom function checks the condition '!launched() && liquidityPools[recipient]', meaning that if the recipient is in the liquidityPools and the contract is not launched, the transfer can be restricted.",
+          "Since the owner can add or remove liquidity pools, they can effectively control whether transfers to certain addresses are allowed or not, thus limiting the ability of regular users to trade freely."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "DestraNetwork.addLiquidityPool(address,bool)",
+        "control_variable": "liquidityPools",
+        "targets": [
+          "DestraNetwork._transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_3",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DestraNetwork.setMaxWallet(uint256,uint256) is controlled by onlyOwner, which means only the owner can modify the _maxWalletSize.",
+          "The affected target, DestraNetwork.checkWalletLimit(address,uint256), includes a conditional check that restricts the amount a recipient can hold based on the wallet limit set by the owner.",
+          "If the owner sets a low wallet limit, it can prevent users from transferring tokens freely, effectively limiting their ability to sell or transfer tokens.",
+          "Thus, the owner has the power to control the trading capabilities of all users by adjusting the wallet limit, which fits the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "DestraNetwork.setMaxWallet(uint256,uint256)",
+        "control_variable": "_maxWalletSize",
+        "targets": [
+          "DestraNetwork.checkWalletLimit(address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_4",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DestraNetwork.setIsTxLimitExempt(address,bool) is controlled by onlyOwner, which means only the owner can modify the isTxLimitExempt status.",
+          "The _transferFrom function checks the condition '! isTxLimitExempt[recipient]', meaning that if the recipient is not exempt, the transfer can be limited based on the owner's control.",
+          "This creates a scenario where the owner can prevent normal users from transferring tokens by changing the exemption status, effectively limiting their ability to trade."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF3"
+        ]
+      },
+      "overview": {
+        "source": "DestraNetwork.setIsTxLimitExempt(address,bool)",
+        "control_variable": "isTxLimitExempt",
+        "targets": [
+          "DestraNetwork._transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_5",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DestraNetwork.setSwapBackSettings(bool,uint256,uint256) is controlled by onlyOwner, allowing the owner to modify the swapThreshold variable.",
+          "The swapBack(uint256) function checks if the amount is less than swapThreshold, which means the owner can effectively control whether swaps can occur by adjusting this threshold.",
+          "This control over the swapThreshold directly impacts the ability of regular users to execute swaps, thus limiting their ability to trade freely."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "DestraNetwork.setSwapBackSettings(bool,uint256,uint256)",
+        "control_variable": "swapThreshold",
+        "targets": [
+          "DestraNetwork.swapBack(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_6",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function DestraNetwork.setSwapBackSettings(bool,uint256,uint256) is controlled by onlyOwner, allowing the owner to modify the inSwap variable.",
+          "The inSwap variable is used as a conditional check in the DestraNetwork._transferFrom(address,address,uint256) function, which means that the owner can control whether transfers can occur based on the state of inSwap.",
+          "If the owner sets inSwap to true, it could prevent normal users from executing transfers, effectively limiting their ability to trade.",
+          "Thus, the ability of the owner to toggle inSwap directly impacts the transfer functionality for all users, classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF4"
+        ]
+      },
+      "overview": {
+        "source": "DestraNetwork.setSwapBackSettings(bool,uint256,uint256)",
+        "control_variable": "inSwap",
+        "targets": [
+          "DestraNetwork._transferFrom(address,address,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 7,
+    "LEAK": 1,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

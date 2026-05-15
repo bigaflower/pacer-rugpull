@@ -1,0 +1,1666 @@
+{
+  "contract_name": "0x2f4155d63c2a9a176a10e4e28e917563d0882483",
+  "generated_at": "2025-12-09T14:39:48Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path starts with the transfer function, which checks for valid sender and recipient addresses and a positive amount. This confirmed in Node D0.",
+          "2. The key permission check occurs at Node IF0, where it evaluates whether the sender is excluded from certain operations. If the sender is not excluded and the recipient is not excluded, it proceeds to Node D1.",
+          "3. In Node D0 (depth=2), the asset manipulation occurs where the sender's balance is decreased: '_tOwned[sender] = _tOwned[sender].sub(tAmount)' and '_rOwned[sender] = _rOwned[sender].sub(rAmount)'. This indicates a decrease in the sender's balance.",
+          "4. The recipient's balance is increased: '_rOwned[recipient] = _rOwned[recipient].add(rTransferAmount)'. This indicates an increase in the recipient's balance.",
+          "5. The critical point is that the sender's balance is decreased while the recipient's balance is increased by a potentially different amount, which could lead to a leak if the difference is directed to a privileged address or fee pool.",
+          "6. The path does not indicate any minting behavior as there is no evidence of increasing total supply or balance without a corresponding decrease elsewhere.",
+          "7. The potential for leakage arises from the fact that the sender can be any address, not just the caller, which allows the privileged account to drain funds from arbitrary users."
+        ],
+        "key_nodes": [
+          "D0",
+          "IF0",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "Journey_YORI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1 -> E1 -> D0[ASSET] -> E1 -> D0 -> E1 -> IF0 -> D0 -> D1 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1 -> E1 -> D0 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry Journey_YORI.transfer(address,uint256); PermNode: IF0; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "Starting with Node D0 at depth 2, we see an asset operation: _tOwned[sender] = _tOwned[sender].sub(tAmount). This operation means that the balance of the sender is reduced by the transferred amount (tAmount).",
+          "The statement _rOwned[sender] = _rOwned[sender].sub(rAmount) also indicates that the sender's equivalent rate-based balance (rOwned) is reduced, which means the sender loses funds.",
+          "The statement _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount) shows that the recipient's balance increases by a certain amount derived from the transaction but not necessarily equal to tAmount. This implies that some value (specifically, the fee) was deducted from the total due.",
+          "According to the variation in balances, the flow indicates that while sender's balance decreases, the recipient's balance does not receive the full amount, with some tokens being taken as fees or redirected elsewhere.",
+          "For the sender, assuming an initial value of 100, if the transaction amount (tAmount) was, say, 20, then after this operation: 100 (initial) - 20 (transferred) = 80, indicating a decrease.",
+          "As for the recipient, assuming they were set to receive the full tAmount, but due to fees, they actually receive, for example, only 15, this shows a lack of equality between the transfer and reception amounts, indicating a leak.",
+          "Overall, since the sender loses balance and only part of that is transferred to the recipient, while additional fees could go to the contract's owner (or another privileged entity), the behavior classifies as LEAK."
+        ],
+        "key_nodes": [
+          "D0",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "Journey_YORI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> D1 -> E1 -> D0[ASSET] -> E1 -> D0 -> E1 -> IF0 -> D2 -> D1 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1 -> E1 -> D0 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry Journey_YORI.transfer(address,uint256); PermNode: IF0; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "In the path, exists [ASSET] node D0 (L1249 and L1251) permission node IF0 and IF1, nodeconditionsand operation:",
+          "1. at node D0, _rOwned[sender] is decrease, _tOwned[recipient] is increase, This indicates sender balance will decreasewhile recipient balance will increase: '_rOwned[sender] = _rOwned[sender].sub(rAmount)' and '_tOwned[recipient] = _tOwned[recipient].add(tTransferAmount)'.",
+          "2. check asset source, sender is by msg.sender, while recipient is by function parameter provide, therefore recipient risk not caller control, exists leak .",
+          "3. because sender balance decreasesis arbitrary recipient, rather thanis the caller itself, This matches the Leak indirectly leak . The privileged user can specify arbitrary account, from its decrease balance .",
+          "Therefore, based on this analysis, the path belongs to the Leak type."
+        ],
+        "key_nodes": [
+          "D0",
+          "IF0",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "Journey_YORI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> IF1[PERM] -> D2 -> E1 -> D0[ASSET] -> E1 -> D0 -> E1 -> IF0 -> D0 -> D1 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1 -> E1 -> D0 -> F1 -> F1 -> F1",
+        "summary": "Entry Journey_YORI.transfer(address,uint256); PermNode: IF0, IF1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path begins with a transfer function, which has two key permission nodes (IF0, IF1).",
+          "In IF0, the conditions check if the sender is excluded from a tax or fee, whereas IF1 checks if the recipient is excluded. Based on these conditions, the transfer path can either proceed or deviate, which indicates that special permissions control the flow of token transfers.",
+          "The logic within the transfer function implies that holders can be selectively excluded from transaction fees, allowing the owner to manipulate who can actually transfer tokens and under what conditions.",
+          "This limitation is primarily due to the `_isExcluded` mappings that control whether senders and recipients are subject to transfer fees or whether their transfers are allowed, directly impacting the ability of regular users to transfer tokens freely.",
+          "Therefore, the presence of these permission checks that affect the transferability of tokens introduces a valid limitation on transactions, classifying this as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "IF0",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "Journey_YORI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> IF1[PERM] -> D2 -> E1 -> D0[ASSET] -> E1 -> D0 -> E1 -> IF0 -> D2 -> D1 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1 -> E1 -> D0 -> F1 -> F1 -> F1",
+        "summary": "Entry Journey_YORI.transfer(address,uint256); PermNode: IF0, IF1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_4",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.85,
+        "reasoning": [
+          "1. In Node D0 (depth=2): require(bool)(enableTrading) ensures trading must be enabled for transfers to proceed. The state of enableTrading can be controlled by a privileged user.",
+          "2. In Node D0 (depth=2): require(bool)(cooldown[recipient] < block.timestamp) enforces a cooldown period for the recipient. This essentially limits how frequently a user can make a transaction. The cooldown variable itself is updated by the contract owner.",
+          "3. In Node D1 (depth=2): cooldown[sender] = block.timestamp + (35) indicates that even if sender is allowed to send tokens, they are subject to the cooldown mechanism, further limiting their ability to trade.",
+          "4. The ability to change enableTrading and set cooldowns directly restricts the transfer process of regular users, which is characteristic of a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "D0",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_4",
+        "function_signature": "Journey_YORI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> IF1[PERM] -> IF2[PERM] -> D3 -> E1 -> IF0 -> IF1[PERM] -> D0[PERM] -> IF2[PERM] -> D1[PERM] -> D2[ASSET] -> E1 -> D0 -> E1 -> IF0 -> D0 -> D1 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1 -> E1 -> D0 -> F1 -> F1 -> F1",
+        "summary": "Entry Journey_YORI.transfer(address,uint256); PermNode: IF0, IF1, IF2, IF1, D0, IF2, D1; AssetNode: D2"
+      }
+    },
+    {
+      "path_id": "path_5",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "In the path, existspermission node (IF0, IF1, IF2) , and node transaction execute.",
+          "node D0 enableTrading, and require(bool)(enableTrading) existsmeans privilege can throughor transaction to limit ordinary user transfer .",
+          "privileged identity (is contract ) through modify enableTrading and cooldown variable to transaction, therefore limit transaction behavior.",
+          "The privileged user can cooldown[recipient], causingordinary user at transaction, further limit transaction ability."
+        ],
+        "key_nodes": [
+          "IF0",
+          "IF1",
+          "D0",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_5",
+        "function_signature": "Journey_YORI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> IF1[PERM] -> IF2[PERM] -> D3 -> E1 -> IF0 -> IF1[PERM] -> D0[PERM] -> IF2[PERM] -> D1[PERM] -> D2[ASSET] -> E1 -> D0 -> E1 -> IF0 -> D2 -> D1 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1 -> E1 -> D0 -> F1 -> F1 -> F1",
+        "summary": "Entry Journey_YORI.transfer(address,uint256); PermNode: IF0, IF1, IF2, IF1, D0, IF2, D1; AssetNode: D2"
+      }
+    },
+    {
+      "path_id": "path_6",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "1. The function 'Journey_YORI.transfer(address,uint256)' has checks in place to allow only certain parameters for transferring tokens.",
+          "2. Permission nodes (IF0, IF1, IF2, IF3) control who can send and receive tokens based on the _isExcluded mapping. This directly relates to whether transactions can occur.",
+          "3. Since the logic includes conditions like '_isExcluded[sender] && ! _isExcluded[recipient]', it indicates that certain addresses are privileged to remove or allow transactions for others under specific conditions, thereby limiting the user base who can participate in transfers once those conditions are set.",
+          "4. The asset nodes (D0) interact with the balances, but the critical aspect is that the permission nodes determine if a transfer can occur, which satisfies the criteria for LIMIT by enabling or disabling transactions based on control by high-permission individuals."
+        ],
+        "key_nodes": [
+          "IF0",
+          "IF1",
+          "IF2",
+          "IF3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_6",
+        "function_signature": "Journey_YORI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> IF1[PERM] -> IF2[PERM] -> IF3[PERM] -> D4 -> E1 -> D0[ASSET] -> E1 -> D0 -> E1 -> IF0 -> D0 -> D1 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1 -> E1 -> D0 -> F1 -> F1 -> F1",
+        "summary": "Entry Journey_YORI.transfer(address,uint256); PermNode: IF0, IF1, IF2, IF3; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_7",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "1. The path enters the transfer method (Journey_YORI.transfer), which is subject to several permission checks (IF0, IF1, IF2, IF3).",
+          "2. Each of these permission checks (IF0, IF1, IF2, IF3) involves the exclusion status (_isExcluded) of the sender and recipient, which can prevent certain transfers based on their exclusion status.",
+          "3. If the sender or recipient is excluded, it potentially modifies their ability to conduct transfers—this indicates a LIMIT behavior since the owner or privileged accounts can control who is allowed to transfer and under what conditions.",
+          "4. There are also indications that the tokens can be transferred differently based on whether the involved addresses are excluded or not, allowing potential for manipulation by a privileged account, further solidifying the LIMIT classification.",
+          "5. No MINT behavior is identified since there is no evidence of balance increase for any accounts, and LEAK behavior is not evident either because the `amount` being transferred is always considered greater than zero under the requirements."
+        ],
+        "key_nodes": [
+          "IF0",
+          "IF1",
+          "IF2",
+          "IF3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_7",
+        "function_signature": "Journey_YORI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> IF1[PERM] -> IF2[PERM] -> IF3[PERM] -> D4 -> E1 -> D0[ASSET] -> E1 -> D0 -> E1 -> IF0 -> D2 -> D1 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1 -> E1 -> D0 -> F1 -> F1 -> F1",
+        "summary": "Entry Journey_YORI.transfer(address,uint256); PermNode: IF0, IF1, IF2, IF3; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_8",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins by verifying certain conditions before proceeding with a transfer. In particular, nodes IF0, IF1, IF2, and IF3 indicate that there are permission checks based on whether the sender or recipient is excluded by the _isExcluded mapping.",
+          "2. The transfer process is tightly regulated by require statements that are dependent on the `enableTrading` boolean value located in Node D0 (L1219) and cooldown requirements controlled by the sender and recipient (L1221). The ability to modify `enableTrading` is likely held by a privileged user, which indicates that they can effectively lock or unlock trading for users.",
+          "3. Node D0 and D1 involve the cooldown mapping that restricts how quickly a user can transact after their last transaction, controlled by privileged conditions. Failure to meet these cooldown requirements will result in the transfer not going through, reinforcing the ability of a high-privilege user to limit trading from regular users.",
+          "4. Therefore, with the ability to set `enableTrading` and control cooldown for individual users by the privileged account(s) as denoted by the permission checks, it prevents normal users from trading freely, clearly categorizing this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "IF1",
+          "IF2",
+          "IF3",
+          "D0",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_8",
+        "function_signature": "Journey_YORI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> IF1[PERM] -> IF2[PERM] -> IF3[PERM] -> D5 -> E1 -> IF0 -> IF1[PERM] -> D0[PERM] -> IF2[PERM] -> D1[PERM] -> D2[ASSET] -> E1 -> D0 -> E1 -> IF0 -> D0 -> D1 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1 -> E1 -> D0 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry Journey_YORI.transfer(address,uint256); PermNode: IF0, IF1, IF2, IF3, IF1, D0, IF2, D1; AssetNode: D2"
+      }
+    },
+    {
+      "path_id": "path_9",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.85,
+        "reasoning": [
+          "1. Path execution begins in Journey_YORI.transfer(address,uint256).",
+          "2. The _transfer function checks multiple permission nodes (IF0, IF1, IF2, IF3), which determine the logic of how the transfer occurs based on whether the sender and recipient are excluded for certain conditions.",
+          "3. Notably at D0 (line L1219), there is a check for enableTrading, which needs to be true for the transfer to occur. This indicates that the transfer execution can be controlled by a privileged address, limiting the ability of standard users to initiate transfers.",
+          "4. The cooldown period implemented at D2 (line L1221) can also be seen as a limiting feature, where any recipient must wait a period before receiving further tokens, further restricting trading capabilities.",
+          "5. The cooling-off period and the condition for enabling trading means that the owner can control the state of trading entirely, preventing normal users from trading or transferring unless specific criteria defined in the smart contract are met.",
+          "6. Summary: The ability to alter trading conditions (enableTrading) and implement cooldowns can be seen as mechanisms that the privileged account can utilize to limit trading and control market actions."
+        ],
+        "key_nodes": [
+          "D0",
+          "D2",
+          "IF0",
+          "IF1",
+          "IF2"
+        ]
+      },
+      "overview": {
+        "path_id": "path_9",
+        "function_signature": "Journey_YORI.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> IF0[PERM] -> IF1[PERM] -> IF2[PERM] -> IF3[PERM] -> D5 -> E1 -> IF0 -> IF1[PERM] -> D0[PERM] -> IF2[PERM] -> D1[PERM] -> D2[ASSET] -> E1 -> D0 -> E1 -> IF0 -> D2 -> D1 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1 -> E1 -> D0 -> F1 -> F1 -> F1 -> F1",
+        "summary": "Entry Journey_YORI.transfer(address,uint256); PermNode: IF0, IF1, IF2, IF3, IF1, D0, IF2, D1; AssetNode: D2"
+      }
+    },
+    {
+      "path_id": "path_10",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path starts with a permissioned function call 'Journey_YORI.transferFrom' which allows one user to spend tokens from another user's account. It involves asset manipulation at various nodes, particularly at Node D0 where it reads and modifies allowances. This a typical behavior seen in ERC20 contracts to control transfers between accounts.",
+          "At Node D0 (depth=1), we observe the conditional checks for sender and recipient, ensuring they aren't the zero address and the amount is positive. However, in Node D1, the transfer logic comes into play which is heavily dependent on whether or not the sender and recipient are excluded from certain rules (Node IF0). If they are excluded, the standard transfer logic (which reduces sender's balance and increases recipient's balance) is overridden.",
+          "At Node D0 (depth=2), the account balances are manipulated. Here we see '_tOwned[sender] = _tOwned[sender].sub(tAmount)' indicating that the sender's balance is decreased. We also notice '_rOwned[recipient] = _rOwned[recipient].add(rTransferAmount)', which means something is being added to the recipient's balance based on a potentially manipulated internal state or fee rate, hence not all of the amount that the sender intended to transfer reaches the recipient.",
+          "This suggests the potential for a leak – specifically in the sense that the sender can lose balance without an equivalent measurement for the recipient unless a legitimate transaction takes place. Given that the recipient and the amount can be influenced by external inputs, this aligns with the indicator for leakage. The total supply isn't affected, and while the balances of the sender and recipient change (sender loses, recipient may receive less than expected), the owner could manipulate the dynamic of the transaction fees leading to discrepancies and direct theft of user tokens.",
+          "Considering the pattern of deductions without a direct return of equivalent value to the sender, and the potential for the receipt to be altered ('receive less than intended or specified') this directly leads us to categorize this as LEAK."
+        ],
+        "key_nodes": [
+          "D0",
+          "IF0",
+          "D1",
+          "E1",
+          "D0(depth=2)"
+        ]
+      },
+      "overview": {
+        "path_id": "path_10",
+        "function_signature": "Journey_YORI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1 -> E1 -> D0[ASSET] -> E1 -> D0 -> E1 -> IF0 -> D0 -> D1 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1 -> E1 -> D0 -> F1 -> F1 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry Journey_YORI.transferFrom(address,address,uint256); PermNode: IF0; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_11",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At Node D0 (first asset node), we read from _allowances and update allowance for the caller authorized by the sender as follows: _allowances[sender][_msgSender()].sub(amount). This indicates the potential for the allowance to be manipulated, leading to asset leakage.",
+          "2. At Node D0 (second asset node, inside _transferFromExcluded), the balances are updated as follows: _tOwned[sender] = _tOwned[sender].sub(tAmount) and _rOwned[sender] = _rOwned[sender].sub(rAmount). The sender's balance is reduced by the amount being transferred, which could represent a legitimate transfer not immediately viewed as a leak, but in relative terms, it shifts the value without reciprocal compensation to others.",
+          "3. The essence of leakage arises at Node D0 (also in _transferFromExcluded) where the recipient receives an amount derived from the transferred amount but is expressed with the potential for fee deductions as part of calculating rTransferAmount. The overall framework supports the idea that the transaction itself could redirect funds away from the sender into exempt or ownership-controlled accounts.",
+          "4. While the balance adjustments generally imply a decrease for the sender, there exists the aspect of indirect control by the owner's governance over either the transaction execution criteria or how assets are redistributed (indicating a potential backdoor for asset bleed-off).",
+          "5. Overall, even if the sender loses value, the structure surrounding the transactions encroaches upon leakage of funds directly attributable to the participation of privileged addresses."
+        ],
+        "key_nodes": [
+          "D0 (first asset)",
+          "D0 (second asset)",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_11",
+        "function_signature": "Journey_YORI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> D1 -> E1 -> D0[ASSET] -> E1 -> D0 -> E1 -> IF0 -> D2 -> D1 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1 -> E1 -> D0 -> F1 -> F1 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry Journey_YORI.transferFrom(address,address,uint256); PermNode: IF0; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_12",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. Node D0 contains a significant ASSET modification: `L1249: _rOwned[sender] = _rOwned[sender].sub(rAmount)`, which reduces the balance of the sender.",
+          "2. This indicates that the balance of 'sender' is being decreased directly, indicating a potential leak of tokens.",
+          "3. The function is designed to verify if the sender is excluded from certain rate calculations, which would be a key control point, as seen in IF0 and IF1.",
+          "4. The recipient receives `tTransferAmount`, thus if `tTransferAmount < amount`, the difference (fee or any other deduction) is unaccounted for and can potentially be directed to the owner, which is a form of leak.",
+          "5. The asset changes occur without the sender being able to consent or alter their accounts' states (the sender is determined by the transaction parameters). This confirms the non-consensual nature of the asset deduction.",
+          "6. Since the coins are being deducted from the sender and directed to someone else without their control, this falls under the definition of LEAK as defined in the guidelines."
+        ],
+        "key_nodes": [
+          "D0",
+          "IF0",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_12",
+        "function_signature": "Journey_YORI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> IF1[PERM] -> D2 -> E1 -> D0[ASSET] -> E1 -> D0 -> E1 -> IF0 -> D0 -> D1 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1 -> E1 -> D0 -> F1 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry Journey_YORI.transferFrom(address,address,uint256); PermNode: IF0, IF1; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_13",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "1. At node D0, _allowances, This indicates balance allow transfer _allowances value, is asset operation. node D0 showsnode L1003 `sub(amount, ERC20: transfer amount exceeds allowance)`, can allow not while transfer, thereby ordinary user transaction ability. This indicates parameter , and control will directly transaction .",
+          "2. node IF0 and IF1 is permission node, conditions account is transfer . at IF0 checkin, confirms `_isExcluded[sender] && !_isExcluded[recipient]`, alsoAt IF1, confirmsis conditions, addressat transfer inis at .",
+          "3. sender is user (_isExcluded[sender]), according tocan transaction, This matchesor limit transaction .",
+          "4. is, This path allow privilege account control transaction is through, thereby ordinary user transaction behavior ."
+        ],
+        "key_nodes": [
+          "D0",
+          "IF0",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_13",
+        "function_signature": "Journey_YORI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> IF1[PERM] -> D2 -> E1 -> D0[ASSET] -> E1 -> D0 -> E1 -> IF0 -> D2 -> D1 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1 -> E1 -> D0 -> F1 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry Journey_YORI.transferFrom(address,address,uint256); PermNode: IF0, IF1; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_14",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. node D0 inAsset changes:L1219 requires(enableTrading) ensures transaction is, therefore privilege nodecan through modify enableTrading valueto limit user transaction ability, directlyordinary user transfer operation.",
+          "2., nodeIF1conditions `sender != uniswapV2Pair` The privileged userthrough control transaction to limit user transaction .",
+          "3. node D1 through cooldown[sender] control user transfer rateand, modify control variable, limit user transfer ability.",
+          "4. In summary, throughThe privileged user enableTrading and cooldown variable control, ordinary user transaction, LIMIT behavior .",
+          "Key nodes include D0, D1 and IF1, node transaction directly."
+        ],
+        "key_nodes": [
+          "D0",
+          "D1",
+          "IF0",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_14",
+        "function_signature": "Journey_YORI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> IF1[PERM] -> IF2[PERM] -> D3 -> E1 -> IF0 -> IF1[PERM] -> D0[PERM] -> IF2[PERM] -> D1[PERM] -> D2[ASSET] -> E1 -> D0 -> E1 -> IF0 -> D0 -> D1 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1 -> E1 -> D0 -> F1 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry Journey_YORI.transferFrom(address,address,uint256); PermNode: IF0, IF1, IF2, IF1, D0, IF2, D1; AssetNode: D0, D2, D0"
+      }
+    },
+    {
+      "path_id": "path_15",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "Node D0 checks that `enableTrading` is true (line L1219). If a privileged user sets `enableTrading` to false, it would prevent all transfers, effectively blocking user trading.",
+          "Node D0 also imposes a cooldown on trading based on the recipient's address (line L1221), allowing privileged users to control how often certain addresses can trade.",
+          "Both of these checks can be manipulated by high privilege accounts, allowing them to restrict trading for regular users without any means of appeal.",
+          "As such, the path includes mechanisms that limit trading based on the state of variables controlled by privileged identities, indicating it's a clear Limiting Sell scenario."
+        ],
+        "key_nodes": [
+          "D0",
+          "IF0",
+          "IF1",
+          "IF2"
+        ]
+      },
+      "overview": {
+        "path_id": "path_15",
+        "function_signature": "Journey_YORI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> IF1[PERM] -> IF2[PERM] -> D3 -> E1 -> IF0 -> IF1[PERM] -> D0[PERM] -> IF2[PERM] -> D1[PERM] -> D2[ASSET] -> E1 -> D0 -> E1 -> IF0 -> D2 -> D1 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1 -> E1 -> D0 -> F1 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry Journey_YORI.transferFrom(address,address,uint256); PermNode: IF0, IF1, IF2, IF1, D0, IF2, D1; AssetNode: D0, D2, D0"
+      }
+    },
+    {
+      "path_id": "path_16",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At Node D0 (L1003) in the transferFrom function, _approve is called which reads the allowance but does not have an asset modification.",
+          "2. In Node D0 at depth 1 (L1185), there are require checks to ensure that the sender, recipient, and amount are valid.",
+          "3. In Node D4, the actual transfer logic begins with the checks on exclusions for the sender and recipient, which indicate special permission conditions.",
+          "4. In the IF branches (IF0, IF1, IF2, IF3), the transfer methods can differ based on whether the sender or recipient is excluded from transaction fees or special conditions.",
+          "5. In Node D0 at depth 2, the balance of the sender and recipient are adjusted accordingly, where sender's balances decrease (_tOwned[sender].sub(tAmount) and _rOwned[sender].sub(rAmount)), and the recipient's balances increase (_tOwned[recipient].add(tTransferAmount) and _rOwned[recipient].add(rTransferAmount). This suggests that tokens are being transferred with a potential unequal distribution due to fees.",
+          "6. The methods for calculating fees can lead to cases where the sender's balance is decreased without a corresponding increase to the recipient (if fees are in place), thereby leaking tokens to the owner or a fee address."
+        ],
+        "key_nodes": [
+          "D0",
+          "D0",
+          "D4"
+        ]
+      },
+      "overview": {
+        "path_id": "path_16",
+        "function_signature": "Journey_YORI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> IF1[PERM] -> IF2[PERM] -> IF3[PERM] -> D4 -> E1 -> D0[ASSET] -> E1 -> D0 -> E1 -> IF0 -> D0 -> D1 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1 -> E1 -> D0 -> F1 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry Journey_YORI.transferFrom(address,address,uint256); PermNode: IF0, IF1, IF2, IF3; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_17",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "In the path, asset node D0, code in balance, is at node D0 and D4. according tonode D0 and D4 code:",
+          "- At D0, _allowances[sender][_msgSender()].sub(amount) -> This means allowance not, will causing asset change, and the operationwill send (sender) balance, existsotherarbitraryaddresstransfer token risk .",
+          "- at D0 nodein, _tOwned[sender] and _tOwned[recipient] shows sender balance will decrease, while recipient balance will increase. here subtractis to parameter `amount`, rather thanis limit at caller control, Therefore, This matches the definition of token leaking.",
+          "also, through asset perform, can :",
+          "- assuming sender Initial balance is 100, transfer, _tOwned[sender] will decrease amount, _tOwned[recipient] will increase (amount - fee), while fee will contract balance, is token leak behavior, because fee The privileged user control . Therefore, amountwill is The privileged useraddress.",
+          "privilege nodecan allow send and recipient, therefore path leak tokencharacteristic."
+        ],
+        "key_nodes": [
+          "D0",
+          "D4",
+          "IF0",
+          "IF1",
+          "IF2",
+          "IF3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_17",
+        "function_signature": "Journey_YORI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> IF1[PERM] -> IF2[PERM] -> IF3[PERM] -> D4 -> E1 -> D0[ASSET] -> E1 -> D0 -> E1 -> IF0 -> D2 -> D1 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1 -> E1 -> D0 -> F1 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry Journey_YORI.transferFrom(address,address,uint256); PermNode: IF0, IF1, IF2, IF3; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_18",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "at path nodein, transaction control conditions, its at node IF0, IF1, IF2, IF3 inexists '_isExcluded' conditionscheck, This indicates account can is or allow perform transfer .",
+          "node D0 at _transfer in 'require(enableTrading)' judge, This meansThe privileged user can through set enableTrading is false to user perform transfer, thereby transfer limit .",
+          "because The privileged user control logic variable ( such enableTrading) ,, ordinary user limit to perform transaction . Therefore, at this path in, The privileged user limit other user transaction behavior, ."
+        ],
+        "key_nodes": [
+          "IF0",
+          "IF1",
+          "IF2",
+          "IF3",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_18",
+        "function_signature": "Journey_YORI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> IF1[PERM] -> IF2[PERM] -> IF3[PERM] -> D5 -> E1 -> IF0 -> IF1[PERM] -> D0[PERM] -> IF2[PERM] -> D1[PERM] -> D2[ASSET] -> E1 -> D0 -> E1 -> IF0 -> D0 -> D1 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1 -> E1 -> D0 -> F1 -> F1 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry Journey_YORI.transferFrom(address,address,uint256); PermNode: IF0, IF1, IF2, IF3, IF1, D0, IF2, D1; AssetNode: D0, D2, D0"
+      }
+    },
+    {
+      "path_id": "path_19",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.85,
+        "reasoning": [
+          "In the path, permission node ( such IF0, IF1, IF2, IF3) control transfer, is at _transfer and _transferStandard functionin.",
+          "node D0 in require(enableTrading) indicates, when enableTrading is false, perform transfer, This indicatescan control transaction or, thereby limit ordinary user transaction .",
+          "furthermore, node L1221 in cooldown[recipient] limit user transaction, therefore control use transfer ability, further confirms LIMIT behavior.",
+          "althoughamong whichnofind balance is or is leak node, but at ( D2 cooldown set ) exists transaction, This matches limit transaction ."
+        ],
+        "key_nodes": [
+          "IF0",
+          "IF1",
+          "D0",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_19",
+        "function_signature": "Journey_YORI.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> IF1[PERM] -> IF2[PERM] -> IF3[PERM] -> D5 -> E1 -> IF0 -> IF1[PERM] -> D0[PERM] -> IF2[PERM] -> D1[PERM] -> D2[ASSET] -> E1 -> D0 -> E1 -> IF0 -> D2 -> D1 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1 -> E1 -> D0 -> F1 -> F1 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry Journey_YORI.transferFrom(address,address,uint256); PermNode: IF0, IF1, IF2, IF3, IF1, D0, IF2, D1; AssetNode: D0, D2, D0"
+      }
+    },
+    {
+      "path_id": "path_20",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function Journey_YORI.reflect(uint256) where the caller is checked for permissions. Node D0 has a [PERM] check using require to exclude addresses from calling this function (L1051).",
+          "2. The node D0 also involves asset manipulation where the balance of the sender is decreased (_rOwned[sender] = _rOwned[sender].sub(rAmount)) (L1055). This indicates a decrease in the balance of the caller when they are permitted to invoke this function.",
+          "3. The condition checked in Node IF0 (`_tTotal >= 30000000 * (10 ** 6) * (10 ** 18)`) binds the operations from this path to a specific parameter value, impacting what values are acceptable for processing transactions. The transaction is contingent on this minimum total supply, indicating that this 'reflect' call can be limited based on state.",
+          "4. The existence of the require logic to exclude addresses and potential conditions that influence whether the reflect operation can proceed implies that the special privileges of certain addresses might lead to limitations on transactions for others. This indicative of 'LIMIT'.",
+          "5. There are no signs of an unbounded increase in assets (MINT) or a leak of tokens through arbitrary deductions of balances from others."
+        ],
+        "key_nodes": [
+          "D0",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_20",
+        "function_signature": "Journey_YORI.reflect(uint256)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> E1 -> IF0 -> D0 -> D1 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1 -> F1",
+        "summary": "Entry Journey_YORI.reflect(uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_21",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.8,
+        "reasoning": [
+          "At Node D0, the line '_rOwned[sender] = _rOwned[sender].sub(rAmount)' indicates that the balance for the sender is being reduced by an amount (rAmount). This represents a direct reduction of the sender's balance, which is a direct asset manipulation.",
+          "Since the sender is determined using '_msgSender()', it is not necessarily the caller's own balance that is being subtracted, but potentially a different user's balance can be affected if manipulated correctly through contract logic. This indicates a potential leakage mechanism.",
+          "The management of balances by an authority can lead to unauthorized deductions from user accounts, hence fitting the definition of a leak where the contract allows deductions of balances for arbitrary users who are not the caller.",
+          "Moreover, if the code structure permits, the owner could direct significant fees or deductions from any user's balance while retaining control, indicating that the permissions surrounding this method can lead to a leak of tokens from users' balances."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_21",
+        "function_signature": "Journey_YORI.reflect(uint256)",
+        "trace": "E1 -> D0[PERM] -> E1 -> D0 -> E1 -> IF0 -> D2 -> D1 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1 -> F1",
+        "summary": "Entry Journey_YORI.reflect(uint256); PermNode: D0"
+      }
+    },
+    {
+      "path_id": "path_22",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.8,
+        "reasoning": [
+          "at node D1, `L1125: _tOwned[account] = tokenFromReflection(_rOwned[account])`, among which `_tOwned` is `account` balance, This indicates account token balance performed on . here `account` allow directly parameter provide, thereforecan is caller specify .",
+          "At node IF0, execute path conditionsis `_rOwned[account] > 0`, This means `account` actual balance, execute. but, The privileged user control the function, account will is (exclude) .",
+          "through path, The privileged userfrom arbitrary account deductionits `_rOwned[account]` balance, will its caller account in, rather thanis other account, account balance leak . according to path node D1, The privileged userthrough excludeAccount function decrease arbitrary account balance, leak ."
+        ],
+        "key_nodes": [
+          "E1",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_22",
+        "function_signature": "Journey_YORI.excludeAccount(address)",
+        "trace": "E1[PERM] -> M1 -> D0 -> IF0 -> D1[ASSET] -> E1 -> D0 -> E1 -> D0 -> F1 -> F1 -> D2 -> F1",
+        "summary": "Entry Journey_YORI.excludeAccount(address); PermNode: E1; AssetNode: D1"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The control function 'Ownable.renounceOwnership()' is restricted to the onlyOwner, meaning that only the owner can invoke it, which modifies the uniswapV2Pair variable through 'Journey_YORI.updateUniPair()'.",
+          "Once the uniswapV2Pair has been updated, the '_transferStandard' function checks the condition 'sender != uniswapV2Pair'. If the ownership is renounced, the owner can manipulate the pair address which means they can control who is allowed to execute transfers by updating and manipulating the uniswapV2Pair to their advantage.",
+          "This ability to alter the uniswapV2Pair indicates that the owner can effectively block or allow transfers, thus limiting the sell capability of ordinary users."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "uniswapV2Pair",
+        "targets": [
+          "Journey_YORI._transferStandard(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function `Ownable.renounceOwnership()` can be called only by the owner (`onlyOwner` modifier), indicating that it has restricted access.",
+          "2. This function affects the `_isExcluded` control variable within `Journey_YORI.excludeAccount(address)`, suggesting that the owner can exclude accounts from certain functionalities.",
+          "3. The reference to `Journey_YORI.balanceOf(address)` checks if the account is in the `_isExcluded` mapping, which can influence whether users are able to interact with the contract, particularly in terms of transferring tokens.",
+          "4. If the owner sets `_isExcluded` to true for certain addresses, those addresses might be able to bypass restrictions, effectively limiting the ability of users (non-excluded) to trade with each other.",
+          "5. Therefore, this path demonstrates a scenario where the owner can control who can trade by manipulating the `_isExcluded` variable, which aligns with the definition of a LIMIT rugpull."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "_isExcluded",
+        "targets": [
+          "Journey_YORI.balanceOf(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_2",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'Ownable.renounceOwnership()' (Node E1) allows the owner to renounce ownership, which could influence the control of '_isExcluded'.",
+          "The '_isExcluded' variable controls access to the '_transfer' function by determining whether the sender and recipient are excluded from transfer fees or other restrictions.",
+          "In '_transfer' (Node IF0), the condition '_isExcluded[sender] && !_isExcluded[recipient]' implies that the owner can manipulate these exclusions and thus control who can freely transfer tokens.",
+          "If the owner sets '_isExcluded' such that users are excluded while allowing themselves to transfer, this enables the owner to limit or control user transactions."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "_isExcluded",
+        "targets": [
+          "Journey_YORI._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_3",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'Journey_YORI.excludeAccount(address)' has a require statement that checks if an account is already excluded from some functionality based on the '_isExcluded' mapping. This mapping can be modified by calling 'Ownable.renounceOwnership()', which means that the owner can exclude any account at will.",
+          "By excluding accounts, the owner can effectively prevent those accounts from participating in certain operations or making transfers, thus controlling their ability to trade or interact with the contract's functionality.",
+          "This restriction represents a control on trading activity, classifying it as a LIMIT type of rugpull.",
+          "Key nodes involved in this reasoning are node 'E1' where ownership is renounced and node 'D0' where transfer exclusions are checked."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "_isExcluded",
+        "targets": [
+          "Journey_YORI.excludeAccount(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_4",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "Step 1: The ownership can be renounced using the function Ownable.renounceOwnership() at node E1, which is restricted to the owner.",
+          "Step 2: This indicates that once the ownership is renounced, certain control variables may be altered without the owner's oversight.",
+          "Step 3: The function Journey_YORI.excludeAccount(address) modifies the _isExcluded variable, allowing the owner to exclude accounts from specific functionality.",
+          "Step 4: The function Journey_YORI.reflect(uint256) at node D0 affects multiple balances, and if _isExcluded is set to exclude certain accounts, those accounts may be unable to perform actions based on this state change.",
+          "Step 5: Since the owner can modify this exclusion variable, it allows them to indirectly control whether and how other users can interact with the reflect function.",
+          "Overall, the path demonstrates that the owner can limit transaction capabilities based on the _isExcluded state, fitting the LIMIT category."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "_isExcluded",
+        "targets": [
+          "Journey_YORI.reflect(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_5",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.8,
+        "reasoning": [
+          "Node E1 is an [PERM] node where 'Ownable.renounceOwnership()' can be triggered only by the owner. This allows the owner to relinquish ownership and possibly change the state of the contract.",
+          "Node D0 is an [ASSET] node where 'Journey_YORI.reflect(uint256)' modifies multiple asset-related variables, including '_rTotal'. Since '_rTotal' is manipulated by the owner, this indicates that the owner can control significant aspects of the contract's balance and distribution.",
+          "The owner has the ability to adjust '_isExcluded' in Node with depth 1, potentially allowing them to manipulate which accounts can or cannot receive reflections, hence indirectly influencing the flow of tokens from those excluded accounts to the owner, which results in a leakage of tokens from regular users' balances."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "_rTotal",
+        "targets": [
+          "Journey_YORI.reflect(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_7",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The control flow begins at the `Ownable.renounceOwnership()` function (Node E1), which is restricted to the onlyOwner. When ownership is renounced, the contract may lose control over certain functionalities, including critical parameters affecting transactions.",
+          "The `Journey_YORI.reflect(uint256)` function (Node D0) subsequently writes to the `_tFeeTotal`, `_rOwned`, and `_rTotal` variables. If the ownership or control is changed, it is possible that the `reflect` function could be manipulated to alter fees or perform reflections in a way that is beneficial to the new owner or harmful to regular users.",
+          "Moreover, the path shows a link to modifying `_isExcluded` (Node depth 1), which can potentially create scenarios where the transaction status can be changed or restricted for certain accounts. This kind of power exploitation fits within the definition of LIMIT as the owner can control transaction fees or whitelist/blacklist addresses, ultimately affecting user transactions."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "_tFeeTotal",
+        "targets": [
+          "Journey_YORI.reflect(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_9",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function Ownable.renounceOwnership() which is guarded by the onlyOwner modifier. This means only the owner can call this function and subsequently affect the state of trading via the enableTrading variable.",
+          "When the enableTrading variable is modified, it directly influences the control of trading permissions within Journey_YORI._transferStandard function. This creates a scenario where the owner can disable or enable trading at will, thereby limiting the trading capabilities of all non-owner users.",
+          "Thus, the ability for the owner to control the enableTrading state presents a clear case of limiting the ability of regular users to perform transactions, classifying this path under LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "enableTrading",
+        "targets": [
+          "Journey_YORI._transferStandard(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_10",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves `Ownable.transferOwnership(address)` which is a function restricted to the `onlyOwner`, indicating that only a privileged account can execute this function (Node E1).",
+          "2. The control chain indicates that the ownership transfer can modify the `uniswapV2Pair` through `Journey_YORI.updateUniPair()`. Changing this variable directly affects the condition used in `_transferStandard`. (Node IF1)",
+          "3. The condition in `_transferStandard` checks if the `sender` is not equal to `uniswapV2Pair`. If the owner controls `uniswapV2Pair`, they can effectively disable transfers from this contract, preventing normal users from transferring tokens while being able to transact from the pair directly.",
+          "4. This suggests that the owner can control who can do transactions, hence limiting the sell activity of other users.",
+          "5. No evidence of minting or leaking tokens is present, as the focus is on controlling the transaction behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "uniswapV2Pair",
+        "targets": [
+          "Journey_YORI._transferStandard(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_11",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'Ownable.transferOwnership(address)' is controlled by 'onlyOwner', which means only the owner has the privilege to call this function.",
+          "When the ownership is transferred, it allows the new owner to execute the 'Journey_YORI.excludeAccount(address)' function, where the '_isExcluded' variable can be modified.",
+          "This means the new owner can update the '_isExcluded' mapping, which directly affects the outcome of 'Journey_YORI.balanceOf(address)'.",
+          "Specifically, if an account is marked as excluded, it can affect normal transfer functionality for that account, effectively allowing the owner to limit whether or not an account can trade in Journey_YORI tokens.",
+          "Therefore, the owner has the ability to restrict transfers for specific users, which categorizes this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "_isExcluded",
+        "targets": [
+          "Journey_YORI.balanceOf(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_12",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'Ownable.transferOwnership(address)' is intended for ownership transfer and is protected by 'onlyOwner', indicating that only the owner can invoke it, thereby providing control over who can affect the contract's state.",
+          "The '_isExcluded' variable is manipulated through 'Journey_YORI.excludeAccount(address)', which will allow the owner to include or exclude any account from having special privileges during transfers.",
+          "In 'Journey_YORI._transfer(address,address,uint256)', the transfer conditions depend on the '_isExcluded' status of both the sender and recipient. If the owner decides to exclude an account, that account will have its transfer capabilities limited, which directly limits the rights of regular users to trade tokens freely.",
+          "Thus, because an owner can exclude users from normal transfer abilities and affect transfer conditions, this path clearly demonstrates the behavior consistent with limiting user transactions, hence classified as 'LIMIT'."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "_isExcluded",
+        "targets": [
+          "Journey_YORI._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_13",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The control source 'Ownable.transferOwnership(address)' allows the owner to change the ownership, which indirectly gives them the capability to modify the state of '_isExcluded' within 'Journey_YORI.excludeAccount(address)'.",
+          "The function 'Journey_YORI.excludeAccount(address)' has a conditional check that will prevent accounts that are already excluded from being excluded again, indicating a form of manipulation of account statuses.",
+          "By modifying '_isExcluded', the owner can selectively include or exclude accounts from transaction privileges, effectively controlling who can trade or transfer, which is a characteristic of limiting access to trading.",
+          "Since the ownership transfer can be executed by any address decided by the owner, they can continuously change the state of '_isExcluded', thus impacting the normal functionality of token transfers for excluded accounts."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "_isExcluded",
+        "targets": [
+          "Journey_YORI.excludeAccount(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_14",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "1. The control function 'Ownable.transferOwnership(address)' is restricted by 'onlyOwner', indicating that only the owner can invoke this function, which gives them power over the ownership transfer.",
+          "2. The '_isExcluded' variable can be manipulated through the function 'Journey_YORI.excludeAccount(address)', which can be called by the owner to determine whether certain accounts can be excluded from a specific logic (potentially the fee logic) or participation in the ecosystem.",
+          "3. The 'Journey_YORI.reflect(uint256)' function modifies state variables '_rOwned', '_rTotal', and '_tFeeTotal'. If the '_isExcluded' status is manipulated by the owner, it directly affects the distribution of tokens, enabling the owner to potentially limit the reflection rewards of normal users.",
+          "4. Because the control exercised over '_isExcluded' by the owner can affect the distribution mechanics of the token, it limits users' ability to participate equitably.",
+          "5. Thus, this path suggests a LIMIT behavior since it allows the owner to control the access of certain accounts from participating freely in the distribution reflected by the token mechanics."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "_isExcluded",
+        "targets": [
+          "Journey_YORI.reflect(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_15",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.85,
+        "reasoning": [
+          "1. The path involves the `Ownable.transferOwnership(address)` function which is controlled by onlyOwner, indicating that only privileged accounts can change ownership and thereby affect the behavior of the contract.",
+          "2. The function `Journey_YORI.reflect(uint256)` is called, which affects `_rTotal`. This reflects a redistribution mechanism that is indirectly tied to privileged control.",
+          "3. Given that the control chain allows the owner to exclude accounts from certain distributions or modifications (`Journey_YORI.excludeAccount(address)`), the owner can manipulate the reflection process.",
+          "4. The behavior suggests that the owner can potentially adjust how reflections (or tokens) are distributed, which can indirectly lead to token leakage from other holders, as they might receive less due to the owner's manipulation of exclusions or the total reflective supply.",
+          "5. This matches the criteria for a Leak in that the privileged owner can indirectly affect other users' balances through the `_rTotal` and its relations to token distributions."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "_rTotal",
+        "targets": [
+          "Journey_YORI.reflect(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_17",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "according tonode E1, this function 'Ownable.transferOwnership(address)' 'onlyOwner', thereforeonlyprivileged identitycan call.",
+          "This path allow The privileged userthrough 'Journey_YORI.excludeAccount(address)' to '_isExcluded' variable, directly.",
+          "node D0 in 'Journey_YORI.reflect(uint256)' functionwill modify '_tFeeTotal', among whichfrom The privileged user control inproduce asset change, will to transaction and .",
+          "This meansThe privileged user can modify transaction control parameter, limit ordinary user transaction . privileged identitycan, causingordinary user transaction, thereforethis path matches the LIMIT ."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "_tFeeTotal",
+        "targets": [
+          "Journey_YORI.reflect(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_19",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The control source is the function 'Ownable.transferOwnership(address)', which is guarded by 'onlyOwner'. This means only the contract owner can change ownership.",
+          "2. The variable 'enableTrading' can be controlled by the method 'Journey_YORI.useCoolDown(bool)', showing that the owner can enable or disable trading based on their control over the ownership.",
+          "3. Since 'enableTrading' directly influences whether the function '_transferStandard' can be executed, this allows the owner to restrict trading for all users at will.",
+          "4. This implies that the contract owner can manipulate trading conditions to limit regular user's ability to transact.",
+          "5. The control of trading status by only the owner matches the criteria set for the 'LIMIT' behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "enableTrading",
+        "targets": [
+          "Journey_YORI._transferStandard(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_20",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The control source 'Journey_YORI.renounceOwnership()' can be triggered by the contract owner, which modifies the 'uniswapV2Pair' variable.",
+          "2. The 'uniswapV2Pair' variable is then used in the conditional check inside the 'Journey_YORI._transferStandard()' function, where transfers are allowed only if 'sender != uniswapV2Pair'.",
+          "3. By renouncing ownership, the owner has the ability to control whether trades can go through or not by impacting the 'uniswapV2Pair'.",
+          "4. If the control variable can be redefined or set to a specific address (which is allowed since ownership can be renounced), it directly influences whether users can make transactions or not.",
+          "5. Therefore, the condition 'sender != uniswapV2Pair' creates a limiting mechanism on transfers under the owner's control, classifying this path as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Journey_YORI.renounceOwnership()",
+        "control_variable": "uniswapV2Pair",
+        "targets": [
+          "Journey_YORI._transferStandard(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_21",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function Journey_YORI.renounceOwnership() has the modifier onlyOwner which means only the owner can execute it, allowing them to control the state of _isExcluded.",
+          "The usage of _isExcluded in the conditional check for balanceOf(address) indicates that if an account is excluded, it might affect how transfers or balance calculations are done.",
+          "By renouncing ownership, the owner could change the _isExcluded state, effectively enabling or disabling transactions for certain accounts, hence manipulating who can participate in trades. This indicates a capability to limit transfers for regular users.",
+          "This path does not show direct manipulation of balances that results in minting tokens or leaking tokens directly but does provide control over transfer ability, confirming it as a LIMIT scenario."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Journey_YORI.renounceOwnership()",
+        "control_variable": "_isExcluded",
+        "targets": [
+          "Journey_YORI.balanceOf(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_22",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path starts with the function Journey_YORI.renounceOwnership(), which is an onlyOwner function, indicating that its control is restricted to the contract owner (Node ID: E1).",
+          "2. This function can change the state of the _isExcluded variable by calling the Journey_YORI.excludeAccount(address) function.",
+          "3. The affected target is the _transfer function (Node ID: IF0), which utilizes the _isExcluded variable to conditionally check if sender is excluded and the recipient is not.",
+          "4. The ability for the owner to change who is excluded or not allows them to effectively control whether transfers can happen between certain accounts, thereby limiting the trading ability of ordinary users.",
+          "5. Because the owner can switch the _isExcluded state at will, this represents a Limiting Sell scenario, where the owner can disable transfers for excluded accounts, impacting normal users' ability to trade."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Journey_YORI.renounceOwnership()",
+        "control_variable": "_isExcluded",
+        "targets": [
+          "Journey_YORI._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_23",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "1. The function `renounceOwnership()` has a modifier `onlyOwner`, giving exclusive control to the owner over the contract functions.",
+          "2. The `excludeAccount(address)` function checks if the account is not already excluded (`require(! _isExcluded[account], 'Account is already excluded')`). This implies that the owner can modify the `_isExcluded` in a way that can limit or control which accounts can participate in transfers or other interactions.",
+          "3. Specifically, if an account is excluded, the owner can choose not to allow them to execute certain actions, effectively limiting their ability to trade or interact freely with the token.",
+          "4. Thus, the owner has the power to create conditions that restrict normal user transactions by modifying the `_isExcluded` status."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Journey_YORI.renounceOwnership()",
+        "control_variable": "_isExcluded",
+        "targets": [
+          "Journey_YORI.excludeAccount(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_24",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function Journey_YORI.renounceOwnership() is marked with 'onlyOwner', indicating that only the owner can call this function, which allows them to modify the _isExcluded state.",
+          "This _isExcluded variable changes the inclusion of accounts in certain calculations, potentially affecting the ability for these accounts to participate in token transfers.",
+          "The function Journey_YORI.reflect(uint256) also writes to state variables like _rOwned, _rTotal, and _tFeeTotal, which can be influenced by whether accounts are excluded or not.",
+          "Since the owner can choose to exclude accounts from these calculations, they can effectively limit or control how those accounts can interact with the token, leading to a scenario where ordinary users cannot freely trade, thus falling under the LIMIT category."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Journey_YORI.renounceOwnership()",
+        "control_variable": "_isExcluded",
+        "targets": [
+          "Journey_YORI.reflect(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_25",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The control function 'Journey_YORI.renounceOwnership()' is marked with 'onlyOwner', indicating that only the owner can invoke it, which grants a precise permission boundary.",
+          "This function can impact trading parameters by potentially disabling or manipulating the 'excludeAccount' logic, which controls whether specific accounts can participate in reflections.",
+          "As a result, the ability to exclude accounts combined with required privileges may effectively limit the ability of ordinary users to conduct trades if the owner decides to manipulate inclusion/exclusion of accounts.",
+          "The 'reflect(uint256)' function indicates that the owner could affect how rewards are distributed based on the account's exclusion state, thus controlling who can gain from the contract's operations.",
+          "Since the owner's actions could directly restrict normal users from trading freely based on their account status, this execution path fits the 'LIMIT' category."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Journey_YORI.renounceOwnership()",
+        "control_variable": "_rTotal",
+        "targets": [
+          "Journey_YORI.reflect(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_27",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Journey_YORI.renounceOwnership() is marked as onlyOwner, indicating that only a privileged address (the owner) can execute it (Node ID: E1).",
+          "By calling renounceOwnership, the control over certain parameters like _tFeeTotal can be altered, which could affect the transaction behavior.",
+          "Additionally, the reflect(uint256) function modifies the state of _tFeeTotal, alongside other asset variables, which suggests that the ability to execute this function combined with the ability to modify ownership can result in transaction limitations for other users.",
+          "If ownership is renounced, it can create scenarios where the owner can manipulate fees or transaction rules, leading to potential restrictions on trading rights for regular users."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Journey_YORI.renounceOwnership()",
+        "control_variable": "_tFeeTotal",
+        "targets": [
+          "Journey_YORI.reflect(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_29",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The control from `Journey_YORI.renounceOwnership()` indicates that the owner can disable trading by controlling the `enableTrading` variable.",
+          "Once `enableTrading` is set to false, this will prevent all users from being able to trade, which aligns with the rugpull behavior of limiting trading capabilities.",
+          "The affected target `_transferStandard` checks the `cooldown` state, which can effectively lock transactions based on the state of `enableTrading`.",
+          "Since the ability to enable or disable trading is exclusively with the owner, this creates a clear path where normal users' ability to transact can be restricted.",
+          "Therefore, the category for this path is determined to be LIMIT due to the owner's control over trading operations."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Journey_YORI.renounceOwnership()",
+        "control_variable": "enableTrading",
+        "targets": [
+          "Journey_YORI._transferStandard(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_30",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Journey_YORI.transferOwnership(address) is controlled by onlyOwner, allowing the owner to change the uniswapV2Pair address.",
+          "The updateUniPair function modifies the control variable uniswapV2Pair, which is later used in the conditional check within the _transferStandard function.",
+          "In the _transferStandard function, there is a check 'sender != uniswapV2Pair'. If the owner changes uniswapV2Pair, they can effectively prevent transfers from occurring depending on the new address set.",
+          "This means that the owner can restrict general users' ability to transfer tokens by changing the pairing address, which directly impacts their ability to engage in transactions, thus classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Journey_YORI.transferOwnership(address)",
+        "control_variable": "uniswapV2Pair",
+        "targets": [
+          "Journey_YORI._transferStandard(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_31",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The 'Journey_YORI.transferOwnership(address)' function is restricted to the owner because it has the 'onlyOwner' modifier, meaning only a privileged identity can invoke it (Node E1).",
+          "This transferOwnership function can indirectly control the '_isExcluded' variable through the 'Journey_YORI.excludeAccount(address)' function (control chain).",
+          "The '_isExcluded' variable is then used in a conditional check in 'Journey_YORI.balanceOf(address)', which affects the ability of accounts to participate in certain transactions. If an account is excluded, they may be unable to transfer tokens freely.",
+          "By modifying '_isExcluded', the owner effectively imposes restrictions on which accounts can trade or interact with the contract, characterizing this behavior as limiting sell transactions.",
+          "As the transfer of ownership and the exclusion status are both controlled by the owner, it demonstrates significant control over trading limitations for accounts."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Journey_YORI.transferOwnership(address)",
+        "control_variable": "_isExcluded",
+        "targets": [
+          "Journey_YORI.balanceOf(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_32",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Journey_YORI.transferOwnership(address) can modify the variable _isExcluded, which is a control state for allowing or disallowing transfers.",
+          "By changing _isExcluded, the owner can dictate whether any sender is excluded from transfers. This directly affects the functionality of the Journey_YORI._transfer function.",
+          "If the sender is excluded (_isExcluded[sender] is true), and the recipient is not excluded (_isExcluded[recipient] is false), this conditional check determines whether the transfer can proceed or not.",
+          "Thus, the owner has the power to enable or disable transfers for certain accounts, effectively limiting trading capabilities for users."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Journey_YORI.transferOwnership(address)",
+        "control_variable": "_isExcluded",
+        "targets": [
+          "Journey_YORI._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_33",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Journey_YORI.transferOwnership(address) has the onlyOwner modifier, allowing a privileged account (the owner) to change the state of the _isExcluded variable.",
+          "If the owner executes Journey_YORI.excludeAccount(address), it modifies the _isExcluded mapping, potentially preventing certain accounts from being able to perform actions.",
+          "The require statement in Journey_YORI.excludeAccount(address) checks if an account is already excluded, but it is controlled by the owner, meaning they can arbitrarily exclude addresses and control who can participate in transactions.",
+          "This creates a situation where the owner can limit the transaction capabilities of any address by excluding them, thus classifying this path as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Journey_YORI.transferOwnership(address)",
+        "control_variable": "_isExcluded",
+        "targets": [
+          "Journey_YORI.excludeAccount(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_34",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function `Journey_YORI.transferOwnership(address)` has the modifier `onlyOwner`, indicating that only the owner can execute this function.",
+          "2. This function may change the value of the control variable `_isExcluded` by calling `Journey_YORI.excludeAccount(address)`, which likely modifies exclusion parameters for certain accounts from the transaction fees or other privileges.",
+          "3. Since `_isExcluded` can influence whether accounts can transfer tokens freely or face restrictions (i.e., whether they are subjected to transaction fees or limited in some other manner), this indicates that the owner can control the transaction capabilities of other users.",
+          "4. Given that the logic allows the owner to modify transaction controls, it implements behavior consistent with LIMIT as it can stop ordinary users from freely accessing their balances or engaging in normal transfers."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Journey_YORI.transferOwnership(address)",
+        "control_variable": "_isExcluded",
+        "targets": [
+          "Journey_YORI.reflect(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_35",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function Journey_YORI.transferOwnership(address) is governed by the onlyOwner modifier, indicating that only the owner has the privilege to execute this function.",
+          "This function potentially allows the owner to transfer ownership, which could impact who has the ability to call transfer or exclude functions, thereby impacting the transfer capabilities of other users.",
+          "Additionally, the control chain shows that the owner can exclude an address via the Journey_YORI.excludeAccount(address) function, which modifies the _isExcluded variable.",
+          "The affected target, Journey_YORI.reflect(uint256), modifies multiple state variables (_rOwned, _rTotal, _tFeeTotal), and since it is indirectly controlled by ownership changes, the owner can effectively control the behavior of these functions.",
+          "As the owner can control access to these functions and modify variables that affect token transfer capabilities, this indicates a limiting behavior on transactions for other users."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Journey_YORI.transferOwnership(address)",
+        "control_variable": "_rTotal",
+        "targets": [
+          "Journey_YORI.reflect(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_37",
+      "path_type": "INDIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.85,
+        "reasoning": [
+          "The `transferOwnership(address)` function, controlled by 'onlyOwner', indicates that a privileged account can take ownership of the contract, which leads to potential changes in transaction behaviors.",
+          "The `reflet(uint256)` function writes to `_tFeeTotal`, which is affected by potentially manipulated parameters set by the owner. If `_tFeeTotal` is altered inappropriately by the owner, it may reflect changes in how fees are deducted or handled.",
+          "The path indicates that ownership transfer impacts fee handling which can result in token leaks, especially if the owner can redirect fees to themselves through adjustments in the transaction fees or parameters in `reflect` calls.",
+          "The ability of a privileged owner to modify the state of `_tFeeTotal`, while reflecting significant changes in balances and dilution of user tokens through fees, suggests that they can effectively leak tokens from users."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Journey_YORI.transferOwnership(address)",
+        "control_variable": "_tFeeTotal",
+        "targets": [
+          "Journey_YORI.reflect(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_39",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function 'Journey_YORI.transferOwnership(address)' is protected by 'onlyOwner', meaning only the contract owner can call it. This gives the owner significant control over the contract.",
+          "2. The ownership transfer modifies the state of 'enableTrading', which is a crucial variable that controls whether trading is allowed or not.",
+          "3. The method '_transferStandard(address,address,uint256)' is invoked based on the 'enableTrading' variable, meaning that if the owner sets 'enableTrading' to false, they can effectively restrict all transfers.",
+          "4. This direct control over 'enableTrading' means the owner can limit trading actions, blocking normal users from conducting transactions by toggling this flag. Thus, they can create scenarios where trades can be stopped entirely or only allowed for certain addresses."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Journey_YORI.transferOwnership(address)",
+        "control_variable": "enableTrading",
+        "targets": [
+          "Journey_YORI._transferStandard(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_40",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Journey_YORI.useCoolDown(bool) is controlled by 'onlyOwner', which means that only the owner can call this function.",
+          "This function modifies the control variable 'enableTrading', which directly influences whether transfers can take place in Journey_YORI._transferStandard(address,address,uint256).",
+          "If 'enableTrading' is set to false by the owner, it effectively limits the ability of regular users to execute transfers, thus limiting their trading actions.",
+          "Since the ability to toggle 'enableTrading' directly affects the transfer mechanism, this represents a scenario where the owner can restrict trading opportunities, categorizing it as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Journey_YORI.useCoolDown(bool)",
+        "control_variable": "enableTrading",
+        "targets": [
+          "Journey_YORI._transferStandard(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_41",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Journey_YORI.updateUniPair() is marked with 'onlyOwner', which means only the owner can invoke it (Node ID: E1). This creates a privilege for the owner.",
+          "The function Journey_YORI._transferStandard(address,address,uint256) contains a conditional check that restricts transfers based on the uniswapV2Pair variable. If the sender is the uniswapV2Pair, the transfer might be prevented.",
+          "Since the owner can change the uniswapV2Pair through the updateUniPair() function, they can effectively limit the ability of users to transfer tokens by manipulating the sender check. This directly controls whether ordinary users can conduct transfers or not."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Journey_YORI.updateUniPair()",
+        "control_variable": "uniswapV2Pair",
+        "targets": [
+          "Journey_YORI._transferStandard(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_42",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function `Journey_YORI.excludeAccount(address)` is restricted by the modifier `onlyOwner`, meaning that only the owner can call it. This gives the owner the ability to exclude any account from transactions.",
+          "When an account is excluded, the balance check logic which likely involves `balanceOf(address)` can be influenced by `_isExcluded[account]`. If an account is marked as excluded, they might not be able to send or receive tokens effectively, which restricts their trading capability.",
+          "The ability of the owner to modify `_isExcluded` directly impacts the transferability of tokens by normal users, effectively limiting their ability to trade."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Journey_YORI.excludeAccount(address)",
+        "control_variable": "_isExcluded",
+        "targets": [
+          "Journey_YORI.balanceOf(address)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_43",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Journey_YORI.excludeAccount(address) has the onlyOwner modifier, indicating that only a privileged account can modify the _isExcluded mapping.",
+          "The _transfer function checks the condition _isExcluded[sender] && ! _isExcluded[recipient], which directly influences whether a transfer can proceed based on the exclusion status set by an owner, thus limiting the ability of regular users to transfer tokens if they are excluded.",
+          "If the owner sets an account as excluded, it can prevent that account from sending tokens to non-excluded accounts, effectively restricting trading capabilities."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Journey_YORI.excludeAccount(address)",
+        "control_variable": "_isExcluded",
+        "targets": [
+          "Journey_YORI._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_44",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "1. The function Journey_YORI.excludeAccount(address) is under the control of the onlyOwner modifier, which means only the contract owner can call it and modify the _isExcluded state variable.",
+          "2. The function Journey_YORI.reflect(uint256) involves state modifications that impact the balances of accounts (e.g., _rOwned, _rTotal, _tFeeTotal).",
+          "3. By excluding accounts from the fee mechanism, the owner can effectively lock or restrict those accounts' ability to receive reflections, indirectly controlling who can benefit from the tokenomics of the contract.",
+          "4. If the owner were to exclude all non-owner accounts, it would effectively prevent those accounts from being able to receive transaction fees or participate in the reflective mechanisms of the token, hence limiting their ability to trade effectively.",
+          "5. Given that the path involves control over the ability to exclude accounts and potentially restrict their access to token benefits, it aligns with the Limiting Sell behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Journey_YORI.excludeAccount(address)",
+        "control_variable": "_isExcluded",
+        "targets": [
+          "Journey_YORI.reflect(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_45",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The function Journey_YORI.excludeAccount(address) is accessible only by the owner (onlyOwner modifier).",
+          "2. This function impacts the _rTotal variable, which influences the reflect function Journey_YORI.reflect(uint256).",
+          "3. By excluding an account, the owner can effectively modify the state of accounts eligible for reward reflection, manipulating how the token economy operates without allowing excluded accounts to participate.",
+          "4. This control can restrict the accounts eligible to engage in transactions based on their exclusion status, hence limiting their ability to trade and receive rewards.",
+          "5. Therefore, this demonstrates a true limit on transaction capabilities for non-owner accounts."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Journey_YORI.excludeAccount(address)",
+        "control_variable": "_rTotal",
+        "targets": [
+          "Journey_YORI.reflect(uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_47",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The control function Journey_YORI.excludeAccount(address) is marked with onlyOwner, indicating that only a privileged actor can modify the exclusions.",
+          "2. This function is related to the _tFeeTotal modification in the function Journey_YORI.reflect(uint256), which leads to changes in the reflection mechanism for certain accounts, locking or unlocking their participation.",
+          "3. By modifying the exclusion status, the owner can effectively control whether or not specific accounts will participate in receiving fees, thus directly limiting their ability to transact essentially.",
+          "4. Since the ability to modify whether accounts are excluded from token rewards is a privilege held exclusively by the owner, it creates a limitation on all other users' interactions with fee distributions.",
+          "5. Thus, through the control provided by the excludeAccount function, the owner can restrict certain accounts (likely regular users) from receiving reflections based on their status."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Journey_YORI.excludeAccount(address)",
+        "control_variable": "_tFeeTotal",
+        "targets": [
+          "Journey_YORI.reflect(uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 49,
+    "LEAK": 13,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

@@ -1,0 +1,499 @@
+{
+  "contract_name": "0x2047ab3072b52561596ce5e0131bdbb7c848538d",
+  "generated_at": "2026-02-24T17:39:40Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path starts with a transfer function where the owner initiates a transfer to a specified address.",
+          "2. The transfer function checks if the sender's balance is sufficient (Node D0, L999). This is a permission check ensuring the owner has enough tokens to transfer.",
+          "3. The transfer process involves multiple checks and balances, but ultimately, it allows the owner to transfer tokens from their balance to any address specified by the 'to' parameter.",
+          "4. The key nodes that indicate potential leakage are Node D4 and D5, where the owner can transfer tokens to any address without restrictions on the recipient, which is a direct leak of tokens from the owner's balance.",
+          "5. The owner can specify any address as the recipient, which means they can drain tokens from the contract or other users' balances without their consent, fulfilling the criteria for a leak."
+        ],
+        "key_nodes": [
+          "D0",
+          "D4",
+          "D5"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "boredtoken.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0[PERM] -> E1 -> D0[ASSET] -> F1 -> IF0[PERM] -> IF1[PERM] -> D1 -> E1 -> D0[ASSET] -> F1 -> IF2 -> D2 -> E1 -> M1 -> D0 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> F1 -> F1 -> F1 -> IF3 -> D3 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF4[PERM] -> D4 -> D5 -> F1 -> F1",
+        "summary": "Entry boredtoken.transfer(address,uint256); PermNode: D0, IF0, IF1, IF4; AssetNode: D0, D0, D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with a transfer function that allows the owner to transfer tokens to any address. The owner is determined by the _msgSender() function, which is a common pattern in ERC20 tokens.",
+          "2. The transfer function checks if the sender has enough balance to transfer the specified amount (Node D0, L999). This ensures that the transfer can only occur if the owner has sufficient tokens.",
+          "3. The path includes multiple checks for permissions (PERM) and asset manipulations (ASSET). In particular, the function _transfer allows the owner to transfer tokens from their balance to any address specified by the 'to' parameter.",
+          "4. The presence of the _marketingReserves and tax variables indicates that the owner can manipulate the fees associated with transfers, which can lead to a situation where the owner can take a portion of the transferred tokens as fees, effectively leaking tokens from the users to the owner's address.",
+          "5. The checks for maxTxAmount and maxWalletAmount (Node D6, L1020 and Node D7, L1022) indicate that the owner can limit how much can be transferred or held by any user, which can be used to restrict users' ability to sell their tokens.",
+          "6. The ability to set fees and the presence of a marketing wallet means that the owner can direct funds away from users, which aligns with the definition of a leak.",
+          "7. The path does not contain any evidence of minting tokens, as there are no operations that increase the balance of any address without a corresponding decrease elsewhere."
+        ],
+        "key_nodes": [
+          "D0",
+          "D1",
+          "D2",
+          "D3",
+          "D6",
+          "D7"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "boredtoken.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0[PERM] -> E1 -> D0[ASSET] -> F1 -> IF0[PERM] -> IF1[PERM] -> D1 -> E1 -> D0[ASSET] -> F1 -> IF2 -> D2 -> E1 -> M1 -> D0 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> F1 -> F1 -> F1 -> IF3 -> D3 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF4[PERM] -> D6 -> IF5[PERM] -> D7[PERM] -> E1 -> D0[ASSET] -> F1 -> D8 -> D5 -> F1 -> F1",
+        "summary": "Entry boredtoken.transfer(address,uint256); PermNode: D0, IF0, IF1, IF4, IF5, D7; AssetNode: D0, D0, D0, D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is boredtoken.transfer(address,uint256), which initiates a transfer process.",
+          "2. The transfer function calls _transfer, where the from address is bound to the owner (the caller).",
+          "3. In the _transfer function, there are several permission checks (D0) that ensure the transfer can only proceed if certain conditions are met.",
+          "4. The critical permission check at IF0 verifies if the from or to address is the uniswapV2Pair and if inSwapAndLiquify is false. This indicates that the owner can control whether transfers to/from the liquidity pool are allowed.",
+          "5. If the owner sets inSwapAndLiquify to true, it can effectively block transfers to the liquidity pool, limiting the ability of users to trade their tokens.",
+          "6. Therefore, the owner has the ability to limit trading by controlling the state of inSwapAndLiquify, which directly affects the transfer process for ordinary users."
+        ],
+        "key_nodes": [
+          "D0",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "boredtoken.transfer(address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0[PERM] -> E1 -> D0[ASSET] -> F1 -> IF0[PERM] -> D9 -> F1 -> F1",
+        "summary": "Entry boredtoken.transfer(address,uint256); PermNode: D0, IF0; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path involves multiple asset nodes where balances are read and modified, particularly in the context of transfers and allowances.",
+          "2. The key asset nodes (D0) indicate that balances are being manipulated: for example, in the transfer function, the balance of 'from' is checked and then modified.",
+          "3. The allowance mechanism allows the spender to spend tokens on behalf of the owner, which can lead to a situation where the owner can manipulate allowances and balances without the owner's consent.",
+          "4. The presence of the _swapAndLiquify function indicates that tokens can be swapped for ETH, which can lead to a situation where the owner can drain tokens from users without their consent.",
+          "5. The transfer function has checks that allow the owner to control transfers based on conditions that can be manipulated, leading to potential leaks of tokens from users to the owner.",
+          "6. The path shows that the owner can approve allowances and transfer tokens, which can lead to unauthorized transfers from users' balances."
+        ],
+        "key_nodes": [
+          "D0",
+          "D1",
+          "D2",
+          "D3",
+          "IF0",
+          "IF1",
+          "IF4"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "boredtoken.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> IF0 -> D1 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> D0[PERM] -> E1 -> D0[ASSET] -> F1 -> IF0[PERM] -> IF1[PERM] -> D1 -> E1 -> D0[ASSET] -> F1 -> IF2 -> D2 -> E1 -> M1 -> D0 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> F1 -> F1 -> F1 -> IF3 -> D3 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF4[PERM] -> D4 -> D5 -> F1 -> F1",
+        "summary": "Entry boredtoken.transferFrom(address,address,uint256); PermNode: D0, IF0, IF1, IF4; AssetNode: D0, D0, D0, D0, D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_4",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function 'boredtoken.transferFrom(address,address,uint256)', which involves checking allowances and balances.",
+          "2. The nodes D0, IF0, IF1, IF4, IF5, and D7 are permission nodes that control access to certain functionalities.",
+          "3. The presence of conditions such as 'require(bool,string)(currentAllowance >= amount,ERC20: insufficient allowance)' in node D1 indicates that the transfer is contingent on the allowance set by the owner, which can be manipulated by the owner.",
+          "4. The checks in nodes IF0, IF1, IF4, and IF5 restrict transfers based on conditions that can be controlled by the owner, such as whether the 'from' address is the uniswapV2Pair or if the amount exceeds maxTxAmount or maxWalletAmount.",
+          "5. The ability of the owner to set these limits means they can effectively prevent normal users from transferring tokens, thus limiting their ability to sell.",
+          "6. Since the owner can control the transfer conditions and restrict transactions, this behavior aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "D1",
+          "IF0",
+          "IF1",
+          "IF4",
+          "IF5",
+          "D7"
+        ]
+      },
+      "overview": {
+        "path_id": "path_4",
+        "function_signature": "boredtoken.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> IF0 -> D1 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> D0[PERM] -> E1 -> D0[ASSET] -> F1 -> IF0[PERM] -> IF1[PERM] -> D1 -> E1 -> D0[ASSET] -> F1 -> IF2 -> D2 -> E1 -> M1 -> D0 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> F1 -> F1 -> F1 -> IF3 -> D3 -> E1 -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> IF4[PERM] -> D6 -> IF5[PERM] -> D7[PERM] -> E1 -> D0[ASSET] -> F1 -> D8 -> D5 -> F1 -> F1",
+        "summary": "Entry boredtoken.transferFrom(address,address,uint256); PermNode: D0, IF0, IF1, IF4, IF5, D7; AssetNode: D0, D0, D0, D0, D0, D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "path_5",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function boredtoken.transferFrom, which involves checking allowances and balances.",
+          "2. The key permission nodes D0 and IF0 indicate that only certain addresses can execute specific actions, particularly regarding transfers.",
+          "3. Node IF0 checks if the transfer is allowed based on whether the from or to address is the uniswapV2Pair and if inSwapAndLiquify is false. This indicates that the owner can control whether transfers involving the uniswapV2Pair are allowed, effectively limiting trading for users.",
+          "4. The allowance checks in nodes D0 and D1 ensure that the spender has sufficient allowance to transfer tokens, which is a standard ERC20 behavior but combined with the conditional checks in IF0, it shows that the owner can restrict transfers.",
+          "5. Since the owner can manipulate the conditions under which transfers occur, this fits the definition of LIMIT, where the owner can prevent users from trading freely."
+        ],
+        "key_nodes": [
+          "D0",
+          "IF0",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_5",
+        "function_signature": "boredtoken.transferFrom(address,address,uint256)",
+        "trace": "E1 -> D0 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> IF0 -> D1 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> D0[PERM] -> E1 -> D0[ASSET] -> F1 -> IF0[PERM] -> D9 -> F1 -> F1",
+        "summary": "Entry boredtoken.transferFrom(address,address,uint256); PermNode: D0, IF0; AssetNode: D0, D0, D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function boredtoken._swapAndLiquify(uint256) is private and can only be called by privileged accounts, which indicates a control over the swap and liquidity process.",
+          "The affected target function boredtoken._transfer(address,address,uint256) has a conditional check that restricts transfers based on the state of inSwapAndLiquify and whether the from or to address is the uniswapV2Pair.",
+          "If inSwapAndLiquify is true, transfers involving the uniswapV2Pair are blocked, effectively limiting the ability of regular users to trade during this state.",
+          "This control mechanism allows privileged accounts to dictate when transfers can occur, thus limiting the ability of ordinary users to freely trade their tokens."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "boredtoken._swapAndLiquify(uint256)",
+        "control_variable": "inSwapAndLiquify",
+        "targets": [
+          "boredtoken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function _swapAndLiquify(uint256) is marked as private and is controlled by the lockTheSwap modifier, indicating that only privileged accounts can execute it.",
+          "Within the _transfer function, there is a conditional check that depends on the _marketingReserves variable being greater than or equal to _numTokensSellToAddToETH. This means that if the privileged account modifies _marketingReserves, they can control whether transfers can occur based on this condition.",
+          "Since the ability to modify _marketingReserves directly affects the ability of ordinary users to perform transfers, this constitutes a limitation on trading, thus categorizing it as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF3"
+        ]
+      },
+      "overview": {
+        "source": "boredtoken._swapAndLiquify(uint256)",
+        "control_variable": "_marketingReserves",
+        "targets": [
+          "boredtoken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_2",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function boredtoken._swapTokensForEth(uint256) is private and can only be called by privileged accounts, which indicates a potential for control over the token's liquidity and trading behavior.",
+          "The _transfer function has a conditional check that restricts transfers based on the state of inSwapAndLiquify. If inSwapAndLiquify is true, transfers to or from the uniswapV2Pair are blocked.",
+          "This means that the privileged account can manipulate the inSwapAndLiquify variable, effectively controlling whether users can trade their tokens or not, thus limiting their ability to sell."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "boredtoken._swapTokensForEth(uint256)",
+        "control_variable": "inSwapAndLiquify",
+        "targets": [
+          "boredtoken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_3",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function _swapTokensForEth(uint256) is marked as private and is controlled by a modifier lockTheSwap, indicating that only privileged accounts can execute it.",
+          "Within this function, there is a conditional check on _marketingReserves to determine if it is greater than or equal to _numTokensSellToAddToETH. This means that the ability to swap tokens for ETH is contingent on the state of _marketingReserves, which can be manipulated by the privileged account.",
+          "If the privileged account sets _marketingReserves to a low value or disables the swap by modifying the lockTheSwap condition, it can effectively limit the ability of ordinary users to perform transactions involving these tokens.",
+          "Thus, the privileged account has control over whether or not users can swap tokens, which fits the definition of a LIMIT rugpull behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF3"
+        ]
+      },
+      "overview": {
+        "source": "boredtoken._swapTokensForEth(uint256)",
+        "control_variable": "_marketingReserves",
+        "targets": [
+          "boredtoken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_4",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function boredtoken._addLiquidity(uint256,uint256) is private and can only be called by the contract itself, which indicates that it is controlled by the contract owner or a privileged role.",
+          "The condition in the _transfer function checks if the transfer is to or from the uniswapV2Pair and whether inSwapAndLiquify is false. If inSwapAndLiquify is true, transfers are restricted.",
+          "This means that the owner can control the inSwapAndLiquify variable, effectively allowing them to enable or disable transfers involving the liquidity pair, thus limiting the ability of regular users to trade.",
+          "Since the ability to change the inSwapAndLiquify state directly affects whether transfers can occur, this constitutes a Limiting Sell behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "boredtoken._addLiquidity(uint256,uint256)",
+        "control_variable": "inSwapAndLiquify",
+        "targets": [
+          "boredtoken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_5",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function boredtoken._addLiquidity(uint256,uint256) is marked as private and has a modifier lockTheSwap, indicating that it is controlled by a privileged entity.",
+          "Within the _addLiquidity function, there is a conditional check on _marketingReserves in the _transfer function, which determines whether the transfer can proceed based on the value of _marketingReserves compared to _numTokensSellToAddToETH.",
+          "Since the ability to modify _marketingReserves and control the liquidity addition is restricted to the privileged entity, they can effectively limit the ability of ordinary users to execute transfers based on the state of _marketingReserves.",
+          "This means that the privileged entity can prevent users from trading by manipulating the liquidity conditions, thus classifying this behavior as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF3"
+        ]
+      },
+      "overview": {
+        "source": "boredtoken._addLiquidity(uint256,uint256)",
+        "control_variable": "_marketingReserves",
+        "targets": [
+          "boredtoken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_6",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'boredtoken.changeMarketingWallet(address)' is controlled by 'onlyOwner', which means only the owner can change the marketing wallet address.",
+          "This change affects the '_transfer' function, which writes to '_marketingReserves'.",
+          "By changing the marketing wallet, the owner can redirect funds to a different address, effectively controlling where the funds go during transfers.",
+          "This ability to change the marketing wallet can limit the ability of regular users to freely transact, as the owner can manipulate the flow of tokens by changing the destination of transfers."
+        ],
+        "key_nodes": [
+          "E1",
+          "D3"
+        ]
+      },
+      "overview": {
+        "source": "boredtoken.changeMarketingWallet(address)",
+        "control_variable": "marketingWallet",
+        "targets": [
+          "boredtoken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_7",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'boredtoken.changeMarketingWallet(address)' is controlled by 'onlyOwner', which means only the owner can change the marketing wallet address.",
+          "This change affects the '_marketingReserves' variable, which is used in the '_transfer' function as a conditional check: '(_marketingReserves) >= _numTokensSellToAddToETH'.",
+          "If the owner changes the marketing wallet, they can manipulate the '_marketingReserves' value, which directly influences whether transfers can occur based on the condition.",
+          "Thus, the owner has the ability to limit or enable transfers based on their control over the marketing wallet and the associated reserves."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF3"
+        ]
+      },
+      "overview": {
+        "source": "boredtoken.changeMarketingWallet(address)",
+        "control_variable": "_marketingReserves",
+        "targets": [
+          "boredtoken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_8",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'boredtoken.changeMaxTxAmount(uint256)' is controlled by 'onlyOwner', which means only the owner can change the 'maxTxAmount'.",
+          "The '_transfer' function checks if the transfer amount exceeds 'maxTxAmount' using a require statement. If the owner sets 'maxTxAmount' to a very low value, it can effectively prevent normal users from transferring tokens.",
+          "This ability to change the maximum transaction amount directly impacts the ability of ordinary users to trade, thus classifying it as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D6"
+        ]
+      },
+      "overview": {
+        "source": "boredtoken.changeMaxTxAmount(uint256)",
+        "control_variable": "maxTxAmount",
+        "targets": [
+          "boredtoken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_9",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'boredtoken.changeMaxTxAmount(uint256)' is controlled by 'onlyOwner', which means only the owner can modify the maximum transaction amount.",
+          "This modification directly affects the conditional check in the '_transfer' function, where the transfer is only allowed if '_marketingReserves' is greater than or equal to '_numTokensSellToAddToETH'.",
+          "By changing the maximum transaction amount, the owner can effectively limit or enable transfers for all users, thus controlling their ability to sell or transfer tokens.",
+          "Since the owner can manipulate this control variable, it restricts normal users' ability to freely transact, fitting the definition of a LIMIT rugpull."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF3"
+        ]
+      },
+      "overview": {
+        "source": "boredtoken.changeMaxTxAmount(uint256)",
+        "control_variable": "_marketingReserves",
+        "targets": [
+          "boredtoken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_10",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function boredtoken.changeMaxWalletAmount(uint256) is controlled by onlyOwner, allowing the owner to change the maxWalletAmount.",
+          "This directly affects the transfer function boredtoken._transfer(address,address,uint256), which checks if the amount being transferred plus the recipient's current balance exceeds maxWalletAmount.",
+          "If the owner sets maxWalletAmount to a low value, they can effectively prevent users from transferring tokens, thus limiting their ability to sell or transfer.",
+          "The ability to change maxWalletAmount gives the owner control over the trading limits for all users, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D7"
+        ]
+      },
+      "overview": {
+        "source": "boredtoken.changeMaxWalletAmount(uint256)",
+        "control_variable": "maxWalletAmount",
+        "targets": [
+          "boredtoken._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_11",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'boredtoken.changeMaxWalletAmount(uint256)' is controlled by 'onlyOwner', which means only the owner can modify the maximum wallet amount.",
+          "This change directly affects the conditional check in the '_transfer' function, where the transfer is contingent upon the value of '_marketingReserves' being greater than or equal to '_numTokensSellToAddToETH'.",
+          "If the owner sets the maximum wallet amount to a value that restricts transfers, it effectively limits the ability of ordinary users to transact freely.",
+          "Thus, the owner has the power to control whether transfers can occur based on the state of '_marketingReserves', which constitutes a limiting behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF3"
+        ]
+      },
+      "overview": {
+        "source": "boredtoken.changeMaxWalletAmount(uint256)",
+        "control_variable": "_marketingReserves",
+        "targets": [
+          "boredtoken._transfer(address,address,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 15,
+    "LEAK": 3,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

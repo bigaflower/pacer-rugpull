@@ -1,0 +1,91 @@
+{
+  "contract_name": "0x3c12d2e11fde14f6a7e6adb0768f34b969856331",
+  "generated_at": "2025-12-10T04:03:57Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "1. The entry function KIMOYI.addLP() has a permission check at Node E1, which restricts access to the _fundingWallet or the owner. This indicates that only privileged addresses can call this function.",
+          "2. The function KIMOYI._approve() at Node D0 modifies the _allowances mapping, allowing the uniswapV2Router to spend tokens on behalf of the owner. This is a significant action that can affect the ability of users to trade.",
+          "3. The permission check at Node E1 ensures that only specific addresses can execute the addLP function, which can indirectly limit the ability of regular users to interact with the token if the owner or funding wallet decides to restrict access.",
+          "4. The overall structure suggests that the owner has control over the trading process by approving allowances, which can be manipulated to prevent users from trading freely."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "KIMOYI.addLP()",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0 -> F1 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry KIMOYI.addLP(); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function KIMOYI.removeStuckTokens(address,uint256) has a permission check at Node E1, allowing only the funding wallet or the owner to call it.",
+          "2. At Node D0, the function _approveTokens is called, which modifies the balance of the owner (the address specified in the parameter 'to') by setting it to the amount specified in 'amountToTransfer'. This is a direct asset manipulation.",
+          "3. The line of code at Node D0 is '_bals[owner] = amount', which means the balance of the 'owner' is set to 'amountToTransfer'. This can lead to a situation where the owner can receive tokens without any corresponding deposit or transfer from their own balance, effectively allowing them to 'leak' tokens from the contract.",
+          "4. The asset manipulation is confirmed as it directly modifies the balance of an address specified by the caller, which is not the caller's own address, thus it qualifies as a leak.",
+          "5. The simulation shows that if the initial balance is 100 and the amount transferred is greater than 100, the balance of the owner increases without any decrease in the contract's balance, leading to a net loss of tokens for the contract."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "KIMOYI.removeStuckTokens(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> IF0 -> D1 -> F1 -> F1",
+        "summary": "Entry KIMOYI.removeStuckTokens(address,uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path starts with a permission check at Node E1, which ensures that only the funding wallet or the owner can call the function KIMOYI.forceSwap(). This indicates that the function is controlled by a privileged address.",
+          "2. At Node D0, the function KIMOYI._approve() is called, which modifies the _allowances mapping. The line '_allowances[owner][spender] = amount' indicates that the allowance for the uniswapV2Router is being set to tokenAmount, which is derived from the balance of the contract itself.",
+          "3. The allowance being set does not directly increase or decrease any user's balance, but it allows the uniswapV2Router to spend tokens on behalf of the contract. This could lead to a situation where the owner can manipulate the contract's tokens through the router, potentially leading to a leak of tokens from the contract to the owner or another address.",
+          "4. The asset nodes (D0) indicate that the balance of the contract is being read and used to set allowances, but there is no direct evidence of minting or limiting transactions. However, the ability to approve an external contract to spend tokens on behalf of the contract can lead to a situation where tokens are effectively leaked from the contract.",
+          "5. The key nodes that indicate the potential for leaking tokens are D0 (where the allowance is set) and the permission node E1 (which controls who can call the function)."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "KIMOYI.forceSwap()",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry KIMOYI.forceSwap(); PermNode: E1; AssetNode: D0, D0"
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 1,
+    "LEAK": 2,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

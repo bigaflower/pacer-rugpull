@@ -1,0 +1,139 @@
+{
+  "contract_name": "0x9194337c06405623c0f374e63fa1cc94e2788c58",
+  "generated_at": "2026-02-25T16:18:38Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D2, execute L616: _balances[owner()] = _balances[owner()] + chargeAmount, means The privileged user can increase its itself balance, chargeAmount value transaction, The privileged user control .",
+          "2. At node D3, execute L621: _balances[sender] = senderBalance - amount and L622: _balances[recipient] = _balances[recipient] + transferAmount, sender balance decreases, recipient balance increases, but here sender is by msg.sender specified, is arbitrary user, while recipient is specified by the parameter, may be an arbitrary address.",
+          "3. because sender balance decreaseswhile recipient balance increases, and recipient can is arbitraryaddress, This matches the definition of token leaking. The privileged user can adjust transaction to chargeAmount, thereby its itself .",
+          "4. because exists from sender deduction recipient situation, and recipient not is the caller itself, therefore this is leak token."
+        ],
+        "key_nodes": [
+          "D2",
+          "D3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "Cybonk.transfer(address,uint256)",
+        "trace": "E1 -> M1 -> D0 -> E1 -> D0 -> IF0[PERM] -> IF1[PERM] -> D1 -> IF2 -> D2[ASSET] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> D3[ASSET] -> F1 -> F1",
+        "summary": "Entry Cybonk.transfer(address,uint256); PermNode: IF0, IF1; AssetNode: D2, D3"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D2, execute L616: _balances[owner()] = _balances[owner()] + chargeAmount, This meansThe privileged user (owner) can increase its balance, chargeAmount is by transaction, The privileged user control .",
+          "2. At node D3, execute L621: _balances[sender] = senderBalance - amount, This means sender balance will decrease, while recipient balance will increase, transfer amount parameter amount, sender is by caller providedaddress, here is arbitrary user .",
+          "3. because sender balance decreaseswhile recipient balance increases, and sender is specified by the parameter, The privileged user can through control amount to transfer, causing balance decrease while no compensation, This matches the definition of token leaking.",
+          "4. The privileged user can adjust chargeAmount to its itself, further leak risk ."
+        ],
+        "key_nodes": [
+          "D2",
+          "D3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "Cybonk.transferFrom(address,address,uint256)",
+        "trace": "E1 -> M1 -> D0[ASSET] -> E1 -> D0 -> IF0[PERM] -> IF1[PERM] -> D1 -> IF2 -> D2[ASSET] -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> D3[ASSET] -> F1 -> E1 -> D0[ASSET] -> F1 -> F1",
+        "summary": "Entry Cybonk.transferFrom(address,address,uint256); PermNode: IF0, IF1; AssetNode: D0, D2, D3, D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'Cybonk.setBuyFee(uint256)' is controlled by 'onlyOwner', which means only the owner can modify the 'buyFee'.",
+          "The '_transfer' function checks if the sender is 'uniswapPair' and if 'buyFee > 0'. If the owner sets 'buyFee' to a high value, it can effectively limit the ability of users to trade by imposing high fees.",
+          "This creates a scenario where the owner can control the trading conditions by adjusting the 'buyFee', thus limiting the ability of ordinary users to freely trade."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF1"
+        ]
+      },
+      "overview": {
+        "source": "Cybonk.setBuyFee(uint256)",
+        "control_variable": "buyFee",
+        "targets": [
+          "Cybonk._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'Cybonk.setSellFee(uint256)' is controlled by 'onlyOwner', which means only the owner can modify the 'sellFee'.",
+          "The '_transfer' function checks if the recipient is 'uniswapPair' and if 'sellFee' is greater than 0. If the owner sets 'sellFee' to a high value, it can effectively limit the ability of users to sell their tokens.",
+          "This creates a scenario where the owner can control the transaction process by adjusting the 'sellFee', thus limiting the ability of regular users to trade freely."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF3"
+        ]
+      },
+      "overview": {
+        "source": "Cybonk.setSellFee(uint256)",
+        "control_variable": "sellFee",
+        "targets": [
+          "Cybonk._transfer(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_2",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function Cybonk.updateWallet(address,bool) is controlled by onlyOwner, which means only the owner can modify the List that determines whether a sender or recipient is allowed to transfer tokens.",
+          "In the _transfer function, there is a conditional check that prevents transfers if either the sender or recipient is in the List. This means that the owner can effectively block transfers for any user by modifying the List.",
+          "Since the owner can control the ability of users to transfer tokens, this constitutes a Limiting Sell behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Cybonk.updateWallet(address,bool)",
+        "control_variable": "List",
+        "targets": [
+          "Cybonk._transfer(address,address,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 3,
+    "LEAK": 2,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

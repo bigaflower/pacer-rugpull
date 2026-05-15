@@ -1,0 +1,362 @@
+{
+  "contract_name": "0x467719ad09025fcc6cf6f8311755809d45a5e5f3",
+  "generated_at": "2026-02-25T01:07:43Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path starts with the function ERC20Permit.permit, which is designed to allow a spender to spend tokens on behalf of the issuer. However, it contains several permission checks that can revert the transaction if certain conditions are not met.",
+          "2. The first permission check (Node IF0) verifies if the current block timestamp is greater than the deadline. If true, it reverts the transaction (Node D0). This indicates that the owner can control the validity of the permit based on time, effectively limiting the ability of users to execute the permit function.",
+          "3. The second permission check (Node IF1) ensures that the value of 's' is within a specific range. If it is not, the transaction is reverted (Node D1). This adds another layer of control over the permit process.",
+          "4. The third permission check (Node IF2) checks the value of 'v' to ensure it is either 27 or 28. If not, the transaction is reverted (Node D2). This further restricts the conditions under which the permit can be executed.",
+          "5. The asset node (Node D1) shows that the allowance is set for the owner and spender, which is a typical operation in ERC20 token contracts. However, the ability to set this allowance is controlled by the issuer, which is a privileged action.",
+          "6. The presence of multiple permission checks that can revert the transaction indicates that the owner has significant control over the permit process, effectively limiting the ability of users to utilize their tokens freely.",
+          "7. Therefore, the path demonstrates a clear case of limiting user transactions through permission checks, classifying it as LIMIT."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D0",
+          "IF1",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "ERC20Permit.permit(address,address,uint256,uint256,uint8,bytes32,bytes32)",
+        "trace": "E1 -> IF0[PERM] -> D0[PERM] -> IF1 -> D1 -> IF2 -> D2 -> D3[ASSET] -> IF3 -> D4 -> D5 -> E1 -> IF0 -> D0 -> D1[ASSET] -> F1 -> F1",
+        "summary": "Entry ERC20Permit.permit(address,address,uint256,uint256,uint8,bytes32,bytes32); PermNode: IF0, D0; AssetNode: D3, D1"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path includes two asset nodes: D3 and D1. In D3, the nonce is being modified, which is a state variable that can be controlled by the issuer. This indicates a potential manipulation of the permit process.",
+          "2. In D1, the allowance is being set with the line 'allowance[owner][spender] = amount'. Here, 'owner' is bound to the parameter 'issuer', and 'spender' is bound to the parameter 'spender'. This means that the issuer can set the allowance for any spender, which could lead to unauthorized spending of tokens.",
+          "3. The allowance being set does not directly increase the total supply or the balance of any account, but it allows the spender to spend tokens on behalf of the issuer. If the issuer has control over the allowance, they can effectively leak tokens by allowing unauthorized spending.",
+          "4. The potential for leakage arises because the issuer can set the allowance to any value, which could lead to a situation where the spender can drain tokens from the issuer's account without their consent.",
+          "5. The path does not show any direct minting of tokens, nor does it show any limitations on trading, but it does show a clear risk of leaking tokens through the allowance mechanism."
+        ],
+        "key_nodes": [
+          "D1",
+          "D3"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "MintableCappedERC20.permit(address,address,uint256,uint256,uint8,bytes32,bytes32)",
+        "trace": "E1 -> IF0[PERM] -> D0[PERM] -> IF1 -> D1 -> IF2 -> D2 -> D3[ASSET] -> IF3 -> D4 -> D5 -> E1 -> IF0 -> D0 -> D1[ASSET] -> F1 -> F1",
+        "summary": "Entry MintableCappedERC20.permit(address,address,uint256,uint256,uint8,bytes32,bytes32); PermNode: IF0, D0; AssetNode: D3, D1"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function MintableCappedERC20.mint(address,uint256) has a permission check at Node E1, ensuring only the owner can call it.",
+          "2. The asset modification occurs at Node D1, where the balance of the account is increased: balanceOf[account] += amount.",
+          "3. The parameters 'account' and 'amount' are bound to the function inputs, meaning the owner can specify any address and any amount to mint.",
+          "4. Since the balance of the specified account is increased without any checks on the current balance or total supply, this constitutes a hidden minting behavior.",
+          "5. The simulation shows that if the initial balance is 100 and the amount is added, the new balance will be greater than 100, confirming the minting action."
+        ],
+        "key_nodes": [
+          "E1",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "MintableCappedERC20.mint(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> IF0 -> D0 -> D1[ASSET] -> F1 -> IF0 -> F1",
+        "summary": "Entry MintableCappedERC20.mint(address,uint256); PermNode: E1; AssetNode: D1"
+      }
+    },
+    {
+      "path_id": "path_3",
+      "path_type": "DIRECT",
+      "category": "MINT",
+      "llm_result": {
+        "category": "MINT",
+        "confidence": 1.0,
+        "reasoning": [
+          "1. The entry function is BurnableMintableCappedERC20.mint(address,uint256), which has a permission check at Node E1 that requires the caller to be the owner.",
+          "2. The mint function calls _mint at Node E1, which binds the account and amount parameters from the function inputs.",
+          "3. At Node D1, the balance of the account is increased by the amount specified: balanceOf[account] += amount. This indicates that the balance of the specified account is directly increased by the amount parameter.",
+          "4. The initial balance is assumed to be 100. After the minting operation, the balance would be 100 + amount, which is greater than 100, indicating a minting behavior.",
+          "5. The account parameter can be any address specified by the caller, which means the owner can mint tokens to any address they choose, fulfilling the criteria for a hidden mint."
+        ],
+        "key_nodes": [
+          "E1",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_3",
+        "function_signature": "BurnableMintableCappedERC20.mint(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> IF0 -> D0 -> D1[ASSET] -> F1 -> IF0 -> F1",
+        "summary": "Entry BurnableMintableCappedERC20.mint(address,uint256); PermNode: E1; AssetNode: D1"
+      }
+    },
+    {
+      "path_id": "path_4",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is BurnableMintableCappedERC20.permit, which is designed to allow an issuer to approve a spender to spend a certain amount of tokens on their behalf.",
+          "2. The path includes several permission checks (nodes IF0, D0, IF1, D2, D4) that can revert the transaction if certain conditions are not met, indicating that only privileged users can execute these actions.",
+          "3. The asset node D1 modifies the allowance of the spender by setting 'allowance[owner][spender] = amount', which is a direct manipulation of the allowance state variable. This action can only be performed if the function passes the permission checks.",
+          "4. The permission checks ensure that only the issuer can approve the spender, and if the issuer is set to address(0) or the spender is address(0), the transaction will revert. This indicates that the approval process is tightly controlled.",
+          "5. Since the approval process can be manipulated by the owner (issuer), they can effectively limit the ability of other users to transfer tokens by controlling the allowance, thus restricting their ability to trade.",
+          "6. Therefore, the path demonstrates a limiting behavior where the privileged user can control the transfer capabilities of other users."
+        ],
+        "key_nodes": [
+          "IF0",
+          "D0",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_4",
+        "function_signature": "BurnableMintableCappedERC20.permit(address,address,uint256,uint256,uint8,bytes32,bytes32)",
+        "trace": "E1 -> IF0[PERM] -> D0[PERM] -> IF1 -> D1 -> IF2 -> D2 -> D3[ASSET] -> IF3 -> D4 -> D5 -> E1 -> IF0 -> D0 -> D1[ASSET] -> F1 -> F1",
+        "summary": "Entry BurnableMintableCappedERC20.permit(address,address,uint256,uint256,uint8,bytes32,bytes32); PermNode: IF0, D0; AssetNode: D3, D1"
+      }
+    },
+    {
+      "path_id": "path_5",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is BurnableMintableCappedERC20.burn(bytes32), which is a burn function that allows the owner to burn tokens from a specified account.",
+          "2. Node D0 shows that the balance of the account is read: balanceOf[account]. This indicates that the function is checking the balance of the account before burning.",
+          "3. In Node D1, the balance of the account is decreased: balanceOf[account] -= amount, where amount is the balance of the account. This means the balance is being reduced by the amount that is currently held by the account.",
+          "4. The total supply is also decreased: totalSupply -= amount, which indicates that tokens are being permanently removed from circulation.",
+          "5. The function allows the owner to specify any account to burn tokens from, which means the owner can reduce the balance of any user without their consent. This is a clear case of leaking tokens.",
+          "6. The account being burned can be any address, including addresses that are not the caller, which confirms that the owner can leak tokens from arbitrary accounts."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_5",
+        "function_signature": "BurnableMintableCappedERC20.burn(bytes32)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> E1 -> D0 -> F1 -> E1 -> IF0 -> D0 -> D1[ASSET] -> F1 -> F1",
+        "summary": "Entry BurnableMintableCappedERC20.burn(bytes32); PermNode: E1; AssetNode: D0, D1"
+      }
+    },
+    {
+      "path_id": "path_6",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function is `BurnableMintableCappedERC20.burnFrom(address,uint256)`, which allows a spender to burn tokens from an account's allowance.",
+          "2. The first asset node D0 reads the allowance of the account for the spender (msg.sender). This is a critical point as it determines how much the spender can burn.",
+          "3. The second asset node D1 in the `_approve` function modifies the allowance by setting it to `_allowance - amount`, which is a decrease in the allowance for the spender.",
+          "4. The third asset node D1 in the `_burn` function decreases the balance of the account by the specified amount. The line `balanceOf[account] -= amount` indicates that the account's balance is reduced by the amount being burned.",
+          "5. The key point is that the account from which tokens are burned is specified by the parameter `account`, which can be any address, not just the caller's address. This means that the owner can specify any account to burn tokens from, leading to a potential leak of tokens.",
+          "6. The balance of the specified account decreases, while the total supply of tokens also decreases, which aligns with the definition of a leak as the owner can reduce the balance of any account without their consent."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0",
+          "D1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_6",
+        "function_signature": "BurnableMintableCappedERC20.burnFrom(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0[ASSET] -> IF0 -> D1 -> E1 -> IF0 -> D0 -> D1[ASSET] -> F1 -> D2 -> E1 -> IF0 -> D0 -> D1[ASSET] -> F1 -> F1",
+        "summary": "Entry BurnableMintableCappedERC20.burnFrom(address,uint256); PermNode: E1; AssetNode: D0, D1, D1"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'Ownable.transferOwnership(address)' is controlled by 'onlyOwner', which means only the owner can change the ownership of the contract. This creates a privileged access point.",
+          "The affected target 'MintableCappedERC20._approve(address,address,uint256)' includes a conditional check that involves the 'owner' variable. If the owner is set to address(0), it may allow approvals that could be manipulated by the owner.",
+          "Since the owner can change the ownership and potentially set the owner to address(0), this could lead to scenarios where the owner can restrict or enable approvals, effectively limiting the ability of other users to interact with the token.",
+          "Thus, the ability of the owner to control the approval process indicates a limitation on user transactions, classifying this path as LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "owner",
+        "targets": [
+          "MintableCappedERC20._approve(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_1",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'Ownable.transferOwnership(address)' is protected by the 'onlyOwner' modifier, which means only the current owner can change the ownership of the contract. This gives the owner control over the contract's state.",
+          "The affected target 'BurnableMintableCappedERC20._approve(address,address,uint256)' includes a conditional check that depends on the 'owner' variable. If the owner is set to address(0), or if the spender is address(0), it could potentially affect the approval process.",
+          "Since the owner can be changed by the 'transferOwnership' function, the owner can control whether the approval can be granted or not, effectively limiting the ability of other users to interact with the token.",
+          "This control over the approval process can restrict normal users from transferring tokens, thus classifying this path as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.transferOwnership(address)",
+        "control_variable": "owner",
+        "targets": [
+          "BurnableMintableCappedERC20._approve(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_2",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function MintableCappedERC20.transferOwnership(address) is protected by the onlyOwner modifier, meaning only the current owner can call it. This indicates a privileged control over ownership.",
+          "Once ownership is transferred, the new owner can potentially manipulate the state of the contract, including the approval process in MintableCappedERC20._approve(address,address,uint256).",
+          "The condition in _approve checks if the owner is address(0) or if the spender is address(0). If the owner is changed to a malicious address, they could control the approval process, effectively limiting or enabling transfers at will.",
+          "This control over the approval process can restrict normal users from executing transfers, thus classifying it as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "MintableCappedERC20.transferOwnership(address)",
+        "control_variable": "owner",
+        "targets": [
+          "MintableCappedERC20._approve(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_3",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'MintableCappedERC20.transferOwnership(address)' is protected by the 'onlyOwner' modifier, which means only the current owner can call this function. This allows the owner to transfer ownership to another address.",
+          "Once ownership is transferred, the new owner can potentially control the state of the contract, including the ability to modify variables that affect the transfer process.",
+          "The affected target function '_approve(address,address,uint256)' contains a conditional check that involves the 'owner' variable. If the owner is set to address(0) or the spender is address(0), it could affect the approval process.",
+          "This means that the new owner could potentially disable or limit the ability of users to approve transfers, effectively controlling the transfer process for all users."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "MintableCappedERC20.transferOwnership(address)",
+        "control_variable": "owner",
+        "targets": [
+          "BurnableMintableCappedERC20._approve(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_4",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'BurnableMintableCappedERC20.transferOwnership(address)' is restricted by the 'onlyOwner' modifier, indicating that only the owner can call this function.",
+          "The affected target 'MintableCappedERC20._approve(address,address,uint256)' includes a conditional check that depends on the 'owner' variable. If the owner is set to a specific address, it can affect the approval process for transfers.",
+          "Since the owner can be changed by the 'transferOwnership' function, this gives the owner control over the approval process, effectively allowing them to limit or enable transfers by manipulating the ownership state.",
+          "This control over the approval process directly impacts the ability of users to transfer tokens, thus classifying this path as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "BurnableMintableCappedERC20.transferOwnership(address)",
+        "control_variable": "owner",
+        "targets": [
+          "MintableCappedERC20._approve(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_5",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function 'BurnableMintableCappedERC20.transferOwnership(address)' is protected by the 'onlyOwner' modifier, indicating that only the current owner can change the ownership of the contract.",
+          "The ownership change can affect the behavior of the '_approve(address,address,uint256)' function, which checks if 'owner == address(0) || spender == address(0)'.",
+          "If the owner is set to address(0), it could potentially disable the ability for users to approve transfers, effectively limiting their ability to interact with the token.",
+          "This means that the owner has the power to control whether or not users can approve transfers, which directly impacts the ability of ordinary users to trade or transfer tokens."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "BurnableMintableCappedERC20.transferOwnership(address)",
+        "control_variable": "owner",
+        "targets": [
+          "BurnableMintableCappedERC20._approve(address,address,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 2,
+    "LIMIT": 8,
+    "LEAK": 3,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

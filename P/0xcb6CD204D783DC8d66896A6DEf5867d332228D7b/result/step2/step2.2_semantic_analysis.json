@@ -1,0 +1,499 @@
+{
+  "contract_name": "0xcb6CD204D783DC8d66896A6DEf5867d332228D7b",
+  "generated_at": "2026-03-08T16:59:10Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the MaxAPY.transfer function, which eventually calls MaxAPY._transferFrom.",
+          "2. In Node D0, there is a permission check (require) that prevents transfers if either the sender or recipient is blacklisted: require(!blacklist[sender] && !blacklist[recipient], in_blacklist). This indicates that the owner can control who can transfer tokens by modifying the blacklist.",
+          "3. The presence of this permission check means that the owner can effectively limit transfers for any user by adding them to the blacklist, thus controlling the ability of users to sell or transfer their tokens.",
+          "4. The asset node D0 shows that balances are being modified, but the key point is that the ability to transfer is restricted based on the blacklist, which is controlled by the owner.",
+          "5. Therefore, this path demonstrates a limiting behavior where the owner can prevent users from transferring their tokens, classifying it as LIMIT."
+        ],
+        "key_nodes": [
+          "D0",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "MaxAPY.transfer(address,uint256)",
+        "trace": "E1 -> M1 -> D0 -> E1 -> D0[PERM] -> IF0[PERM] -> D1 -> E1 -> D0[ASSET] -> F1 -> F1 -> F1",
+        "summary": "Entry MaxAPY.transfer(address,uint256); PermNode: D0, IF0; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D1, execute _allowedFragments[from][msg.sender] = _allowedFragments[from][msg.sender].sub(value, Insufficient Allowance), This means from 'from' addressdeducted from the balance of 'value', while 'from' is provided by the parameter, This indicatesThe privileged user can specify arbitraryaddressperformdeduction.",
+          "2. At node D0, _gonBalances[from] = _gonBalances[from].sub(gonAmount) and _gonBalances[to] = _gonBalances[to].add(gonAmount) operationindicates, 'from' balance decreases, while 'to' balance increases, and 'from' is provided by the parameter, further confirmsThe privileged user can control deducted account .",
+          "3. because 'from' is a parameter, The privileged user can arbitrarily specify affected accounts, therefore this matches the definition of token leaking.",
+          "4. In this path, there is nobalance increasesoperation, and all asset node balance decrease or transfer, matches the LEAK characteristic."
+        ],
+        "key_nodes": [
+          "D1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "MaxAPY.transferFrom(address,address,uint256)",
+        "trace": "E1 -> M1 -> D0 -> IF0[PERM] -> D1[ASSET] -> D2 -> E1 -> D0[PERM] -> IF0[PERM] -> D1 -> E1 -> D0[ASSET] -> F1 -> F1 -> F1",
+        "summary": "Entry MaxAPY.transferFrom(address,address,uint256); PermNode: IF0, D0, IF0; AssetNode: D1, D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. At node D0, code L1723 reads _gonBalances[address(this)], amountToSwap = _gonBalances[address(this)].div(_gonsPerFragment).",
+          "2. the node asset _gonBalances value, the valueis contract, The privileged user (owner) can control the value.",
+          "3. because amountToSwap is from contract address balance incalculated, The privileged user can call withdrawAllToVault() functionwill contract intokentransfer specifiedaddress ( such VaultReceiver) , while ordinary user .",
+          "4. This path asset is from contract deducted from addresstoken, while tokennois transfer caller (owner) address, Therefore it matches the definition of token leaking."
+        ],
+        "key_nodes": [
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "MaxAPY.withdrawAllToVault()",
+        "trace": "E1[PERM] -> M1 -> M2 -> D0[PERM] -> F1",
+        "summary": "Entry MaxAPY.withdrawAllToVault(); PermNode: E1, D0"
+      }
+    },
+    {
+      "path_id": "indirect_0",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The path involves the function 'Ownable.renounceOwnership()', which is a permissioned function that can only be called by the owner. This indicates that the owner has control over the contract's ownership.",
+          "The control chain shows that the owner can set the 'VaultReceiver' address through 'MaxAPY.setFeeReceivers(address,address,address,address)'. This means the owner can direct funds to a specific address.",
+          "The affected target 'MaxAPY.withdrawAllToVault()' includes a conditional check that requires 'amountToSwap > 0'. If the owner can manipulate the 'VaultReceiver', they can effectively control whether funds can be withdrawn or not, limiting the ability of other users to access their funds.",
+          "Since the owner can change the state of the 'VaultReceiver' and potentially prevent users from withdrawing their funds, this constitutes a limitation on user transactions."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "VaultReceiver",
+        "targets": [
+          "MaxAPY.withdrawAllToVault()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_3",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'Ownable.renounceOwnership()' is marked with 'onlyOwner', indicating that only the owner can call this function (Node E1).",
+          "When the owner renounces ownership, it affects the 'inSwap' variable, which is used in the conditional check of the '_transferFrom' function (Node IF0).",
+          "If 'inSwap' is set to true by the owner, it can prevent transfers from occurring, effectively limiting the ability of normal users to trade.",
+          "This control over the 'inSwap' variable directly impacts the transfer functionality, thus classifying it as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "inSwap",
+        "targets": [
+          "MaxAPY._transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_2",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'Ownable.renounceOwnership()' allows the owner to renounce ownership, which means they can no longer control the contract. However, before renouncing, the owner can set the 'blacklist' variable using 'MaxAPY.setBotBlacklist(address,bool)'.",
+          "The 'blacklist' variable is checked in the '_transferFrom' function with the condition 'require(!blacklist[sender] && !blacklist[recipient], in_blacklist)'. This means that if the sender or recipient is blacklisted, the transfer will be blocked.",
+          "Since the owner can modify the 'blacklist' at any time, they can effectively control who can and cannot transfer tokens, thus limiting the ability of regular users to trade freely."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable.renounceOwnership()",
+        "control_variable": "blacklist",
+        "targets": [
+          "MaxAPY._transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_4",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The control source is the function Ownable._transferOwnership(address), which allows the owner to change the VaultReceiver address.",
+          "This change affects the MaxAPY.setFeeReceivers function, which can alter the recipients of fees.",
+          "The affected target, MaxAPY.withdrawAllToVault(), has a conditional check that requires amountToSwap > 0, which means the owner can control whether funds can be withdrawn based on the state of the VaultReceiver.",
+          "Since the owner can change the VaultReceiver and thus control the flow of funds, this creates a scenario where the owner can limit or enable withdrawals, effectively controlling user transactions."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable._transferOwnership(address)",
+        "control_variable": "VaultReceiver",
+        "targets": [
+          "MaxAPY.withdrawAllToVault()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_7",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The path involves the function Ownable._transferOwnership(address), which allows the owner to change the ownership of the contract. This a privileged action that can affect the control of the inSwap variable.",
+          "The inSwap variable is used as a conditional check in the MaxAPY._transferFrom(address,address,uint256) function. If inSwap is set to true by the owner, it can prevent normal users from executing transfers, effectively limiting their ability to trade.",
+          "Since the owner can control the inSwap variable, they can enable or disable transfers at will, which directly impacts the ability of ordinary users to transact freely.",
+          "Thus, this path demonstrates a limiting behavior where the owner can restrict trading based on the state of the inSwap variable."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable._transferOwnership(address)",
+        "control_variable": "inSwap",
+        "targets": [
+          "MaxAPY._transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_6",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The path involves the function 'MaxAPY.setBotBlacklist(address,bool)' which modifies the 'blacklist' variable. This variable is then checked in the 'MaxAPY._transferFrom(address,address,uint256)' function.",
+          "The condition 'require(!blacklist[sender] && !blacklist[recipient], in_blacklist)' indicates that if either the sender or recipient is blacklisted, the transfer will be blocked.",
+          "Since the 'blacklist' can be modified by the owner through the 'setBotBlacklist' function, this gives the owner the ability to control who can and cannot transfer tokens, effectively limiting the ability of regular users to trade.",
+          "Thus, the ability to change the 'blacklist' directly impacts the transfer functionality, classifying this path as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "Ownable._transferOwnership(address)",
+        "control_variable": "blacklist",
+        "targets": [
+          "MaxAPY._transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_8",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function MaxAPY.renounceOwnership() allows the owner to relinquish ownership, which could lead to the VaultReceiver being set to an arbitrary address by the owner through MaxAPY.setFeeReceivers().",
+          "The function MaxAPY.withdrawAllToVault() checks if amountToSwap > 0 before proceeding, which indicates that the owner can control the flow of funds to the vault based on their ability to set the VaultReceiver.",
+          "Since the owner can modify the VaultReceiver and potentially restrict or allow withdrawals to that address, this creates a scenario where the owner can limit the ability of users to withdraw their funds, thus classifying it as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "MaxAPY.renounceOwnership()",
+        "control_variable": "VaultReceiver",
+        "targets": [
+          "MaxAPY.withdrawAllToVault()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_11",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function MaxAPY.renounceOwnership() is marked with onlyOwner, indicating that only the owner can call it, which gives them control over the inSwap variable.",
+          "The inSwap variable is used as a conditional check in the MaxAPY._transferFrom function. If inSwap is true, it can prevent transfers from occurring, effectively limiting the ability of users to trade.",
+          "Since the owner can change the state of inSwap, they can control whether transfers are allowed or not, which directly impacts the ability of ordinary users to execute transactions."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "MaxAPY.renounceOwnership()",
+        "control_variable": "inSwap",
+        "targets": [
+          "MaxAPY._transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_10",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function MaxAPY.renounceOwnership() allows the owner to relinquish control, which could lead to the ability to modify the blacklist variable.",
+          "The blacklist variable is used in the _transferFrom function to conditionally check if the sender or recipient is blacklisted. If they are, the transfer is blocked.",
+          "Since the owner can modify the blacklist through the setBotBlacklist function, they can effectively control who can and cannot trade, thus limiting the ability of regular users to transact freely.",
+          "This control over the blacklist directly impacts the transfer functionality, making it a clear case of limiting sell."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "MaxAPY.renounceOwnership()",
+        "control_variable": "blacklist",
+        "targets": [
+          "MaxAPY._transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_12",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function MaxAPY._transferOwnership(address) allows the owner to change the VaultReceiver address, which is a control variable affecting the withdrawal process.",
+          "The affected target MaxAPY.withdrawAllToVault() has a conditional check that requires amountToSwap > 0, which means that if the VaultReceiver is set to an address that there is no tokens deposited, the withdrawal will fail.",
+          "Since the owner can change the VaultReceiver, they can effectively control whether users can withdraw their tokens or not, thus limiting their ability to trade or access their funds."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "MaxAPY._transferOwnership(address)",
+        "control_variable": "VaultReceiver",
+        "targets": [
+          "MaxAPY.withdrawAllToVault()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_15",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The control source is MaxAPY._transferOwnership(address), which allows the owner to change the ownership of the contract. This function there is no modifiers that restrict its access, indicating that it can be called by the owner at any time.",
+          "The variable 'inSwap' is controlled by the function MaxAPY.withdrawAllToVault(), which can be manipulated by the owner. This variable is then used in the conditional check for the function MaxAPY._transferFrom(address,address,uint256).",
+          "If 'inSwap' is set to true by the owner, it can prevent the transfer of tokens by making the _transferFrom function revert, effectively limiting the ability of normal users to transfer tokens.",
+          "Thus, the owner has the ability to control the transfer state of the tokens, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "MaxAPY._transferOwnership(address)",
+        "control_variable": "inSwap",
+        "targets": [
+          "MaxAPY._transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_14",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function MaxAPY._transferOwnership(address) allows the owner to modify the blacklist variable through MaxAPY.setBotBlacklist(address,bool).",
+          "The _transferFrom function checks if the sender or recipient is blacklisted using the condition require(!blacklist[sender] && !blacklist[recipient], in_blacklist).",
+          "If the owner sets an address to be blacklisted, it directly affects the ability of that address to transfer tokens, effectively limiting their ability to trade.",
+          "This control over the blacklist variable means that the owner can prevent specific users from transferring tokens, which aligns with the definition of LIMIT."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "MaxAPY._transferOwnership(address)",
+        "control_variable": "blacklist",
+        "targets": [
+          "MaxAPY._transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_16",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.8,
+        "reasoning": [
+          "The function MaxAPY.withdrawAllToVault() is marked with the modifier onlyOwner, indicating that only the owner can call this function, which gives them control over the withdrawal process.",
+          "The control variable inSwap is used in the conditional check for the _transferFrom function, which suggests that the owner can manipulate whether transfers occur based on the state of inSwap.",
+          "Since the owner can change the state of inSwap, they can effectively control whether transfers are allowed or not, which limits the ability of regular users to execute transfers freely."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "MaxAPY.withdrawAllToVault()",
+        "control_variable": "inSwap",
+        "targets": [
+          "MaxAPY._transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_17",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function MaxAPY.setFeeReceivers is controlled by onlyOwner, which means only the owner can set the fee receivers.",
+          "This function indirectly affects the behavior of MaxAPY.withdrawAllToVault, which has a conditional check that requires amountToSwap > 0.",
+          "By changing the fee receivers, the owner can manipulate the flow of funds and potentially prevent users from withdrawing their tokens if the conditions are not met.",
+          "This control over the withdrawal process effectively limits the ability of regular users to access their funds, thus classifying it as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "MaxAPY.setFeeReceivers(address,address,address,address)",
+        "control_variable": "VaultReceiver",
+        "targets": [
+          "MaxAPY.withdrawAllToVault()"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_18",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function MaxAPY.setFeeReceivers is controlled by onlyOwner, which means only the owner can modify the fee receivers.",
+          "The variable inSwap is used as a conditional check in the _transferFrom function, which means if inSwap is true, it can affect whether transfers can occur.",
+          "Since the owner can set inSwap to true or false, they can effectively control whether transfers are allowed or not, limiting the ability of regular users to trade."
+        ],
+        "key_nodes": [
+          "E1",
+          "IF0"
+        ]
+      },
+      "overview": {
+        "source": "MaxAPY.setFeeReceivers(address,address,address,address)",
+        "control_variable": "inSwap",
+        "targets": [
+          "MaxAPY._transferFrom(address,address,uint256)"
+        ]
+      }
+    },
+    {
+      "path_id": "indirect_19",
+      "path_type": "INDIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function MaxAPY.setBotBlacklist(address,bool) is controlled by onlyOwner, allowing the owner to modify the blacklist status.",
+          "The _transferFrom function checks the blacklist status of both the sender and recipient before allowing a transfer to proceed.",
+          "If the owner sets an address to be blacklisted, that address will be unable to transfer tokens, effectively limiting their ability to trade.",
+          "This control over the blacklist directly impacts the ability of ordinary users to execute transfers, thus classifying it as a LIMIT behavior."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "source": "MaxAPY.setBotBlacklist(address,bool)",
+        "control_variable": "blacklist",
+        "targets": [
+          "MaxAPY._transferFrom(address,address,uint256)"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 17,
+    "LEAK": 2,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

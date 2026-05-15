@@ -1,0 +1,92 @@
+{
+  "contract_name": "0x1485c33c59eddde1ce7686bb1a09f8a0f2da2ed9",
+  "generated_at": "2025-12-09T08:33:31Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. at node D0 (line 483), `_allowances[owner][spender] = amount` indicates `owner` (address(this)) is allow `spender` (uniswapV2Router) , here `amount` is `totalSupply()`, while `totalSupply()` initial valueis 0. Therefore, _allowances from 0 increased to 0, actualnocausing balance increase .",
+          "2. Since `owner` is set to `address(this)`, which can change based on certain conditions, and `spender` can be set to any contract (the Uniswap Router), it creates a situation where the contract can approve a potentially unbounded allowance. The allowance mechanism may allow future allowances to be set for any amount, leading to risk of leaking funds in future transactions.",
+          "3. In this pathThe privileged userat, its through adjust `spender` will causing user leak . The privileged user can `spender`, while this through (E1) , This indicatesis privilege behavior .",
+          "4. to, privilege control asset transferredability, although transaction at this contract, but the contract The privileged user specify, user no control, soThis path matches the LEAK .",
+          "5. Key nodes include D0 (asset operationnode) and E1 (control node)."
+        ],
+        "key_nodes": [
+          "D0",
+          "E1"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "TigraInu.addInitialLP()",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0 -> F1 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry TigraInu.addInitialLP(); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "The function 'TigraInu.stuckWithdraw(address,uint256)' is only callable by the specified addresses (owner or funding wallet), giving the owner significant control over fund withdrawals.",
+          "In Node D0, the balance of the `owner` is set to the value of `amount`, which is determined by the function parameter `amountToTransfer` from the caller. This operation decreases the balance of the `owner` without any checks on the prior balance, allowing the owner to claim any amount specified by the caller in `amountToTransfer`.",
+          "If an arbitrary amount is withdrawn from any account specified by the caller (instead of the owner's balance or from a contract balance), it enables a potential leak of funds to the owner, demonstrating leakage behavior.",
+          "Additionally, there are permissions granted only to specific roles which further restrict the possibility of misuse for regular users, indicating significant control by privileged users over how funds can be manipulated.",
+          "In conclusion, the defined operations allow the owner to pull funds specified by arbitrary callers, without reconstitution of balance which may lead to leaking others' tokens directly to the owner."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "TigraInu.stuckWithdraw(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> IF0 -> D1 -> F1 -> F1",
+        "summary": "Entry TigraInu.stuckWithdraw(address,uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "In the path, the function TigraInu.forceSwap() is called, which includes permission checks at node E1, dicating only certain accounts can execute this function.",
+          "The first asset node D0 shows a read operation: it returns the balance of the contract itself (_bals[account] where account=address(this)). This an asset node but does not directly modify balances.",
+          "However, during the operation at node D0, TigraInu._approve(address,address,uint256), the allowance for the contract (owner=address(this)) is set based on the balance from the `balanceOf(address(this))` result, allowing the uniswapV2Router to spend those tokens. This silently reduces the allowance of the contract's tokens without the consent of the users, as it indirectly links to them not being able to control their assets once this operation occurs.",
+          "The transaction does not show an increase in balances nor provides any evidence of minting tokens. Instead, it sets allowance based on the tokenAmount, which could be defined as a fixed or dynamic number tied to the state of the contract that could ultimately lead to alteration in the operational flow for users who did not consent to these changes.",
+          "The operation allows interaction with the uniswap router, which normally expects transfers of tokens. In this case, the potential for the owner to approve a significant amount to a third party (uniswap router) creates the risk that funds may be leaked from the contract to the uniswap address or kept as fees, leading to a loss of funds for users of the contract."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "TigraInu.forceSwap()",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> F1",
+        "summary": "Entry TigraInu.forceSwap(); PermNode: E1; AssetNode: D0, D0"
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 0,
+    "LEAK": 3,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

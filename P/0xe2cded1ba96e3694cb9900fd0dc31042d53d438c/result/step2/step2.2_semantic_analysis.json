@@ -1,0 +1,93 @@
+{
+  "contract_name": "0xe2cded1ba96e3694cb9900fd0dc31042d53d438c",
+  "generated_at": "2026-03-08T08:34:21Z",
+  "model": "gpt-4o-mini",
+  "paths": [
+    {
+      "path_id": "path_0",
+      "path_type": "DIRECT",
+      "category": "LIMIT",
+      "llm_result": {
+        "category": "LIMIT",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function HOROINU.addInitialLP() has a permission check at Node E1, which restricts access to the _fundingWallet or the owner. This indicates that only privileged addresses can execute this function.",
+          "2. The function calls HOROINU._approve() at Node M1, which sets allowances for the uniswapV2Router. The allowance is set to totalSupply() at Node D0, which is initialized to 0.",
+          "3. The permission check at Node E1 ensures that only the funding wallet or the owner can call this function, effectively limiting who can interact with the liquidity pool.",
+          "4. Since the totalSupply is initialized to 0, the allowance set at Node D0 does not result in any actual tokens being approved for transfer, but the ability to set allowances is still a limiting factor for normal users.",
+          "5. The ability to control the allowance for the uniswapV2Router can be seen as a way to limit the trading capabilities of other users, as they cannot freely trade without the approval of the router, which is controlled by the privileged address."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_0",
+        "function_signature": "HOROINU.addInitialLP()",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> E1 -> D0 -> F1 -> F1",
+        "summary": "Entry HOROINU.addInitialLP(); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_1",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The entry function HOROINU.removeStuckTokens(address,uint256) has a permission check at Node E1, allowing only the funding wallet or the owner to call it.",
+          "2. At Node D0, the function _approveTokens is called, which modifies the balance of the owner (param:to) by setting it to amount (param:amountToTransfer). This is a direct asset manipulation where the balance of the specified address is set to a specific amount, which can be controlled by the caller.",
+          "3. The balance change at Node D0 is: _bals[owner] = amount. If the owner is set to an arbitrary address, this can lead to a situation where the owner’s balance is increased without any corresponding decrease from the caller's balance, indicating a potential leak.",
+          "4. The transfer function at Node E1 and D0 also checks for zero addresses, but the amount being transferred is determined by the caller, which can lead to a situation where the caller can drain tokens from any specified address (not just their own).",
+          "5. The overall flow allows the owner to specify any address to receive tokens, which means they can effectively leak tokens from any user by calling this function with their address."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_1",
+        "function_signature": "HOROINU.removeStuckTokens(address,uint256)",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> IF0 -> D1 -> F1 -> F1",
+        "summary": "Entry HOROINU.removeStuckTokens(address,uint256); PermNode: E1; AssetNode: D0"
+      }
+    },
+    {
+      "path_id": "path_2",
+      "path_type": "DIRECT",
+      "category": "LEAK",
+      "llm_result": {
+        "category": "LEAK",
+        "confidence": 0.9,
+        "reasoning": [
+          "1. The path begins with the function HOROINU.forceSwap(), which has a permission check at Node E1 that allows only the _fundingWallet or the owner to call it. This indicates that the function can be triggered by a privileged address.",
+          "2. At Node D0, the balance of the contract (address(this)) is read, which is an asset node. The balance is used in the swap process, indicating that the contract's tokens are being manipulated.",
+          "3. The function _swapTokensForETH(uint256) is called, which involves approving the uniswapV2Router to spend tokens on behalf of the contract. This is done at Node D0 where the allowance is set, which is another asset manipulation.",
+          "4. The approval at Node D0 writes to _allowances, allowing the uniswapV2Router to spend an amount of tokens equal to tokenAmount, which is derived from the balance of the contract. This means that the contract can potentially lose tokens without any direct compensation to the users.",
+          "5. The key aspect of the leak is that the function can be called by a privileged address, and the tokens can be swapped for ETH, which means that the tokens are effectively being drained from the contract without any direct benefit to the users.",
+          "6. The path does not show any minting behavior as there are no increases in balances for any user or the total supply. Instead, it shows a potential for the owner or privileged address to drain tokens from the contract."
+        ],
+        "key_nodes": [
+          "E1",
+          "D0"
+        ]
+      },
+      "overview": {
+        "path_id": "path_2",
+        "function_signature": "HOROINU.forceSwap()",
+        "trace": "E1[PERM] -> M1 -> D0 -> E1 -> D0[ASSET] -> F1 -> E1 -> D0 -> E1 -> D0[ASSET] -> F1 -> F1 -> F1",
+        "summary": "Entry HOROINU.forceSwap(); PermNode: E1; AssetNode: D0, D0"
+      }
+    }
+  ],
+  "summary": {
+    "MINT": 0,
+    "LIMIT": 1,
+    "LEAK": 2,
+    "EMPTY": 0,
+    "ERROR": 0
+  }
+}

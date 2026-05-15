@@ -1,0 +1,276 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Unified Solidity Version Manager for PADG Pipeline
+
+Handles automatic version detection and switching across all analysis steps.
+Provides a single interface for initializing Slither with correct compiler version.
+
+Usage:
+    from utils.version_manager import init_slither
+
+    slither = init_slither("contracts/Token.sol")
+"""
+
+import os
+import re
+import subprocess
+from pathlib import Path
+from typing import Optional, Tuple
+
+from slither import Slither
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+SOLC_SELECT_STORAGE = PROJECT_ROOT / ".solc-select"
+SOLC_SELECT_STORAGE.mkdir(parents=True, exist_ok=True)
+
+# Prefer the highest patch version per major.minor to avoid syntax support gaps
+PREFERRED_PATCH_BY_MAJOR_MINOR = {
+    "0.4": "0.4.26",
+    "0.5": "0.5.17",
+    "0.6": "0.6.12",
+    "0.7": "0.7.6",
+    "0.8": "0.8.26",
+    "0.9": "0.9.9",
+}
+
+
+class SolidityVersionManager:
+    """Lightweight version manager for multi-version contract analysis."""
+
+    @staticmethod
+    def _highest_patch(version: str) -> str:
+        """
+        Upgrade a version to the preferred highest patch for its major.minor.
+
+        Examples:
+            0.6.0 -> 0.6.12
+            0.5.10 -> 0.5.17
+        """
+        try:
+            major, minor, _ = version.split(".")
+        except ValueError:
+            return version
+        key = f"{major}.{minor}"
+        return PREFERRED_PATCH_BY_MAJOR_MINOR.get(key, version)
+
+    @staticmethod
+    def _version_tuple(version: str) -> Tuple[int, int, int]:
+        try:
+            return tuple(map(int, version.split(".")))  # type: ignore
+        except Exception:
+            return (0, 0, 0)
+
+    @staticmethod
+    def detect_version(file_path: str) -> Optional[str]:
+        """
+        Detect Solidity version from pragma statement.
+
+        Handles:
+        - Exact version: pragma solidity 0.8.0;
+        - Caret range: pragma solidity ^0.8.0;
+        - Comparison: pragma solidity >=0.6.0 <0.9.0;
+        - Multiple pragmas: selects the highest exact version
+
+        Returns:
+            Version string (e.g., "0.8.19") or None if not detected
+        """
+        try:
+            content = Path(file_path).read_text(encoding='utf-8')
+            # Strip comments to avoid picking up commented pragmas.
+            content = re.sub(r'/\*.*?\*/', ' ', content, flags=re.DOTALL)
+            content = re.sub(r'//.*', ' ', content)
+
+            # Extract ALL pragma statements
+            matches = re.findall(r'pragma\s+solidity\s+([^;]+);', content, re.IGNORECASE)
+            if not matches:
+                # Heuristics: legacy syntax without pragma
+                contract_match = re.search(r'\bcontract\s+([A-Za-z_]\w*)', content)
+                old_ctor = None
+                if contract_match:
+                    cname = contract_match.group(1)
+                    if re.search(rf'\bfunction\s+{re.escape(cname)}\s*\(', content):
+                        old_ctor = True
+                if old_ctor or re.search(r'\bfunction\s*\(\)\s*(public|external)?\s*(payable)?', content):
+                    return PREFERRED_PATCH_BY_MAJOR_MINOR.get("0.4")
+                return None
+
+            # Collect all exact versions found
+            exact_versions = []
+            range_versions = []
+
+            for version_spec in matches:
+                version_spec = version_spec.strip()
+
+                # Priority 1: Exact version: 0.8.19
+                exact_match = re.search(r'^(\d+\.\d+\.\d+)$', version_spec)
+                if exact_match:
+                    # For an exact pragma, do NOT bump the patch; compiler must match exactly.
+                    exact_versions.append(exact_match.group(1))
+                    continue
+
+                # Priority 2: Caret with full version: ^0.8.19 -> use 0.8.19
+                caret_match = re.search(r'\^(\d+\.\d+\.\d+)', version_spec)
+                if caret_match:
+                    range_versions.append(SolidityVersionManager._highest_patch(caret_match.group(1)))
+                    continue
+
+                # Priority 3: Simplified caret: ^0.8 -> use 0.8.0
+                caret_short = re.search(r'\^(\d+\.\d+)(?!\.\d)', version_spec)
+                if caret_short:
+                    range_versions.append(
+                        SolidityVersionManager._highest_patch(f"{caret_short.group(1)}.0")
+                    )
+                    continue
+
+                # Priority 4: Comparison >=: >=0.8.0 -> use 0.8.0
+                gte_match = re.search(r'>=\s*(\d+\.\d+\.\d+)', version_spec)
+                if gte_match:
+                    range_versions.append(SolidityVersionManager._highest_patch(gte_match.group(1)))
+                    continue
+
+                # Priority 5: Comparison >: >0.8.0 -> use next patch (0.8.1)
+                gt_match = re.search(r'>\s*(\d+)\.(\d+)\.(\d+)', version_spec)
+                if gt_match:
+                    major, minor, patch = int(gt_match.group(1)), int(gt_match.group(2)), int(gt_match.group(3))
+                    bumped = f"{major}.{minor}.{patch + 1}"
+                    range_versions.append(SolidityVersionManager._highest_patch(bumped))
+                    continue
+
+            # Select highest exact version if available
+            if exact_versions:
+                selected = max(exact_versions, key=SolidityVersionManager._version_tuple)
+                if len(exact_versions) > 1:
+                    print(f"   [*] Multiple exact versions found: {exact_versions}, using highest: {selected}")
+                return selected
+
+            # Otherwise use highest range version
+            if range_versions:
+                selected = max(range_versions, key=SolidityVersionManager._version_tuple)
+                if len(range_versions) > 1:
+                    print(f"   [*] Multiple range versions found: {range_versions}, using highest: {selected}")
+                return selected
+
+            print(f"   [!] Could not parse any version from pragmas: {matches}")
+            return None
+
+        except Exception as e:
+            print(f"   [!] Version detection failed: {e}")
+            return None
+
+    @staticmethod
+    def switch_version(version: str) -> bool:
+        """
+        Switch to specified Solidity version using solc-select.
+        Auto-installs if version not found.
+
+        Args:
+            version: Target version string (e.g., "0.8.19")
+
+        Returns:
+            True if successful, False otherwise
+        """
+        env = os.environ.copy()
+        env.setdefault("VIRTUAL_ENV", str(SOLC_SELECT_STORAGE))
+
+        def _run(args, **kwargs):
+            kwargs.setdefault("env", env)
+            return subprocess.run(args, **kwargs)
+
+        solc_path = SOLC_SELECT_STORAGE / "artifacts" / f"solc-{version}" / f"solc-{version}"
+        if solc_path.exists():
+            print(f"   [*] Using cached solc {version} at {solc_path}")
+            return True
+
+        # Check solc-select availability (use 'versions' command instead of --version)
+        try:
+            _run(['solc-select', 'versions'], capture_output=True, check=True, timeout=10)
+        except subprocess.TimeoutExpired:
+            print("   [!] solc-select timeout when checking versions")
+            return False
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            print("   [!] solc-select not installed. Install: pip install solc-select")
+            return False
+
+        try:
+            print(f"   [*] Installing solc {version}...")
+            install_result = _run(
+                ['solc-select', 'install', version],
+                capture_output=True, text=True, timeout=180
+            )
+
+            if install_result.returncode != 0:
+                print(f"   [!] Installation failed: {install_result.stderr}")
+                return False
+
+            if solc_path.exists():
+                print(f"   [*] Installed solc {version}")
+                return True
+
+            print("   [!] solc installation reported success but binary not found")
+            return False
+
+        except subprocess.TimeoutExpired:
+            print(f"   [!] Timeout installing solc {version}")
+            return False
+        except Exception as e:
+            print(f"   [!] Version switch failed: {e}")
+            return False
+
+    @staticmethod
+    def init_slither(contract_path: str, **kwargs) -> Optional[Slither]:
+        """
+        Initialize Slither with automatic version management.
+
+        This is the main entry point for all PADG analysis steps.
+
+        Args:
+            contract_path: Path to Solidity contract file
+            **kwargs: Additional arguments passed to Slither
+
+        Returns:
+            Slither instance or None if initialization failed
+
+        Usage:
+            slither = SolidityVersionManager.init_slither("contracts/Token.sol")
+            if slither:
+                # Proceed with analysis
+                ...
+        """
+        # Detect and switch version
+        version = SolidityVersionManager.detect_version(contract_path)
+
+        if version:
+            print(f"   [*] Detected: solidity {version}")
+            if not SolidityVersionManager.switch_version(version):
+                print("   [!] Falling back to system solc due to version switch failure")
+            else:
+                solc_path = (
+                    SOLC_SELECT_STORAGE
+                    / "artifacts"
+                    / f"solc-{version}"
+                    / f"solc-{version}"
+                )
+                if solc_path.exists():
+                    kwargs.setdefault("solc", str(solc_path))
+        else:
+            print("   [*] Using default compiler")
+
+        # Initialize Slither
+        try:
+            return Slither(contract_path, **kwargs)
+        except Exception as e:
+            print(f"   [!] Slither initialization failed: {e}")
+            return None
+
+
+def init_slither(contract_path: str, **kwargs) -> Optional[Slither]:
+    """
+    Shorthand for version-aware Slither initialization.
+
+    Usage:
+        from utils.version_manager import init_slither
+
+        slither = init_slither("contracts/Token.sol")
+    """
+    return SolidityVersionManager.init_slither(contract_path, **kwargs)

@@ -1,0 +1,398 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Step 2.1: Path Formatter
+
+Consumes Step 1.4 path outputs and produces annotated, LLM-friendly
+representations that include:
+  * Path overview (node sequence, call depth, permission stats)
+  * Per-node blocks with permission context, caller highlights, asset tags
+  * Edge descriptions (sequential/conditional/call)
+
+The formatted artifact will be consumed by Step 2's semantic tagger.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+try:
+    PROJECT_ROOT = Path(__file__).resolve().parents[2]
+except ValueError:
+    PROJECT_ROOT = Path.cwd()
+
+OUTPUT_DIR = PROJECT_ROOT / "output"
+
+
+CALLER_ASSIGNMENT_PATTERN = re.compile(
+    r"^\s*(?:address\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:_msgSender\(\)|msg\.sender)\s*;?"
+)
+
+REASONING_STEPS = [
+    "1. 按顺序阅读节点：遇到 [PERM] 节点记录谁能触发、依赖哪些状态；遇到 [ASSET] 节点记录余额/变量如何变化（增加、减少或依赖因子）。",
+    "2. 关注资产来源：特别留意 [ASSET] 节点中 from/payer 是否由参数或任意地址提供，而非调用者本身；也检查是否有交易开关/黑名单变量被修改。",
+    "3. 将权限与资产关联：说明特权身份如何操纵这些资产变动，受影响地址是固定（如 owner）、任意输入还是仅限 caller。",
+    "4. 根据 Rugpull 定义做结论：Hidden Mint=特权任意增发，Limiting Sell=特权控制交易状态，Leaking Token=特权可扣他人余额或设置极端费率；若无风险则返回 \"\"。引用关键节点编号。",
+]
+
+RUGPULL_DEFINITION = [
+    "Mint（隐藏铸币）：路径中存在真实的权限门槛（onlyOwner、_taxWallet 等），只有特权身份才能触达资产节点；资产操作允许向任意地址增加余额或总供给，无需余额校验。",
+    "Limit（限制交易）：特权节点可以修改交易控制变量（交易开关、黑/白名单、冷却等），这些变量直接决定 transfer/交易是否成立，一旦被特权者调整，普通用户就无法自由交易。",
+    "Leak（泄露代币）：包含两类——A) 直接泄露：特权节点扣减/转出的是由参数或任意输入指定的账户，而非调用者自身；B) 税率操控：特权节点可将手续费/税率调到极端或无上限水平，把交易收益导向特权地址。若源地址只能是调用者自身，则不算 Leak。",
+    "判定方法：沿路径查找带 [PERM] 与 [ASSET] 的节点，确认是否符合上述 Mint/Limit/Leak 模式，再做分类。",
+]
+
+FINAL_INSTRUCTION = (
+    "结合以上节点与提示，判断该路径是否属于 Hidden Mint / Limiting Sell / Leaking Token / 无风险（\"\"）。"
+    "输出严格 JSON：{\"category\":\"...\",\"confidence\":0.0-1.0,\"reasoning\":[...],\"key_nodes\":[...]}"
+)
+
+
+def _load_json(path: Path) -> Optional[Dict[str, Any]]:
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+
+
+def _discover_contracts() -> List[str]:
+    if not OUTPUT_DIR.exists():
+        return []
+    return sorted(
+        [
+            p.name
+            for p in OUTPUT_DIR.iterdir()
+            if p.is_dir() and (p / "step1" / "step1.4_paths.json").exists()
+        ]
+    )
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+# ---------------------------------------------------------------------------
+# Core formatting logic
+# ---------------------------------------------------------------------------
+
+class PathFormatter:
+    """Formatter for Step 1.4 paths."""
+
+    def __init__(self, contract_name: str, raw_paths: Dict[str, Any]):
+        self.contract_name = contract_name
+        self.raw_paths = raw_paths
+
+    # ---- Public API -----------------------------------------------------
+
+    def format_paths(self) -> Dict[str, Any]:
+        """Return formatted representation for all direct/indirect paths."""
+        formatted: Dict[str, Any] = {
+            "contract_name": self.contract_name,
+            "generated_at": _now_iso(),
+            "direct_paths": [],
+            "indirect_paths": [],
+        }
+
+        for path in self.raw_paths.get("direct_paths", []):
+            formatted["direct_paths"].append(self._format_direct_path(path))
+
+        for path in self.raw_paths.get("indirect_paths", []):
+            formatted["indirect_paths"].append(self._format_indirect_path(path))
+
+        summary = self.raw_paths.get("summary", {})
+        formatted["summary"] = {
+            "direct_paths": len(formatted["direct_paths"]),
+            "indirect_paths": len(formatted["indirect_paths"]),
+            "original_summary": summary,
+        }
+        return formatted
+
+    # ---- Direct Paths ---------------------------------------------------
+
+    def _format_direct_path(self, path: Dict[str, Any]) -> Dict[str, Any]:
+        nodes: List[Dict[str, Any]] = path.get("nodes", [])
+        overview = self._build_overview(path, nodes)
+        node_blocks = [self._build_node_block(node) for node in nodes]
+        focus = {
+            "permission_nodes": [ block["node_id"] for block in node_blocks if "PERMISSION" in block["attention"]],
+            "asset_nodes": [ block["node_id"] for block in node_blocks if "ASSET" in block["attention"]],
+        }
+
+        return {
+            "path_id": path["path_id"],
+            "path_type": path.get("path_type", "DIRECT"),
+            "overview": overview,
+            "node_blocks": node_blocks,
+            "focus_hints": focus,
+            "reasoning_steps": REASONING_STEPS,
+            "rugpull_definition": RUGPULL_DEFINITION,
+            "instruction": FINAL_INSTRUCTION,
+        }
+
+    def _build_overview(self, path: Dict[str, Any], nodes: List[Dict[str, Any]]) -> Dict[str, Any]:
+        trace_tokens: List[str] = []
+        permission_nodes: List[str] = []
+        asset_nodes: List[str] = []
+
+        for node in nodes:
+            label = node.get("node_id", "")
+            if self._node_has_permission(node):
+                label += "[PERM]"
+                permission_nodes.append(node.get("node_id", ""))
+            elif node.get("asset_annotations"):
+                label += "[ASSET]"
+                asset_nodes.append(node.get("node_id", ""))
+            trace_tokens.append(label)
+
+        summary_parts = [
+            f"入口 {path.get('function_signature')}",
+        ]
+        if permission_nodes:
+            summary_parts.append(f"权限节点: {', '.join(permission_nodes)}")
+        if asset_nodes:
+            summary_parts.append(f"资产节点: {', '.join(asset_nodes)}")
+
+        return {
+            "path_id": path.get("path_id"),
+            "function_signature": path.get("function_signature"),
+            "trace": " -> ".join(trace_tokens),
+            "summary": "；".join(summary_parts),
+        }
+
+    def _build_node_block(self, node: Dict[str, Any]) -> Dict[str, Any]:
+        node_id = node.get("node_id")
+        node_type = node.get("node_type")
+        call_depth = node.get("call_depth", 0)
+        function_name = node.get("function")
+
+        attention: List[str] = []
+        if self._node_has_permission(node):
+            attention.append("PERMISSION")
+        if node.get("asset_annotations"):
+            attention.append("ASSET")
+
+        code_lines = self._extract_code_snippet(node)
+        notes = self._build_node_notes(node)
+
+        header = f"[Node {node_id} | depth={call_depth} | {function_name}]"
+        if attention:
+            header += f" | ATTENTION: {', '.join(attention)}"
+
+        return {
+            "node_id": node_id,
+            "header": header,
+            "attention": attention,
+            "code_block": "\n".join(code_lines) if code_lines else "",
+            "notes": notes,
+        }
+
+    @staticmethod
+    def _node_has_permission(node: Dict[str, Any]) -> bool:
+        checks = node.get("permission_checks") or []
+        for check in checks:
+            if check.get("has_permission"):
+                return True
+            if check.get("is_state_lock"):
+                return True
+            if check.get("depends_on_caller") and check.get("depends_on_state"):
+                return True
+        return False
+
+    def _extract_code_snippet(self, node: Dict[str, Any]) -> List[str]:
+        relevant_lines: List[str] = []
+        caller_aliases = self._collect_caller_aliases(node)
+        data_profile = node.get("data_io_profile") or {}
+        init_values = data_profile.get("variable_initializations") or {}
+        state_types = data_profile.get("state_variable_types") or {}
+        permission_lines = {
+            check.get("line")
+            for check in node.get("permission_checks") or []
+            if check.get("line") is not None
+        }
+        asset_vars = [ann.get("variable") for ann in node.get("asset_annotations") or [] if ann.get("variable")]
+
+        for block in node.get("code_blocks") or []:
+            expression = block.get("expression") or ""
+            inline_hints: List[str] = []
+            if init_values:
+                for var, value in init_values.items():
+                    if not var or value is None:
+                        continue
+                    type_str = (state_types.get(var) or "").lower()
+                    if "mapping" in type_str:
+                        continue
+                    pattern = r"\b" + re.escape(var) + r"\b"
+                    if re.search(pattern, expression):
+                        val_str = str(value).strip()
+                        if val_str:
+                            inline_hints.append(f"{var}={val_str}")
+                if inline_hints:
+                    expression = f"{expression}  /* {'; '.join(inline_hints)} */"
+            line_no = block.get("line")
+            tags: List[str] = []
+
+            if line_no in permission_lines:
+                tags.append("PERM")
+            if any(alias and alias in expression for alias in caller_aliases):
+                tags.append("CALLER")
+            if any(var and var in expression for var in asset_vars):
+                tags.append("ASSET")
+
+            if tags:
+                prefix = f"L{line_no}: " if line_no is not None else ""
+                relevant_lines.append(f"{prefix}{expression}  // [{', '.join(tags)}]")
+
+        if not relevant_lines and node.get("condition"):
+            relevant_lines.append(node.get("condition"))
+
+        return relevant_lines
+
+    @staticmethod
+    def _collect_caller_aliases(node: Dict[str, Any]) -> List[str]:
+        aliases: List[str] = []
+        data_profile = node.get("data_io_profile") or {}
+        for param, mapping in (data_profile.get("parameter_mapping") or {}).items():
+            if mapping.get("is_caller"):
+                aliases.append(param)
+
+        for block in node.get("code_blocks") or []:
+            expr = block.get("expression") or ""
+            match = CALLER_ASSIGNMENT_PATTERN.match(expr)
+            if match:
+                aliases.append(match.group(1))
+        return aliases
+
+    def _build_node_notes(self, node: Dict[str, Any]) -> List[str]:
+        notes: List[str] = []
+        for check in node.get("permission_checks") or []:
+            if any([check.get("has_permission"), check.get("is_state_lock"), (check.get("depends_on_caller") and check.get("depends_on_state"))]):
+                line = check.get("line")
+                summary = check.get("summary") or ""
+                prefix = "L{}".format(line) if line is not None else ""
+                if prefix:
+                    notes.append(f"[PERM] {prefix} {summary}")
+                else:
+                    notes.append(f"[PERM] {summary}")
+
+        for ann in node.get("asset_annotations") or []:
+            var = ann.get("variable")
+            access = ann.get("access") or []
+            if var:
+                access_str = "/".join(access) if access else ""
+                if access_str:
+                    notes.append(f"[ASSET] {var} ({access_str})")
+                else:
+                    notes.append(f"[ASSET] {var}")
+        notes.extend(self._collect_initialization_notes(node))
+        return notes
+
+    def _collect_initialization_notes(self, node: Dict[str, Any]) -> List[str]:
+        data_profile = node.get("data_io_profile") or {}
+        init_map = data_profile.get("variable_initializations")
+        if not isinstance(init_map, dict) or not init_map:
+            return []
+
+        state_types = (data_profile.get("state_variable_types") or {})
+        expressions = " ".join(
+            block.get("expression") or "" for block in node.get("code_blocks") or []
+        )
+        referenced = [var for var in init_map if var and var in expressions]
+        if not referenced:
+            referenced = [var for var in init_map if var]
+
+        notes: List[str] = []
+        for var in referenced:
+            var_type = (state_types.get(var) or "").lower()
+            if "mapping" in var_type:
+                continue
+            value = init_map.get(var)
+            if value is None:
+                continue
+            value_str = str(value).strip()
+            if not value_str:
+                continue
+            notes.append(f"[INIT] {var} = {value_str}")
+        return notes
+
+    # ---- Indirect Paths -------------------------------------------------
+
+    @staticmethod
+    def _format_indirect_path(path: Dict[str, Any]) -> Dict[str, Any]:
+        control_source = path.get("control_source", {})
+        control_var = path.get("control_variable", {})
+        affected_targets = path.get("affected_targets", [])
+        control_chain = path.get("control_chain") or []
+
+        return {
+            "path_id": path.get("path_id"),
+            "overview": {
+                "source": control_source.get("function"),
+                "control_variable": control_var.get("name"),
+                "targets": [t.get("function") for t in affected_targets],
+            },
+            "details": {
+                "control_source": control_source,
+                "control_variable": control_var,
+                "control_chain": control_chain,
+                "affected_targets": affected_targets,
+            },
+            "reasoning_steps": REASONING_STEPS,
+            "rugpull_definition": RUGPULL_DEFINITION,
+            "instruction": FINAL_INSTRUCTION,
+        }
+
+
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
+
+def process_contract(contract_name: str) -> None:
+    step1_dir = OUTPUT_DIR / contract_name / "step1"
+    step2_dir = OUTPUT_DIR / contract_name / "step2"
+    step2_dir.mkdir(parents=True, exist_ok=True)
+
+    path_file = step1_dir / "step1.4_paths.json"
+    raw_paths = _load_json(path_file)
+    if not raw_paths:
+        print(f"[WARN] Missing or invalid path file for {contract_name}: {path_file}")
+        return
+
+    formatter = PathFormatter(contract_name, raw_paths)
+    formatted = formatter.format_paths()
+
+    output_file = step2_dir / "step2.1_formatted_paths.json"
+    output_file.write_text(json.dumps(formatted, indent=2), encoding="utf-8")
+    print(f"[OK] Formatted paths saved to {output_file.relative_to(PROJECT_ROOT)}")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Format Step 1.4 paths for Step 2 LLM input.")
+    parser.add_argument(
+        "--contracts",
+        nargs="+",
+        help="Specific contract names (default: all contracts with step1.4 output).",
+    )
+    args = parser.parse_args()
+
+    contracts = args.contracts or _discover_contracts()
+    if not contracts:
+        print("[WARN] No contracts found to process.")
+        return
+
+    for contract in contracts:
+        process_contract(contract)
+
+
+if __name__ == "__main__":
+    main()
